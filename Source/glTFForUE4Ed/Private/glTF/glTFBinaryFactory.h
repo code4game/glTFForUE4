@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Factories/Factory.h"
-#include "glTFFactory.generated.h"
+#include "glTFBinaryFactory.generated.h"
 
 UCLASS(hidecategories=Object)
-class UglTFFactory : public UFactory
+class UglTFBinaryFactory : public UFactory
 {
     GENERATED_UCLASS_BODY()
 
@@ -15,5 +15,5 @@ public:
     // End UFactory Interface
 
 public:
-    virtual UObject* FactoryCreateText(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* InContext, const TCHAR* InType, const TCHAR*& InBuffer, const TCHAR* InBufferEnd, FFeedbackContext* InWarn);
+    virtual UObject* FactoryCreateBinary(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, UObject* InContext, const TCHAR* InType, const uint8*& InBuffer, const uint8* InBufferEnd, FFeedbackContext* InWarn);
 };

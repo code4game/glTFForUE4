@@ -3,6 +3,7 @@
 
 UglTFImportUI::UglTFImportUI(const FObjectInitializer& InObjectInitializer)
     : Super(InObjectInitializer)
+    , bIsBinary(false)
 {
     //
 }

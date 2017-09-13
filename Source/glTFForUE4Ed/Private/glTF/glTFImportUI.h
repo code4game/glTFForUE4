@@ -8,4 +8,6 @@ class UglTFImportUI : public UObject
     GENERATED_UCLASS_BODY()
 
 public:
+    UPROPERTY()
+    bool bIsBinary;
 };

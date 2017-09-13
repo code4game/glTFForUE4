@@ -10,27 +10,25 @@
 
 UglTFFactory::UglTFFactory(const FObjectInitializer& InObjectInitializer)
     : Super(InObjectInitializer)
-    , glTFImportUI(nullptr)
 {
     SupportedClass = UStaticMesh::StaticClass();
-    Formats.Add(TEXT("gltf;glTF meshes and animations"));
+    if (Formats.Num() > 0) Formats.Empty();
+    Formats.Add(TEXT("gltf;glTF 2.0"));
 
     bCreateNew = false;
     bText = true;
     bEditorImport = true;
-    //
 }
 
 bool UglTFFactory::DoesSupportClass(UClass* InClass)
 {
+    //TODO:
     return (InClass == UStaticMesh::StaticClass());
 }
 
 bool UglTFFactory::FactoryCanImport(const FString& InFilename)
 {
-    const FString Extension = FPaths::GetExtension(InFilename);
-    return Extension.Equals(TEXT("gltf"), ESearchCase::IgnoreCase)
-        || Extension.Equals(TEXT("glb"), ESearchCase::IgnoreCase);
+    return FPaths::GetExtension(InFilename).Equals(TEXT("gltf"), ESearchCase::IgnoreCase);
 }
 
 UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* InContext, const TCHAR* InType, const TCHAR*& InBuffer, const TCHAR* InBufferEnd, FFeedbackContext* InWarn)
@@ -40,6 +38,11 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
     if (!(GlTF << GlTFString))
     {
         return nullptr;
+    }
+    for (const std::shared_ptr<libgltf::SBuffer>& buffer : GlTF->buffers)
+    {
+        int32 dd = 0;
+        buffer->name;
     }
     //
     return nullptr;

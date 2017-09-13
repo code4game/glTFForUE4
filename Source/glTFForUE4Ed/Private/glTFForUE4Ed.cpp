@@ -4,6 +4,7 @@
 #include "glTFForUE4Settings.h"
 
 #include "glTF/glTFFactory.h"
+#include "glTF/glTFBinaryFactory.h"
 
 #include "ISettingsModule.h"
 
@@ -24,6 +25,7 @@ void FglTFForUE4EdModule::StartupModule()
 	}
 
     UglTFFactory::StaticClass();
+    UglTFBinaryFactory::StaticClass();
 }
 
 void FglTFForUE4EdModule::ShutdownModule()
