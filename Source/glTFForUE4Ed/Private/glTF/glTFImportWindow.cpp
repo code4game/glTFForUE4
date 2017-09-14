@@ -154,7 +154,6 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                                 .Text(LOCTEXT("SglTFImportWindow_InvertNormal_Title", "Invert Normal:"))
                         ]
                         + SGridPanel::Slot(1, 0)
-                            .HAlign(HAlign_Right)
                             .Padding(2)
                         [
                             SNew(SCheckBox)
@@ -169,7 +168,6 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                                 .Text(LOCTEXT("SglTFImportWindow_InvertTangent_Title", "Scale Ratio:"))
                         ]
                         + SGridPanel::Slot(1, 1)
-                            .HAlign(HAlign_Right)
                             .Padding(2)
                         [
                             SNew(SSpinBox<float>)
