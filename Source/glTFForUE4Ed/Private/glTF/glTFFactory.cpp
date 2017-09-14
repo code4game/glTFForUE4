@@ -48,30 +48,23 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
     }
 
     /// Open import window, allow to configure some options
-    TSharedPtr<FglTFImportOptions> glTFImportOptions = SglTFImportWindow::Open();
+    TSharedPtr<FglTFImportOptions> glTFImportOptions = SglTFImportWindow::Open(InParent->GetPathName());
     if (!glTFImportOptions.IsValid())
     {
         UE_LOG(LogglTFForUE4Ed, Error, TEXT("Failed to open import window"));
         return nullptr;
     }
 
-    InWarn->BeginSlowTask(LOCTEXT("UglTFFactory::FactoryCreateText", "Parsing the glTF file"), true, true);
     std::shared_ptr<libgltf::SGlTF> GlTF;
     std::wstring GlTFString = InBuffer;
     bool bIsSuccessToParse = (GlTF << GlTFString);
-    InWarn->EndSlowTask();
     if (!bIsSuccessToParse)
     {
         UE_LOG(LogglTFForUE4Ed, Error, TEXT("Failed to parse the gltf file %s"), *InName.ToString());
         return nullptr;
     }
-    for (const std::shared_ptr<libgltf::SBuffer>& buffer : GlTF->buffers)
-    {
-        int32 dd = 0;
-        buffer->name;
-    }
-    //
-    return nullptr;
+
+    return FglTFImporter::Get().CreateMesh(glTFImportOptions, GlTF, InClass, InParent);
 }
 
 #undef LOCTEXT_NAMESPACE

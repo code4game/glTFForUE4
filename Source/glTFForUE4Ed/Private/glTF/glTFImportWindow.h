@@ -2,21 +2,22 @@
 
 #include "SlateBasics.h"
 #include "AssetRegistryModule.h"
-#include "glTF/glTFImportWindowUI.h"
 
 class SglTFImportWindow : public SCompoundWidget
 {
 public:
-    static TSharedPtr<struct FglTFImportOptions> Open();
+    static TSharedPtr<struct FglTFImportOptions> Open(const FString& InCurrentFile);
 
 public:
     SLATE_BEGIN_ARGS(SglTFImportWindow)
-        : _WidgetWindow()
-        , _glTFImportWindowUI(nullptr)
+        : _glTFImportOptions(nullptr)
+        , _WidgetWindow(nullptr)
+        , _CurrentFile()
         {}
 
-        SLATE_ARGUMENT(UglTFImportWindowUI*, glTFImportWindowUI)
+        SLATE_ARGUMENT(TSharedPtr<struct FglTFImportOptions>, glTFImportOptions)
         SLATE_ARGUMENT(TSharedPtr<SWindow>, WidgetWindow)
+        SLATE_ARGUMENT(FText, CurrentFile)
     SLATE_END_ARGS()
 
 public:
@@ -33,8 +34,11 @@ protected:
     bool CanImport() const;
     FReply OnImport();
     FReply OnCancel();
+    void HandleMeshScaleRatio(float InNewValue);
+    void HandleMeshInvertNormal(ECheckBoxState InCheckBoxState);
+    void HandleMaterialImportMaterial(ECheckBoxState InCheckBoxState);
 
 private:
+    TWeakPtr<struct FglTFImportOptions> glTFImportOptions;
     TWeakPtr<SWindow> WidgetWindow;
-    UglTFImportWindowUI* glTFImportWindowUI;
 };
