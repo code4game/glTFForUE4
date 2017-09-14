@@ -3,7 +3,8 @@
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTFForUE4Settings.h"
 
-#include "libgltf/libgltf.h"
+#include "glTF/glTFFactory.h"
+#include "glTF/glTFBinaryFactory.h"
 
 #include "ISettingsModule.h"
 
@@ -22,6 +23,9 @@ void FglTFForUE4EdModule::StartupModule()
 			LOCTEXT("Description", "glTF for UE4"),
 			GetMutableDefault<UglTFForUE4Settings>());
 	}
+
+    UglTFFactory::StaticClass();
+    UglTFBinaryFactory::StaticClass();
 }
 
 void FglTFForUE4EdModule::ShutdownModule()
