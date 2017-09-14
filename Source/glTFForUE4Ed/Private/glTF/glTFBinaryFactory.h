@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Factories/Factory.h"
+#include "glTFFactory.h"
 #include "glTFBinaryFactory.generated.h"
 
 UCLASS(hidecategories=Object)
-class UglTFBinaryFactory : public UFactory
+class UglTFBinaryFactory : public UglTFFactory
 {
     GENERATED_UCLASS_BODY()
 
