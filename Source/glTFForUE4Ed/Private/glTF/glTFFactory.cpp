@@ -37,6 +37,7 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
     std::wstring GlTFString = InBuffer;
     if (!(GlTF << GlTFString))
     {
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Failed to parse the gltf file %s"), *InName.ToString());
         return nullptr;
     }
     for (const std::shared_ptr<libgltf::SBuffer>& buffer : GlTF->buffers)
