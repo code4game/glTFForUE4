@@ -16,4 +16,8 @@ public:
 
 public:
     virtual UObject* FactoryCreateText(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* InContext, const TCHAR* InType, const TCHAR*& InBuffer, const TCHAR* InBufferEnd, FFeedbackContext* InWarn);
+
+private:
+    //HACK: It is not safe
+    FString CurrentFilename;
 };

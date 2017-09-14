@@ -1,8 +1,6 @@
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTFBinaryFactory.h"
 
-#include "glTFImportUI.h"
-
 #include "Engine/StaticMesh.h"
 #include "Misc/Paths.h"
 
