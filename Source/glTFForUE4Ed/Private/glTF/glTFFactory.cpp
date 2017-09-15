@@ -48,7 +48,7 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
     }
 
     /// Open import window, allow to configure some options
-    TSharedPtr<FglTFImportOptions> glTFImportOptions = SglTFImportWindow::Open(InParent->GetPathName());
+    TSharedPtr<FglTFImportOptions> glTFImportOptions = SglTFImportWindow::Open(CurrentFilename, InParent->GetPathName());
     if (!glTFImportOptions.IsValid())
     {
         UE_LOG(LogglTFForUE4Ed, Error, TEXT("Failed to open import window"));

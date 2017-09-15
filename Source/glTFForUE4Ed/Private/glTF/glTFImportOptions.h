@@ -10,7 +10,7 @@ struct FglTFImportOptions
     FglTFImportOptions();
 
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    float MeshScaleRatio;
+    FVector MeshScaleRatio;
 
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bInvertNormal;
