@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include "ModuleManager.h"
+#include "glTFForUE4PublicPCH.h"
+#include "ModuleInterface.h"
 
 class GLTFFORUE4_API IglTFForUE4Module : public IModuleInterface
 {

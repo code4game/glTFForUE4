@@ -11,9 +11,12 @@
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
 
-TSharedPtr<FglTFImportOptions> SglTFImportWindow::Open(const FString& InSourceFilePath, const FString& InTargetFilePath)
+TSharedPtr<FglTFImportOptions> SglTFImportWindow::Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, bool& OutCancel)
 {
     TSharedPtr<FglTFImportOptions> glTFImportOptions = MakeShareable(new FglTFImportOptions());
+
+    glTFImportOptions->FilePathInOS = InFilePathInOS;
+    glTFImportOptions->FilePathInEngine = InFilePathInEngine;
 
     TSharedPtr<SWindow> ParentWindow;
 
@@ -33,13 +36,12 @@ TSharedPtr<FglTFImportOptions> SglTFImportWindow::Open(const FString& InSourceFi
         SAssignNew(glTFImportWindow, SglTFImportWindow)
             .glTFImportOptions(glTFImportOptions)
             .WidgetWindow(Window)
-            .SourceFilePath(FText::FromString(InSourceFilePath))
-            .TargetFilePath(FText::FromString(InTargetFilePath))
     );
 
+    /// Show the import options window.
     FSlateApplication::Get().AddModalWindow(Window, ParentWindow, false);
 
-    //
+    OutCancel = (glTFImportOptions != glTFImportWindow->GetImportOptions());
     return glTFImportOptions;
 }
 
@@ -86,7 +88,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                     [
                         SNew(STextBlock)
                             .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                            .Text(InArgs._SourceFilePath)
+                            .Text(glTFImportOptions.Pin()->FilePathInOS)
                     ]
                 ]
                 + SVerticalBox::Slot()
@@ -107,7 +109,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                     [
                         SNew(STextBlock)
                             .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                            .Text(InArgs._TargetFilePath)
+                            .Text(glTFImportOptions.Pin()->FilePathInEngine)
                     ]
                 ]
             ]
@@ -332,16 +334,18 @@ FReply SglTFImportWindow::OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent
     return FReply::Unhandled();
 }
 
+TSharedPtr<FglTFImportOptions> SglTFImportWindow::GetImportOptions()
+{
+    return glTFImportOptions.Pin();
+}
+
 bool SglTFImportWindow::CanImport() const
 {
-    //
-    return false;
+    return true;
 }
 
 FReply SglTFImportWindow::OnImport()
 {
-    //
-
     if (WidgetWindow.IsValid())
     {
         WidgetWindow.Pin()->RequestDestroyWindow();
@@ -351,6 +355,8 @@ FReply SglTFImportWindow::OnImport()
 
 FReply SglTFImportWindow::OnCancel()
 {
+    glTFImportOptions.Reset();
+
     if (WidgetWindow.IsValid())
     {
         WidgetWindow.Pin()->RequestDestroyWindow();

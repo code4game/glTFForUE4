@@ -21,8 +21,19 @@ FglTFImporter::~FglTFImporter()
     //
 }
 
-UObject* FglTFImporter::CreateMesh(const TSharedPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, UClass* InClass, UObject* InParent) const
+UObject* FglTFImporter::CreateMesh(const TSharedPtr<FglTFImportOptions>& InglTFImportOptions
+    , const std::shared_ptr<libgltf::SGlTF>& InGlTF
+    , UClass* InClass, UObject* InParent) const
 {
+    if (!InGlTF)
+    {
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Invalid SGlTF!"));
+        return nullptr;
+    }
+
+    const FString FolderPathInOS = FPaths::GetPath(InglTFImportOptions->FilePathInOS);
+
+
     //
     return nullptr;
 }

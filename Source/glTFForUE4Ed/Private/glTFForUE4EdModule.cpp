@@ -13,11 +13,9 @@
 /// From engine
 #include "ISettingsModule.h"
 
-DEFINE_LOG_CATEGORY(LogglTFForUE4Ed);
-
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
 
-class FglTFForUE4EdModule : public IModuleInterface
+class FglTFForUE4EdModule : public IglTFForUE4EdModule
 {
 public:
     /** IModuleInterface implementation */

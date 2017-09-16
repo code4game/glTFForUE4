@@ -14,7 +14,7 @@
 
 UglTFFactory::UglTFFactory(const FObjectInitializer& InObjectInitializer)
     : Super(InObjectInitializer)
-    , CurrentFilename(TEXT(""))
+    , FilePathInOS(TEXT(""))
 {
     SupportedClass = UStaticMesh::StaticClass();
     if (Formats.Num() > 0) Formats.Empty();
@@ -31,24 +31,30 @@ bool UglTFFactory::DoesSupportClass(UClass* InClass)
     return (InClass == UStaticMesh::StaticClass());
 }
 
-bool UglTFFactory::FactoryCanImport(const FString& InFilename)
+bool UglTFFactory::FactoryCanImport(const FString& InFilePathInOS)
 {
     //HACK: Store the filename, but it will be used in another function
-    CurrentFilename = InFilename;
-    return FPaths::GetExtension(InFilename).Equals(TEXT("gltf"), ESearchCase::IgnoreCase);
+    FilePathInOS = InFilePathInOS;
+    return FPaths::GetExtension(InFilePathInOS).Equals(TEXT("gltf"), ESearchCase::IgnoreCase);
 }
 
 UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* InContext, const TCHAR* InType, const TCHAR*& InBuffer, const TCHAR* InBufferEnd, FFeedbackContext* InWarn)
 {
     //HACK: Check the filename that was stored by another function
-    if (!FPaths::GetBaseFilename(CurrentFilename).Equals(InName.ToString()))
+    if (!FPaths::GetBaseFilename(FilePathInOS).Equals(InName.ToString()))
     {
-        UE_LOG(LogglTFForUE4Ed, Error, TEXT("It is different between current filename(%s) and name(%s)!!"), *CurrentFilename, *InName.ToString());
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("It is different between current filename(%s) and name(%s)!!"), *FilePathInOS, *InName.ToString());
         return nullptr;
     }
 
     /// Open import window, allow to configure some options
-    TSharedPtr<FglTFImportOptions> glTFImportOptions = SglTFImportWindow::Open(CurrentFilename, InParent->GetPathName());
+    bool bCancel = false;
+    TSharedPtr<FglTFImportOptions> glTFImportOptions = SglTFImportWindow::Open(FilePathInOS, InParent->GetPathName(), bCancel);
+    if (bCancel)
+    {
+        UE_LOG(LogglTFForUE4Ed, Display, TEXT("Cancel to import the file - %s"), *FilePathInOS);
+        return nullptr;
+    }
     if (!glTFImportOptions.IsValid())
     {
         UE_LOG(LogglTFForUE4Ed, Error, TEXT("Failed to open import window"));

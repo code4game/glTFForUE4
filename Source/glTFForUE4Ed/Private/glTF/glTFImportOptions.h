@@ -10,6 +10,12 @@ struct FglTFImportOptions
     FglTFImportOptions();
 
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    FString FilePathInOS;
+
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    FString FilePathInEngine;
+
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     FVector MeshScaleRatio;
 
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)

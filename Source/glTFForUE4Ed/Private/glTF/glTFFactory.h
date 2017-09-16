@@ -11,7 +11,7 @@ class UglTFFactory : public UFactory
 public:
     // Begin UFactory Interface
     virtual bool DoesSupportClass(UClass* InClass) override;
-    virtual bool FactoryCanImport(const FString& InFilename) override;
+    virtual bool FactoryCanImport(const FString& InSystemFilePath) override;
     // End UFactory Interface
 
 public:
@@ -19,5 +19,5 @@ public:
 
 private:
     //HACK: It is not safe
-    FString CurrentFilename;
+    FString FilePathInOS;
 };
