@@ -40,8 +40,6 @@ public class glTFForUE4 : ModuleRules
 				"Slate",
 				"SlateCore",
 				"InputCore",
-				"UnrealEd",
-				"LevelEditor",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
