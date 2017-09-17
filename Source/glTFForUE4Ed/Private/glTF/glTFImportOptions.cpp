@@ -4,7 +4,7 @@
 FglTFImportOptions::FglTFImportOptions()
     : FilePathInOS(TEXT(""))
     , FilePathInEngine(TEXT(""))
-    , MeshScaleRatio(1.0f)
+    , MeshScaleRatio(100.0f)
     , bInvertNormal(false)
     , bImportMaterial(true)
     , bRecomputeNormals(true)
