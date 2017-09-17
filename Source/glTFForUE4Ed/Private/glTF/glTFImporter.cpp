@@ -121,72 +121,83 @@ UObject* FglTFImporter::CreateMesh(const TWeakPtr<FglTFImportOptions>& InglTFImp
     const FString FolderPathInOS = FPaths::GetPath(glTFImportOptions->FilePathInOS);
     FBufferFiles BufferFiles(FolderPathInOS, InGlTF->buffers);
 
-    const std::shared_ptr<libgltf::SScene>& Scene = InGlTF->scenes[InGlTF->scene];
-    for (const int32& NodeIndex : Scene->nodes)
+    if (InGlTF->scene)
     {
-        const std::shared_ptr<libgltf::SNode>& Node = InGlTF->nodes[NodeIndex];
-        const std::shared_ptr<libgltf::SMesh>& Mesh = InGlTF->meshes[Node->mesh];
-        for (const std::shared_ptr<libgltf::SMeshPrimitive>& MeshPrimitive : Mesh->primitives)
+        const std::shared_ptr<libgltf::SScene>& Scene = InGlTF->scenes[(int32)(*InGlTF->scene)];
+        for (const std::shared_ptr<libgltf::SGlTFId>& NodeIndex : Scene->nodes)
         {
+            if (!NodeIndex) continue;
+            const std::shared_ptr<libgltf::SNode>& Node = InGlTF->nodes[(int32)(*NodeIndex)];
+            if (!Node) continue;
+            const std::shared_ptr<libgltf::SGlTFId>& MeshIndex = Node->mesh;
+            if (!MeshIndex) continue;
+            const std::shared_ptr<libgltf::SMesh>& Mesh = InGlTF->meshes[(int32)(*MeshIndex)];
+            for (const std::shared_ptr<libgltf::SMeshPrimitive>& MeshPrimitive : Mesh->primitives)
             {
-                const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[MeshPrimitive->indices];
-                const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[Accessor->bufferView];
-                if (Accessor->componentType == 5120)
                 {
-                    TArray<int8> WedgeIndices;
-                    BufferFiles.Get(BufferView->buffer, BufferView->byteOffset, BufferView->byteLength, WedgeIndices);
-                    NewRawMesh.WedgeIndices = TArray<uint32>(WedgeIndices);
+                    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->indices)];
+                    const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
+                    if (Accessor->componentType == 5120)
+                    {
+                        TArray<int8> WedgeIndices;
+                        BufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, WedgeIndices);
+                        NewRawMesh.WedgeIndices = TArray<uint32>(WedgeIndices);
+                    }
+                    else if (Accessor->componentType == 5121)
+                    {
+                        TArray<uint8> WedgeIndices;
+                        BufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, WedgeIndices);
+                        NewRawMesh.WedgeIndices = TArray<uint32>(WedgeIndices);
+                    }
+                    else if (Accessor->componentType == 5122)
+                    {
+                        TArray<int16> WedgeIndices;
+                        BufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, WedgeIndices);
+                        NewRawMesh.WedgeIndices = TArray<uint32>(WedgeIndices);
+                    }
+                    else if (Accessor->componentType == 5123)
+                    {
+                        TArray<uint16> WedgeIndices;
+                        BufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, WedgeIndices);
+                        NewRawMesh.WedgeIndices = TArray<uint32>(WedgeIndices);
+                    }
+                    else if (Accessor->componentType == 5125)
+                    {
+                        BufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, NewRawMesh.WedgeIndices);
+                    }
                 }
-                else if (Accessor->componentType == 5121)
+                if (MeshPrimitive->attributes.find(TEXT("POSITION")) != MeshPrimitive->attributes.cend())
                 {
-                    TArray<uint8> WedgeIndices;
-                    BufferFiles.Get(BufferView->buffer, BufferView->byteOffset, BufferView->byteLength, WedgeIndices);
-                    NewRawMesh.WedgeIndices = TArray<uint32>(WedgeIndices);
+                    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->attributes[TEXT("POSITION")])];
+                    const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
+                    BufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, NewRawMesh.VertexPositions);
                 }
-                else if (Accessor->componentType == 5122)
+                if (MeshPrimitive->attributes.find(TEXT("NORMAL")) != MeshPrimitive->attributes.cend())
                 {
-                    TArray<int16> WedgeIndices;
-                    BufferFiles.Get(BufferView->buffer, BufferView->byteOffset, BufferView->byteLength, WedgeIndices);
-                    NewRawMesh.WedgeIndices = TArray<uint32>(WedgeIndices);
+                    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->attributes[TEXT("NORMAL")])];
+                    const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
+                    BufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, NewRawMesh.WedgeTangentZ);
                 }
-                else if (Accessor->componentType == 5123)
+                if (MeshPrimitive->attributes.find(TEXT("TANGENT")) != MeshPrimitive->attributes.cend())
                 {
-                    TArray<uint16> WedgeIndices;
-                    BufferFiles.Get(BufferView->buffer, BufferView->byteOffset, BufferView->byteLength, WedgeIndices);
-                    NewRawMesh.WedgeIndices = TArray<uint32>(WedgeIndices);
+                    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->attributes[TEXT("TANGENT")])];
+                    const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
+                    TArray<FVector4> Tangent;
+                    if (BufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, Tangent))
+                    {
+                        //
+                    }
                 }
-                else if (Accessor->componentType == 5125)
+                if (MeshPrimitive->attributes.find(TEXT("TEXCOORD_0")) != MeshPrimitive->attributes.cend())
                 {
-                    BufferFiles.Get(BufferView->buffer, BufferView->byteOffset, BufferView->byteLength, NewRawMesh.WedgeIndices);
+                    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->attributes[TEXT("TEXCOORD_0")])];
+                    const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
+                    BufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, NewRawMesh.WedgeTexCoords[0]);
                 }
-            }
-            {
-                const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[MeshPrimitive->attributes[TEXT("POSITION")]];
-                const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[Accessor->bufferView];
-                BufferFiles.Get(BufferView->buffer, BufferView->byteOffset, BufferView->byteLength, NewRawMesh.VertexPositions);
-            }
-            {
-                const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[MeshPrimitive->attributes[TEXT("NORMAL")]];
-                const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[Accessor->bufferView];
-                BufferFiles.Get(BufferView->buffer, BufferView->byteOffset, BufferView->byteLength, NewRawMesh.WedgeTangentZ);
-            }
-            {
-                const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[MeshPrimitive->attributes[TEXT("TANGENT")]];
-                const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[Accessor->bufferView];
-                TArray<FVector4> Tangent;
-                if (BufferFiles.Get(BufferView->buffer, BufferView->byteOffset, BufferView->byteLength, Tangent))
-                {
-                    //
-                }
-            }
-            {
-                const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[MeshPrimitive->attributes[TEXT("TEXCOORD_0")]];
-                const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[Accessor->bufferView];
-                BufferFiles.Get(BufferView->buffer, BufferView->byteOffset, BufferView->byteLength, NewRawMesh.WedgeTexCoords[0]);
+                break;
             }
             break;
         }
-        break;
     }
 
     int32 WedgeIndicesCount = NewRawMesh.WedgeIndices.Num();

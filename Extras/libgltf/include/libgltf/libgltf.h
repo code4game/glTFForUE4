@@ -122,9 +122,9 @@ namespace libgltf
         operator bool() const;
 
         // The index of an accessor containing keyframe input values, e.g., time.
-        int32_t input;
+        std::shared_ptr<struct SGlTFId> input;
         // The index of an accessor, containing keyframe output values.
-        int32_t output;
+        std::shared_ptr<struct SGlTFId> output;
         // Interpolation algorithm.
         std::wstring interpolation;
     };
@@ -154,7 +154,7 @@ namespace libgltf
         operator bool() const;
 
         // The indices of each root node.
-        std::vector<int32_t> nodes;
+        std::vector<std::shared_ptr<struct SGlTFId>> nodes;
     };
 
     /*!
@@ -192,7 +192,7 @@ namespace libgltf
         // The length of the bufferView in bytes.
         int32_t byteLength;
         // The index of the buffer.
-        int32_t buffer;
+        std::shared_ptr<struct SGlTFId> buffer;
         // The offset into the buffer in bytes.
         int32_t byteOffset;
         // The target that the GPU buffer should be bound to.
@@ -213,7 +213,7 @@ namespace libgltf
         operator bool() const;
 
         // The index of the texture.
-        int32_t index;
+        std::shared_ptr<struct SGlTFId> index;
         // The set index of texture's TEXCOORD attribute used for texture coordinate mapping.
         int32_t texCoord;
     };
@@ -258,7 +258,7 @@ namespace libgltf
         operator bool() const;
 
         // The index of the bufferView with sparse values. Referenced bufferView can't have ARRAY_BUFFER or ELEMENT_ARRAY_BUFFER target.
-        int32_t bufferView;
+        std::shared_ptr<struct SGlTFId> bufferView;
         // The offset relative to the start of the bufferView in bytes. Must be aligned.
         int32_t byteOffset;
     };
@@ -275,7 +275,7 @@ namespace libgltf
         operator bool() const;
 
         // The index of the node to target.
-        int32_t node;
+        std::shared_ptr<struct SGlTFId> node;
         // The name of the node's TRS property to modify, or the "weights" of the Morph Targets it instantiates.
         std::wstring path;
     };
@@ -328,15 +328,15 @@ namespace libgltf
         operator bool() const;
 
         // The index of the accessor that contains the indices.
-        int32_t indices;
+        std::shared_ptr<struct SGlTFId> indices;
         // A dictionary object, where each key corresponds to mesh attribute semantic and each value is the index of the accessor containing attribute's data.
-        std::map<std::wstring, int32_t> attributes;
+        std::map<std::wstring, std::shared_ptr<struct SGlTFId>> attributes;
         // The index of the material to apply to this primitive when rendering.
-        int32_t material;
+        std::shared_ptr<struct SGlTFId> material;
         // The type of primitives to render.
         int32_t mode;
         // An array of Morph Targets, each  Morph Target is a dictionary mapping attributes (only `POSITION`, `NORMAL`, and `TANGENT` supported) to their deviations in the Morph Target.
-        std::vector<int32_t> targets;
+        std::vector<std::shared_ptr<struct SGlTFId>> targets;
     };
 
     /*!
@@ -366,10 +366,24 @@ namespace libgltf
         // The index of the node and TRS property to target.
         std::shared_ptr<struct SAnimationChannelTarget> target;
         // The index of a sampler in this animation used to compute the value for the target.
-        int32_t sampler;
+        std::shared_ptr<struct SGlTFId> sampler;
     };
 
+    /*!
+     * struct: SGlTFId
+     */
+    struct SGlTFId
+    {
+        SGlTFId();
 
+        // Check valid
+        operator bool() const;
+
+        operator int32_t() const;
+
+        int32_t int32_tValue;
+
+    };
 
     /*!
      * struct: SAccessorSparseIndices
@@ -385,7 +399,7 @@ namespace libgltf
         // The indices data type.
         int32_t componentType;
         // The index of the bufferView with sparse indices. Referenced bufferView can't have ARRAY_BUFFER or ELEMENT_ARRAY_BUFFER target.
-        int32_t bufferView;
+        std::shared_ptr<struct SGlTFId> bufferView;
         // The offset relative to the start of the bufferView in bytes. Must be aligned.
         int32_t byteOffset;
     };
@@ -408,17 +422,17 @@ namespace libgltf
         // A floating-point 4x4 transformation matrix stored in column-major order.
         std::vector<float> matrix;
         // The index of the mesh in this node.
-        int32_t mesh;
+        std::shared_ptr<struct SGlTFId> mesh;
         // The index of the camera referenced by this node.
-        int32_t camera;
+        std::shared_ptr<struct SGlTFId> camera;
         // The weights of the instantiated Morph Target. Number of elements must match number of Morph Targets of used mesh.
         std::vector<float> weights;
         // The index of the skin referenced by this node.
-        int32_t skin;
+        std::shared_ptr<struct SGlTFId> skin;
         // The node's translation.
         std::vector<float> translation;
         // The indices of this node's children.
-        std::vector<int32_t> children;
+        std::vector<std::shared_ptr<struct SGlTFId>> children;
     };
 
     /*!
@@ -450,11 +464,11 @@ namespace libgltf
         operator bool() const;
 
         // Indices of skeleton nodes, used as joints in this skin.
-        std::vector<int32_t> joints;
+        std::vector<std::shared_ptr<struct SGlTFId>> joints;
         // The index of the accessor containing the floating-point 4x4 inverse-bind matrices.  The default is that each matrix is a 4x4 identity matrix, which implies that inverse-bind matrices were pre-applied.
-        int32_t inverseBindMatrices;
+        std::shared_ptr<struct SGlTFId> inverseBindMatrices;
         // The index of the node used as a skeleton root. When undefined, joints transforms resolve to scene root.
-        int32_t skeleton;
+        std::shared_ptr<struct SGlTFId> skeleton;
     };
 
     /*!
@@ -513,7 +527,7 @@ namespace libgltf
         // The image's MIME type.
         std::wstring mimeType;
         // The index of the bufferView that contains the image. Use this instead of the image's uri property.
-        int32_t bufferView;
+        std::shared_ptr<struct SGlTFId> bufferView;
         // The uri of the image.
         std::wstring uri;
     };
@@ -530,9 +544,9 @@ namespace libgltf
         operator bool() const;
 
         // The index of the image used by this texture.
-        int32_t source;
+        std::shared_ptr<struct SGlTFId> source;
         // The index of the sampler used by this texture. When undefined, a sampler with repeat wrapping and auto filtering should be used.
-        int32_t sampler;
+        std::shared_ptr<struct SGlTFId> sampler;
     };
 
     /*!
@@ -591,7 +605,7 @@ namespace libgltf
         // Maximum value of each component in this attribute.
         std::vector<float> max;
         // The index of the bufferView.
-        int32_t bufferView;
+        std::shared_ptr<struct SGlTFId> bufferView;
         // The datatype of components in the attribute.
         int32_t componentType;
         // The offset relative to the start of the bufferView in bytes.
@@ -628,7 +642,7 @@ namespace libgltf
         // An array of scenes.
         std::vector<std::shared_ptr<struct SScene>> scenes;
         // The index of the default scene.
-        int32_t scene;
+        std::shared_ptr<struct SGlTFId> scene;
         // Names of glTF extensions required to properly load this asset.
         std::vector<std::wstring> extensionsRequired;
         // An array of meshes.
