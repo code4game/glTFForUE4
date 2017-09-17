@@ -14,7 +14,6 @@
 
 UglTFFactory::UglTFFactory(const FObjectInitializer& InObjectInitializer)
     : Super(InObjectInitializer)
-    , FilePathInOS(TEXT(""))
 {
     SupportedClass = UStaticMesh::StaticClass();
     if (Formats.Num() > 0) Formats.Empty();
@@ -33,14 +32,12 @@ bool UglTFFactory::DoesSupportClass(UClass* InClass)
 
 bool UglTFFactory::FactoryCanImport(const FString& InFilePathInOS)
 {
-    //HACK: Store the filename, but it will be used in another function
-    FilePathInOS = InFilePathInOS;
     return FPaths::GetExtension(InFilePathInOS).Equals(TEXT("gltf"), ESearchCase::IgnoreCase);
 }
 
 UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* InContext, const TCHAR* InType, const TCHAR*& InBuffer, const TCHAR* InBufferEnd, FFeedbackContext* InWarn)
 {
-    //HACK: Check the filename that was stored by another function
+    const FString& FilePathInOS = UFactory::GetCurrentFilename();
     if (!FPaths::GetBaseFilename(FilePathInOS).Equals(InName.ToString()))
     {
         UE_LOG(LogglTFForUE4Ed, Error, TEXT("It is different between current filename(%s) and name(%s)!!"), *FilePathInOS, *InName.ToString());

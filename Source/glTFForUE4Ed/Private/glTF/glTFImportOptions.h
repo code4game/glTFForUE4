@@ -23,4 +23,14 @@ struct FglTFImportOptions
 
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bImportMaterial;
+
+    /// Build setting
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    bool bRecomputeNormals;
+
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    bool bRecomputeTangents;
+
+    static const FglTFImportOptions Default;
+    static FglTFImportOptions Current;
 };

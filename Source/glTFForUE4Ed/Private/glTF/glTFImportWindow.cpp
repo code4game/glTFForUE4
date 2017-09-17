@@ -14,6 +14,7 @@
 TSharedPtr<FglTFImportOptions> SglTFImportWindow::Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, bool& OutCancel)
 {
     TSharedPtr<FglTFImportOptions> glTFImportOptions = MakeShareable(new FglTFImportOptions());
+    (*glTFImportOptions) = FglTFImportOptions::Current;
 
     glTFImportOptions->FilePathInOS = InFilePathInOS;
     glTFImportOptions->FilePathInEngine = InFilePathInEngine;
@@ -42,6 +43,12 @@ TSharedPtr<FglTFImportOptions> SglTFImportWindow::Open(const FString& InFilePath
     FSlateApplication::Get().AddModalWindow(Window, ParentWindow, false);
 
     OutCancel = (glTFImportOptions != glTFImportWindow->GetImportOptions());
+
+    /// Store the option if not cancel
+    if (!OutCancel)
+    {
+        FglTFImportOptions::Current = (*glTFImportOptions);
+    }
     return glTFImportOptions;
 }
 
@@ -163,6 +170,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                 SNew(SVerticalBox)
                 + SVerticalBox::Slot()
                     .AutoHeight()
+                    .Padding(2)
                     .HAlign(HAlign_Center)
                     .VAlign(VAlign_Center)
                 [
@@ -172,6 +180,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                 ]
                 + SVerticalBox::Slot()
                     .AutoHeight()
+                    .Padding(2)
                     .VAlign(VAlign_Center)
                 [
                     SNew(SBorder)
@@ -225,7 +234,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                                 SNew(SSpinBox<float>)
                                     .Value(glTFImportOptions.Pin()->MeshScaleRatio.X)
                                     .MinValue(0.0f)
-                                    .MaxValue(1000.0f)
+                                    .MaxValue(100000.0f)
                                     .OnValueChanged(this, &SglTFImportWindow::HandleMeshScaleRatioX)
                             ]
                             + SHorizontalBox::Slot()
@@ -245,7 +254,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                                 SNew(SSpinBox<float>)
                                     .Value(glTFImportOptions.Pin()->MeshScaleRatio.Y)
                                     .MinValue(0.0f)
-                                    .MaxValue(1000.0f)
+                                    .MaxValue(100000.0f)
                                     .OnValueChanged(this, &SglTFImportWindow::HandleMeshScaleRatioY)
                             ]
                             + SHorizontalBox::Slot()
@@ -265,7 +274,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                                 SNew(SSpinBox<float>)
                                     .Value(glTFImportOptions.Pin()->MeshScaleRatio.Z)
                                     .MinValue(0.0f)
-                                    .MaxValue(1000.0f)
+                                    .MaxValue(100000.0f)
                                     .OnValueChanged(this, &SglTFImportWindow::HandleMeshScaleRatioZ)
                             ]
                         ]
@@ -311,6 +320,71 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                             SNew(SCheckBox)
                                 .IsChecked(glTFImportOptions.Pin()->bImportMaterial ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
                                 .OnCheckStateChanged(this, &SglTFImportWindow::HandleMaterialImportMaterial)
+                        ]
+                    ]
+                ]
+            ]
+        ]
+        + SVerticalBox::Slot()
+            .AutoHeight()
+            .Padding(2)
+        [
+            SNew(SBorder)
+                .BorderImage(FEditorStyle::GetBrush("ToolPanel.DarkGroupBorder"))
+            [
+                SNew(SVerticalBox)
+                + SVerticalBox::Slot()
+                    .AutoHeight()
+                    .Padding(2)
+                    .HAlign(HAlign_Center)
+                    .VAlign(VAlign_Center)
+                [
+                    SNew(STextBlock)
+                        .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                        .Text(LOCTEXT("SglTFImportWindow_Mesh_Title", "Build Settins"))
+                ]
+                + SVerticalBox::Slot()
+                    .AutoHeight()
+                    .Padding(2)
+                    .VAlign(VAlign_Center)
+                [
+                    SNew(SBorder)
+                        .BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
+                    [
+                        SNew(SGridPanel)
+                        + SGridPanel::Slot(0, 0)
+                            .VAlign(VAlign_Center)
+                            .Padding(2)
+                        [
+                            SNew(STextBlock)
+                                .MinDesiredWidth(200)
+                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                                .Text(LOCTEXT("SglTFImportWindow_RecomputeNormals_Title", "Recompute Normals: "))
+                        ]
+                        + SGridPanel::Slot(1, 0)
+                            .VAlign(VAlign_Center)
+                            .Padding(2)
+                        [
+                            SNew(SCheckBox)
+                                .IsChecked(glTFImportOptions.Pin()->bRecomputeNormals ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImportWindow::HandleMeshRecomputeNormals)
+                        ]
+                        + SGridPanel::Slot(0, 1)
+                            .VAlign(VAlign_Center)
+                            .Padding(2)
+                        [
+                            SNew(STextBlock)
+                                .MinDesiredWidth(200)
+                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                                .Text(LOCTEXT("SglTFImportWindow_RecomputeTangents_Title", "Recompute Tangents: "))
+                        ]
+                        + SGridPanel::Slot(1, 1)
+                            .VAlign(VAlign_Center)
+                            .Padding(2)
+                        [
+                            SNew(SCheckBox)
+                                .IsChecked(glTFImportOptions.Pin()->bRecomputeTangents ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImportWindow::HandleMeshRecomputeTangents)
                         ]
                     ]
                 ]
@@ -367,7 +441,6 @@ FReply SglTFImportWindow::OnCancel()
 void SglTFImportWindow::HandleMeshScaleRatioX(float InNewValue)
 {
     check(glTFImportOptions.IsValid());
-
     glTFImportOptions.Pin()->MeshScaleRatio.X = InNewValue;
 }
 
@@ -390,6 +463,20 @@ void SglTFImportWindow::HandleMeshInvertNormal(ECheckBoxState InCheckBoxState)
     check(glTFImportOptions.IsValid());
 
     glTFImportOptions.Pin()->bInvertNormal = (InCheckBoxState == ECheckBoxState::Checked);
+}
+
+void SglTFImportWindow::HandleMeshRecomputeNormals(ECheckBoxState InCheckBoxState)
+{
+    check(glTFImportOptions.IsValid());
+
+    glTFImportOptions.Pin()->bRecomputeNormals = (InCheckBoxState == ECheckBoxState::Checked);
+}
+
+void SglTFImportWindow::HandleMeshRecomputeTangents(ECheckBoxState InCheckBoxState)
+{
+    check(glTFImportOptions.IsValid());
+
+    glTFImportOptions.Pin()->bRecomputeTangents = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
 void SglTFImportWindow::HandleMaterialImportMaterial(ECheckBoxState InCheckBoxState)

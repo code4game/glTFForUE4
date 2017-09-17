@@ -17,5 +17,5 @@ private:
     virtual ~FglTFImporter();
 
 public:
-    UObject* CreateMesh(const TSharedPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, UClass* InClass, UObject* InParent) const;
+    UObject* CreateMesh(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, UClass* InClass, UObject* InParent) const;
 };
