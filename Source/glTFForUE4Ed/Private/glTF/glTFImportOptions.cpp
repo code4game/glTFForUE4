@@ -2,9 +2,16 @@
 #include "glTFImportOptions.h"
 
 FglTFImportOptions::FglTFImportOptions()
-    : MeshScaleRatio(1.0f)
+    : FilePathInOS(TEXT(""))
+    , FilePathInEngine(TEXT(""))
+    , MeshScaleRatio(100.0f)
     , bInvertNormal(false)
     , bImportMaterial(true)
+    , bRecomputeNormals(true)
+    , bRecomputeTangents(true)
 {
     //
 }
+
+const FglTFImportOptions FglTFImportOptions::Default;
+FglTFImportOptions FglTFImportOptions::Current;

@@ -11,9 +11,13 @@
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
 
-TSharedPtr<FglTFImportOptions> SglTFImportWindow::Open(const FString& InCurrentFile)
+TSharedPtr<FglTFImportOptions> SglTFImportWindow::Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, bool& OutCancel)
 {
     TSharedPtr<FglTFImportOptions> glTFImportOptions = MakeShareable(new FglTFImportOptions());
+    (*glTFImportOptions) = FglTFImportOptions::Current;
+
+    glTFImportOptions->FilePathInOS = InFilePathInOS;
+    glTFImportOptions->FilePathInEngine = InFilePathInEngine;
 
     TSharedPtr<SWindow> ParentWindow;
 
@@ -33,12 +37,18 @@ TSharedPtr<FglTFImportOptions> SglTFImportWindow::Open(const FString& InCurrentF
         SAssignNew(glTFImportWindow, SglTFImportWindow)
             .glTFImportOptions(glTFImportOptions)
             .WidgetWindow(Window)
-            .CurrentFile(FText::FromString(InCurrentFile))
     );
 
+    /// Show the import options window.
     FSlateApplication::Get().AddModalWindow(Window, ParentWindow, false);
 
-    //
+    OutCancel = (glTFImportOptions != glTFImportWindow->GetImportOptions());
+
+    /// Store the option if not cancel
+    if (!OutCancel)
+    {
+        FglTFImportOptions::Current = (*glTFImportOptions);
+    }
     return glTFImportOptions;
 }
 
@@ -66,22 +76,48 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
             SNew(SBorder)
                 .BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
             [
-                SNew(SHorizontalBox)
-                + SHorizontalBox::Slot()
-                    .AutoWidth()
+                SNew(SVerticalBox)
+                + SVerticalBox::Slot()
+                    .AutoHeight()
                 [
-                    SNew(STextBlock)
-                        .Font(FEditorStyle::GetFontStyle("CurveEd.LabelFont"))
-                        .Text(LOCTEXT("SglTFImportWindow_CurrentFileTitle", "Current File: "))
+                    SNew(SHorizontalBox)
+                    + SHorizontalBox::Slot()
+                        .AutoWidth()
+                    [
+                        SNew(STextBlock)
+                            .Font(FEditorStyle::GetFontStyle("CurveEd.LabelFont"))
+                            .Text(LOCTEXT("SglTFImportWindow_SourceFilePath_Title", "Source File Path: "))
+                    ]
+                    + SHorizontalBox::Slot()
+                        .Padding(5, 0, 0, 0)
+                        .AutoWidth()
+                        .VAlign(VAlign_Center)
+                    [
+                        SNew(STextBlock)
+                            .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                            .Text(glTFImportOptions.Pin()->FilePathInOS)
+                    ]
                 ]
-                + SHorizontalBox::Slot()
-                    .Padding(5, 0, 0, 0)
-                    .AutoWidth()
-                    .VAlign(VAlign_Center)
+                + SVerticalBox::Slot()
+                    .AutoHeight()
                 [
-                    SNew(STextBlock)
-                    .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                    .Text(InArgs._CurrentFile)
+                    SNew(SHorizontalBox)
+                    + SHorizontalBox::Slot()
+                        .AutoWidth()
+                    [
+                        SNew(STextBlock)
+                            .Font(FEditorStyle::GetFontStyle("CurveEd.LabelFont"))
+                            .Text(LOCTEXT("SglTFImportWindow_TargetFilePath_Title", "Target File Path: "))
+                    ]
+                    + SHorizontalBox::Slot()
+                        .Padding(5, 0, 0, 0)
+                        .AutoWidth()
+                        .VAlign(VAlign_Center)
+                    [
+                        SNew(STextBlock)
+                            .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                            .Text(glTFImportOptions.Pin()->FilePathInEngine)
+                    ]
                 ]
             ]
         ]
@@ -105,11 +141,11 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
             + SUniformGridPanel::Slot(1, 0)
             [
                 SNew(SButton)
-                .HAlign(HAlign_Center)
-                .Text(LOCTEXT("SglTFImportWindow_OnImport", "Import file"))
-                .ToolTipText(LOCTEXT("SglTFImportWindow_OnImport_ToolTip", "Import file"))
-                .IsEnabled(this, &SglTFImportWindow::CanImport)
-                .OnClicked(this, &SglTFImportWindow::OnImport)
+                    .HAlign(HAlign_Center)
+                    .Text(LOCTEXT("SglTFImportWindow_OnImport", "Import file"))
+                    .ToolTipText(LOCTEXT("SglTFImportWindow_OnImport_ToolTip", "Import file"))
+                    .IsEnabled(this, &SglTFImportWindow::CanImport)
+                    .OnClicked(this, &SglTFImportWindow::OnImport)
             ]
             + SUniformGridPanel::Slot(2, 0)
             [
@@ -134,6 +170,9 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                 SNew(SVerticalBox)
                 + SVerticalBox::Slot()
                     .AutoHeight()
+                    .Padding(2)
+                    .HAlign(HAlign_Left)
+                    .VAlign(VAlign_Center)
                 [
                     SNew(STextBlock)
                         .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
@@ -141,6 +180,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                 ]
                 + SVerticalBox::Slot()
                     .AutoHeight()
+                    .Padding(2)
                 [
                     SNew(SBorder)
                         .BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
@@ -148,13 +188,18 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                         SNew(SGridPanel)
                         + SGridPanel::Slot(0, 0)
                             .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
                         [
                             SNew(STextBlock)
+                                .MinDesiredWidth(200)
                                 .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                                .Text(LOCTEXT("SglTFImportWindow_InvertNormal_Title", "Invert Normal:"))
+                                .Text(LOCTEXT("SglTFImportWindow_InvertNormal_Title", "Invert Normal: "))
                         ]
                         + SGridPanel::Slot(1, 0)
                             .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
                         [
                             SNew(SCheckBox)
                                 .IsChecked(glTFImportOptions.Pin()->bInvertNormal ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
@@ -162,19 +207,85 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                         ]
                         + SGridPanel::Slot(0, 1)
                             .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
                         [
                             SNew(STextBlock)
                                 .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                                .Text(LOCTEXT("SglTFImportWindow_InvertTangent_Title", "Scale Ratio:"))
+                                .Text(LOCTEXT("SglTFImportWindow_InvertTangent_Title", "Scale Ratio: "))
                         ]
                         + SGridPanel::Slot(1, 1)
                             .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
                         [
-                            SNew(SSpinBox<float>)
-                                .Value(glTFImportOptions.Pin()->MeshScaleRatio)
-                                .MinValue(0.0f)
-                                .MaxValue(1000.0f)
-                                .OnValueChanged(this, &SglTFImportWindow::HandleMeshScaleRatio)
+                            SNew(SHorizontalBox)
+                            + SHorizontalBox::Slot()
+                                .AutoWidth()
+                                .Padding(2)
+                                .HAlign(HAlign_Left)
+                                .VAlign(VAlign_Center)
+                            [
+                                SNew(STextBlock)
+                                    .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                                    .Text(LOCTEXT("SglTFImportWindow_MeshScaleRatioX_Title", "X: "))
+                            ]
+                            + SHorizontalBox::Slot()
+                                .AutoWidth()
+                                .Padding(2)
+                                .HAlign(HAlign_Left)
+                                .VAlign(VAlign_Center)
+                            [
+                                SNew(SSpinBox<float>)
+                                    .Value(glTFImportOptions.Pin()->MeshScaleRatio.X)
+                                    .MinValue(0.0f)
+                                    .MaxValue(100000.0f)
+                                    .OnValueChanged(this, &SglTFImportWindow::HandleMeshScaleRatioX)
+                            ]
+                            + SHorizontalBox::Slot()
+                                .AutoWidth()
+                                .Padding(2)
+                                .HAlign(HAlign_Left)
+                                .VAlign(VAlign_Center)
+                            [
+                                SNew(STextBlock)
+                                    .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                                    .Text(LOCTEXT("SglTFImportWindow_MeshScaleRatioY_Title", "Y: "))
+                            ]
+                            + SHorizontalBox::Slot()
+                                .AutoWidth()
+                                .Padding(2)
+                                .HAlign(HAlign_Left)
+                                .VAlign(VAlign_Center)
+                            [
+                                SNew(SSpinBox<float>)
+                                    .Value(glTFImportOptions.Pin()->MeshScaleRatio.Y)
+                                    .MinValue(0.0f)
+                                    .MaxValue(100000.0f)
+                                    .OnValueChanged(this, &SglTFImportWindow::HandleMeshScaleRatioY)
+                            ]
+                            + SHorizontalBox::Slot()
+                                .AutoWidth()
+                                .Padding(2)
+                                .HAlign(HAlign_Left)
+                                .VAlign(VAlign_Center)
+                            [
+                                SNew(STextBlock)
+                                    .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                                    .Text(LOCTEXT("SglTFImportWindow_MeshScaleRatioZ_Title", "Z: "))
+                            ]
+                            + SHorizontalBox::Slot()
+                                .AutoWidth()
+                                .Padding(2)
+                                .HAlign(HAlign_Left)
+                                .VAlign(VAlign_Center)
+                            [
+                                SNew(SSpinBox<float>)
+                                    .Value(glTFImportOptions.Pin()->MeshScaleRatio.Z)
+                                    .MinValue(0.0f)
+                                    .MaxValue(100000.0f)
+                                    .OnValueChanged(this, &SglTFImportWindow::HandleMeshScaleRatioZ)
+                            ]
                         ]
                     ]
                 ]
@@ -191,6 +302,8 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                 + SVerticalBox::Slot()
                     .AutoHeight()
                     .Padding(2)
+                    .HAlign(HAlign_Left)
+                    .VAlign(VAlign_Center)
                 [
                     SNew(STextBlock)
                         .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
@@ -206,17 +319,90 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                         SNew(SGridPanel)
                         + SGridPanel::Slot(0, 0)
                             .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
                         [
                             SNew(STextBlock)
+                                .MinDesiredWidth(200)
                                 .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                                .Text(LOCTEXT("SglTFImportWindow_ImportMaterial_Title", "Import Material?"))
+                                .Text(LOCTEXT("SglTFImportWindow_ImportMaterial_Title", "Import Material: "))
                         ]
                         + SGridPanel::Slot(1, 0)
                             .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
                         [
                             SNew(SCheckBox)
                                 .IsChecked(glTFImportOptions.Pin()->bImportMaterial ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
                                 .OnCheckStateChanged(this, &SglTFImportWindow::HandleMaterialImportMaterial)
+                        ]
+                    ]
+                ]
+            ]
+        ]
+        + SVerticalBox::Slot()
+            .AutoHeight()
+            .Padding(2)
+        [
+            SNew(SBorder)
+                .BorderImage(FEditorStyle::GetBrush("ToolPanel.DarkGroupBorder"))
+            [
+                SNew(SVerticalBox)
+                + SVerticalBox::Slot()
+                    .AutoHeight()
+                    .Padding(2)
+                    .HAlign(HAlign_Left)
+                    .VAlign(VAlign_Center)
+                [
+                    SNew(STextBlock)
+                        .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                        .Text(LOCTEXT("SglTFImportWindow_BuildSettings_Title", "Build Settings"))
+                ]
+                + SVerticalBox::Slot()
+                    .AutoHeight()
+                    .Padding(2)
+                [
+                    SNew(SBorder)
+                        .BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
+                    [
+                        SNew(SGridPanel)
+                        + SGridPanel::Slot(0, 0)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(STextBlock)
+                                .MinDesiredWidth(200)
+                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                                .Text(LOCTEXT("SglTFImportWindow_RecomputeNormals_Title", "Recompute Normals: "))
+                        ]
+                        + SGridPanel::Slot(1, 0)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(SCheckBox)
+                                .IsChecked(glTFImportOptions.Pin()->bRecomputeNormals ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImportWindow::HandleMeshRecomputeNormals)
+                        ]
+                        + SGridPanel::Slot(0, 1)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(STextBlock)
+                                .MinDesiredWidth(200)
+                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                                .Text(LOCTEXT("SglTFImportWindow_RecomputeTangents_Title", "Recompute Tangents: "))
+                        ]
+                        + SGridPanel::Slot(1, 1)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(SCheckBox)
+                                .IsChecked(glTFImportOptions.Pin()->bRecomputeTangents ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImportWindow::HandleMeshRecomputeTangents)
                         ]
                     ]
                 ]
@@ -240,16 +426,18 @@ FReply SglTFImportWindow::OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent
     return FReply::Unhandled();
 }
 
+TSharedPtr<FglTFImportOptions> SglTFImportWindow::GetImportOptions()
+{
+    return glTFImportOptions.Pin();
+}
+
 bool SglTFImportWindow::CanImport() const
 {
-    //
-    return false;
+    return true;
 }
 
 FReply SglTFImportWindow::OnImport()
 {
-    //
-
     if (WidgetWindow.IsValid())
     {
         WidgetWindow.Pin()->RequestDestroyWindow();
@@ -259,6 +447,8 @@ FReply SglTFImportWindow::OnImport()
 
 FReply SglTFImportWindow::OnCancel()
 {
+    glTFImportOptions.Reset();
+
     if (WidgetWindow.IsValid())
     {
         WidgetWindow.Pin()->RequestDestroyWindow();
@@ -266,11 +456,24 @@ FReply SglTFImportWindow::OnCancel()
     return FReply::Handled();
 }
 
-void SglTFImportWindow::HandleMeshScaleRatio(float InNewValue)
+void SglTFImportWindow::HandleMeshScaleRatioX(float InNewValue)
+{
+    check(glTFImportOptions.IsValid());
+    glTFImportOptions.Pin()->MeshScaleRatio.X = InNewValue;
+}
+
+void SglTFImportWindow::HandleMeshScaleRatioY(float InNewValue)
 {
     check(glTFImportOptions.IsValid());
 
-    glTFImportOptions.Pin()->MeshScaleRatio = InNewValue;
+    glTFImportOptions.Pin()->MeshScaleRatio.Y = InNewValue;
+}
+
+void SglTFImportWindow::HandleMeshScaleRatioZ(float InNewValue)
+{
+    check(glTFImportOptions.IsValid());
+
+    glTFImportOptions.Pin()->MeshScaleRatio.Z = InNewValue;
 }
 
 void SglTFImportWindow::HandleMeshInvertNormal(ECheckBoxState InCheckBoxState)
@@ -278,6 +481,20 @@ void SglTFImportWindow::HandleMeshInvertNormal(ECheckBoxState InCheckBoxState)
     check(glTFImportOptions.IsValid());
 
     glTFImportOptions.Pin()->bInvertNormal = (InCheckBoxState == ECheckBoxState::Checked);
+}
+
+void SglTFImportWindow::HandleMeshRecomputeNormals(ECheckBoxState InCheckBoxState)
+{
+    check(glTFImportOptions.IsValid());
+
+    glTFImportOptions.Pin()->bRecomputeNormals = (InCheckBoxState == ECheckBoxState::Checked);
+}
+
+void SglTFImportWindow::HandleMeshRecomputeTangents(ECheckBoxState InCheckBoxState)
+{
+    check(glTFImportOptions.IsValid());
+
+    glTFImportOptions.Pin()->bRecomputeTangents = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
 void SglTFImportWindow::HandleMaterialImportMaterial(ECheckBoxState InCheckBoxState)

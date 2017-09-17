@@ -37,11 +37,13 @@ public class glTFForUE4Ed : ModuleRules
 				"Slate",
 				"SlateCore",
 				"InputCore",
+                "RenderCore",
 				"UnrealEd",
                 "MainFrame",
                 "Documentation",
                 "PropertyEditor",
                 "EditorStyle",
+                "RawMesh",
                 "glTFForUE4",
 				// ... add private dependencies that you statically link with here ...	
 			}

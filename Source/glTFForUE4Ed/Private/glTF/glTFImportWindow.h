@@ -6,18 +6,16 @@
 class SglTFImportWindow : public SCompoundWidget
 {
 public:
-    static TSharedPtr<struct FglTFImportOptions> Open(const FString& InCurrentFile);
+    static TSharedPtr<struct FglTFImportOptions> Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, bool& OutCancel);
 
 public:
     SLATE_BEGIN_ARGS(SglTFImportWindow)
         : _glTFImportOptions(nullptr)
         , _WidgetWindow(nullptr)
-        , _CurrentFile()
         {}
 
         SLATE_ARGUMENT(TSharedPtr<struct FglTFImportOptions>, glTFImportOptions)
         SLATE_ARGUMENT(TSharedPtr<SWindow>, WidgetWindow)
-        SLATE_ARGUMENT(FText, CurrentFile)
     SLATE_END_ARGS()
 
 public:
@@ -30,12 +28,19 @@ public:
     virtual bool SupportsKeyboardFocus() const override;
     virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
 
+public:
+    TSharedPtr<struct FglTFImportOptions> GetImportOptions();
+
 protected:
     bool CanImport() const;
     FReply OnImport();
     FReply OnCancel();
-    void HandleMeshScaleRatio(float InNewValue);
+    void HandleMeshScaleRatioX(float InNewValue);
+    void HandleMeshScaleRatioY(float InNewValue);
+    void HandleMeshScaleRatioZ(float InNewValue);
     void HandleMeshInvertNormal(ECheckBoxState InCheckBoxState);
+    void HandleMeshRecomputeNormals(ECheckBoxState InCheckBoxState);
+    void HandleMeshRecomputeTangents(ECheckBoxState InCheckBoxState);
     void HandleMaterialImportMaterial(ECheckBoxState InCheckBoxState);
 
 private:

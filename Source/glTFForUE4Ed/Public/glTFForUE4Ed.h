@@ -2,12 +2,4 @@
 
 #pragma once
 
-#include "ModuleManager.h"
-
-class FglTFForUE4EdModule : public IModuleInterface
-{
-public:
-	/** IModuleInterface implementation */
-	virtual void StartupModule() override;
-	virtual void ShutdownModule() override;
-};
+#include "glTFForUE4EdModule.h"
