@@ -9,6 +9,7 @@
 #include "RawMesh.h"
 #include "Engine/StaticMesh.h"
 #include "StaticMeshResources.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 const FglTFImporter& FglTFImporter::Get()
 {
@@ -277,11 +278,15 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
         if (glTFImportOptions->bImportMaterial)
         {
             //TODO:
-            StaticMesh->Materials.Add(UMaterial::GetDefaultMaterial(MD_Surface));
+            checkf(0, TEXT("This function is in developing"));
         }
         else
         {
+#if (ENGINE_MINOR_VERSION < 14)
             StaticMesh->Materials.Add(UMaterial::GetDefaultMaterial(MD_Surface));
+#else
+            StaticMesh->StaticMaterials.Add(UMaterial::GetDefaultMaterial(MD_Surface));
+#endif
         }
 
         /// Build the static mesh
@@ -301,7 +306,11 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
                 for (int32 SectionIndex = 0; SectionIndex < NumSections; ++SectionIndex)
                 {
                     FMeshSectionInfo Info = OldSectionInfoMap.Get(LODResoureceIndex, SectionIndex);
+#if (ENGINE_MINOR_VERSION < 14)
                     if (StaticMesh->Materials.IsValidIndex(Info.MaterialIndex))
+#else
+                    if (StaticMesh->StaticMaterials.IsValidIndex(Info.MaterialIndex))
+#endif
                     {
                         StaticMesh->SectionInfoMap.Set(LODResoureceIndex, SectionIndex, Info);
                     }

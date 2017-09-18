@@ -93,7 +93,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                 [
                     SNew(STextBlock)
                         .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                        .Text(glTFImportOptions.Pin()->FilePathInOS)
+                        .Text(FText::FromString(glTFImportOptions.Pin()->FilePathInOS))
                 ]
                 + SGridPanel::Slot(0, 1)
                     .Padding(2)
@@ -111,7 +111,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                 [
                     SNew(STextBlock)
                     .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                    .Text(glTFImportOptions.Pin()->FilePathInEngine)
+                    .Text(FText::FromString(glTFImportOptions.Pin()->FilePathInEngine))
                 ]
             ]
         ]
