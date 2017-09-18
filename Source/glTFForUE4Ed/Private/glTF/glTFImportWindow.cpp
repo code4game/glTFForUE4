@@ -76,48 +76,42 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
             SNew(SBorder)
                 .BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
             [
-                SNew(SVerticalBox)
-                + SVerticalBox::Slot()
-                    .AutoHeight()
+                SNew(SGridPanel)
+                + SGridPanel::Slot(0, 0)
+                    .Padding(2)
+                    .HAlign(HAlign_Left)
+                    .VAlign(VAlign_Center)
                 [
-                    SNew(SHorizontalBox)
-                    + SHorizontalBox::Slot()
-                        .AutoWidth()
-                    [
-                        SNew(STextBlock)
-                            .Font(FEditorStyle::GetFontStyle("CurveEd.LabelFont"))
-                            .Text(LOCTEXT("SglTFImportWindow_SourceFilePath_Title", "Source File Path: "))
-                    ]
-                    + SHorizontalBox::Slot()
-                        .Padding(5, 0, 0, 0)
-                        .AutoWidth()
-                        .VAlign(VAlign_Center)
-                    [
-                        SNew(STextBlock)
-                            .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                            .Text(glTFImportOptions.Pin()->FilePathInOS)
-                    ]
+                    SNew(STextBlock)
+                        .Font(FEditorStyle::GetFontStyle("CurveEd.LabelFont"))
+                        .Text(LOCTEXT("SglTFImportWindow_SourceFilePath_Title", "Source File Path: "))
                 ]
-                + SVerticalBox::Slot()
-                    .AutoHeight()
+                + SGridPanel::Slot(1, 0)
+                    .Padding(2)
+                    .HAlign(HAlign_Left)
+                    .VAlign(VAlign_Center)
                 [
-                    SNew(SHorizontalBox)
-                    + SHorizontalBox::Slot()
-                        .AutoWidth()
-                    [
-                        SNew(STextBlock)
-                            .Font(FEditorStyle::GetFontStyle("CurveEd.LabelFont"))
-                            .Text(LOCTEXT("SglTFImportWindow_TargetFilePath_Title", "Target File Path: "))
-                    ]
-                    + SHorizontalBox::Slot()
-                        .Padding(5, 0, 0, 0)
-                        .AutoWidth()
-                        .VAlign(VAlign_Center)
-                    [
-                        SNew(STextBlock)
-                            .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                            .Text(glTFImportOptions.Pin()->FilePathInEngine)
-                    ]
+                    SNew(STextBlock)
+                        .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                        .Text(glTFImportOptions.Pin()->FilePathInOS)
+                ]
+                + SGridPanel::Slot(0, 1)
+                    .Padding(2)
+                    .HAlign(HAlign_Left)
+                    .VAlign(VAlign_Center)
+                [
+                    SNew(STextBlock)
+                        .Font(FEditorStyle::GetFontStyle("CurveEd.LabelFont"))
+                        .Text(LOCTEXT("SglTFImportWindow_TargetFilePath_Title", "Target File Path: "))
+                ]
+                + SGridPanel::Slot(1, 1)
+                    .Padding(2)
+                    .HAlign(HAlign_Left)
+                    .VAlign(VAlign_Center)
+                [
+                    SNew(STextBlock)
+                    .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                    .Text(glTFImportOptions.Pin()->FilePathInEngine)
                 ]
             ]
         ]
@@ -133,7 +127,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
             .Padding(2)
         [
             SNew(SUniformGridPanel)
-            .SlotPadding(2)
+                .SlotPadding(2)
             + SUniformGridPanel::Slot(0, 0)
             [
                 IDocumentation::Get()->CreateAnchor(FString("https://doc.c4g.io/gltfforue4/"))
@@ -141,18 +135,18 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
             + SUniformGridPanel::Slot(1, 0)
             [
                 SNew(SButton)
+                    .ToolTipText(LOCTEXT("SglTFImportWindow_OnImport_ToolTip", "Import this glTF file"))
                     .HAlign(HAlign_Center)
                     .Text(LOCTEXT("SglTFImportWindow_OnImport", "Import file"))
-                    .ToolTipText(LOCTEXT("SglTFImportWindow_OnImport_ToolTip", "Import file"))
                     .IsEnabled(this, &SglTFImportWindow::CanImport)
                     .OnClicked(this, &SglTFImportWindow::OnImport)
             ]
             + SUniformGridPanel::Slot(2, 0)
             [
                 SNew(SButton)
+                    .ToolTipText(LOCTEXT("SglTFImportWindow_OnCancel_ToolTip", "Cancel to import this glTF file"))
                     .HAlign(HAlign_Center)
                     .Text(LOCTEXT("SglTFImportWindow_OnCancel", "Cancel"))
-                    .ToolTipText(LOCTEXT("SglTFImportWindow_OnCancel_ToolTip", "Cancels importing this glTF file"))
                     .OnClicked(this, &SglTFImportWindow::OnCancel)
             ]
         ]
@@ -323,6 +317,8 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(STextBlock)
+                                .IsEnabled(false)
+                                .ToolTipText(NSLOCTEXT("glTFForUE4Ed", "ImportMaterial_ToolTip", "This function is in developing!"))
                                 .MinDesiredWidth(200)
                                 .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
                                 .Text(LOCTEXT("SglTFImportWindow_ImportMaterial_Title", "Import Material: "))
@@ -333,6 +329,8 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(SCheckBox)
+                                .IsEnabled(false)
+                                .ToolTipText(NSLOCTEXT("glTFForUE4Ed", "ImportMaterial_ToolTip", "This function is in developing!"))
                                 .IsChecked(glTFImportOptions.Pin()->bImportMaterial ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
                                 .OnCheckStateChanged(this, &SglTFImportWindow::HandleMaterialImportMaterial)
                         ]
