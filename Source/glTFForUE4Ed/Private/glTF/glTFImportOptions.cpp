@@ -6,7 +6,7 @@ FglTFImportOptions::FglTFImportOptions()
     , FilePathInEngine(TEXT(""))
     , MeshScaleRatio(100.0f)
     , bInvertNormal(false)
-    , bImportMaterial(true)
+    , bImportMaterial(false)
     , bRecomputeNormals(true)
     , bRecomputeTangents(true)
 {
