@@ -333,8 +333,6 @@ bool FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>& InglTFI
 {
     if (!InNode) return false;
 
-    UStaticMesh* NewStaticMesh = nullptr;
-
     const std::shared_ptr<libgltf::SGlTFId>& MeshIndex = InNode->mesh;
     if (MeshIndex)
     {
