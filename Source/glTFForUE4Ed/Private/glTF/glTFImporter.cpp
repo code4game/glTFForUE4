@@ -151,70 +151,182 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
         {
             const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->indices)];
             const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
+            TArray<uint32> WedgeIndices;
             if (Accessor->componentType == 5120)
             {
-                TArray<int8> WedgeIndices;
-                InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, WedgeIndices);
-                NewRawMesh.WedgeIndices = TArray<uint32>(WedgeIndices);
-                if (WedgeIndexStart != 0)
+                int32 MemLen = Accessor->count * sizeof(int8);
+                if (MemLen <= BufferView->byteLength)
                 {
-                    for (uint32& WedgeIndex : NewRawMesh.WedgeIndices)
-                    {
-                        WedgeIndex += WedgeIndexStart;
-                    }
+                    TArray<int8> WedgeIndicesTemp;
+                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, MemLen, WedgeIndicesTemp);
+                    WedgeIndices = TArray<uint32>(WedgeIndicesTemp);
+                }
+                else
+                {
+                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
                 }
             }
             else if (Accessor->componentType == 5121)
             {
-                TArray<uint8> WedgeIndices;
-                InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, WedgeIndices);
-                NewRawMesh.WedgeIndices = TArray<uint32>(WedgeIndices);
+                int32 MemLen = Accessor->count * sizeof(uint8);
+                if (MemLen <= BufferView->byteLength)
+                {
+                    TArray<uint8> WedgeIndicesTemp;
+                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, MemLen, WedgeIndicesTemp);
+                    WedgeIndices = TArray<uint32>(WedgeIndicesTemp);
+                }
+                else
+                {
+                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
+                }
             }
             else if (Accessor->componentType == 5122)
             {
-                TArray<int16> WedgeIndices;
-                InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, WedgeIndices);
-                NewRawMesh.WedgeIndices = TArray<uint32>(WedgeIndices);
+                int32 MemLen = Accessor->count * sizeof(uint16);
+                if (MemLen <= BufferView->byteLength)
+                {
+                    TArray<int16> WedgeIndicesTemp;
+                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, MemLen, WedgeIndicesTemp);
+                    WedgeIndices = TArray<uint32>(WedgeIndicesTemp);
+                }
+                else
+                {
+                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
+                }
             }
             else if (Accessor->componentType == 5123)
             {
-                TArray<uint16> WedgeIndices;
-                InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, WedgeIndices);
-                NewRawMesh.WedgeIndices = TArray<uint32>(WedgeIndices);
+                int32 MemLen = Accessor->count * sizeof(uint16);
+                if (MemLen <= BufferView->byteLength)
+                {
+                    TArray<uint16> WedgeIndicesTemp;
+                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, MemLen, WedgeIndicesTemp);
+                    WedgeIndices = TArray<uint32>(WedgeIndicesTemp);
+                }
+                else
+                {
+                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
+                }
             }
             else if (Accessor->componentType == 5125)
             {
-                InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, NewRawMesh.WedgeIndices);
+                int32 MemLen = Accessor->count * sizeof(int32);
+                if (MemLen <= BufferView->byteLength)
+                {
+                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, MemLen, WedgeIndices);
+                }
+                else
+                {
+                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
+                }
             }
+            else
+            {
+                UE_LOG(LogglTFForUE4Ed, Error, TEXT("Sorry can support this componentType(%d)?"), Accessor->componentType);
+            }
+            if (WedgeIndexStart != 0)
+            {
+                for (uint32& WedgeIndex : WedgeIndices)
+                {
+                    WedgeIndex += WedgeIndexStart;
+                }
+            }
+            NewRawMesh.WedgeIndices.Append(WedgeIndices);
         }
         if (MeshPrimitive->attributes.find(TEXT("POSITION")) != MeshPrimitive->attributes.cend())
         {
             const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->attributes[TEXT("POSITION")])];
-            const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
-            InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, NewRawMesh.VertexPositions);
-            WedgeIndexStart += NewRawMesh.VertexPositions.Num();
+            if (Accessor->componentType == 5126)
+            {
+                const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
+                int32 MemLen = Accessor->count * sizeof(FVector);
+                if (MemLen <= BufferView->byteLength)
+                {
+                    TArray<FVector> VertexPositions;
+                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, MemLen, VertexPositions);
+                    NewRawMesh.VertexPositions.Append(VertexPositions);
+                    WedgeIndexStart = NewRawMesh.VertexPositions.Num();
+                }
+                else
+                {
+                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
+                }
+            }
+            else
+            {
+                UE_LOG(LogglTFForUE4Ed, Error, TEXT("Sorry can support this componentType(%d)?"), Accessor->componentType);
+            }
         }
         if (MeshPrimitive->attributes.find(TEXT("NORMAL")) != MeshPrimitive->attributes.cend())
         {
             const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->attributes[TEXT("NORMAL")])];
-            const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
-            InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, NewRawMesh.WedgeTangentZ);
+            if (Accessor->componentType == 5126)
+            {
+                const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
+                int32 MemLen = Accessor->count * sizeof(FVector);
+                if (MemLen <= BufferView->byteLength)
+                {
+                    TArray<FVector> WedgeTangentZ;
+                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, MemLen, WedgeTangentZ);
+                    NewRawMesh.WedgeTangentZ.Append(WedgeTangentZ);
+                }
+                else
+                {
+                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
+                }
+            }
+            else
+            {
+                UE_LOG(LogglTFForUE4Ed, Error, TEXT("Sorry can support this componentType(%d)?"), Accessor->componentType);
+            }
         }
         if (MeshPrimitive->attributes.find(TEXT("TANGENT")) != MeshPrimitive->attributes.cend())
         {
             const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->attributes[TEXT("TANGENT")])];
-            const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
-            TArray<FVector4> Tangent;
-            if (InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, Tangent))
+            if (Accessor->componentType == 5126)
             {
-                //
+                const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
+                int32 MemLen = Accessor->count * sizeof(FVector4);
+                if (MemLen <= BufferView->byteLength)
+                {
+                    TArray<FVector4> Tangent;
+                    if (InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, MemLen, Tangent))
+                    {
+                        //
+                    }
+                }
+                else
+                {
+                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
+                }
+            }
+            else
+            {
+                UE_LOG(LogglTFForUE4Ed, Error, TEXT("Sorry can support this componentType(%d)?"), Accessor->componentType);
             }
         }
         if (MeshPrimitive->attributes.find(TEXT("TEXCOORD_0")) != MeshPrimitive->attributes.cend())
         {
             const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->attributes[TEXT("TEXCOORD_0")])];
-            const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
-            InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, NewRawMesh.WedgeTexCoords[0]);
+            if (Accessor->componentType == 5126)
+            {
+                const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
+                int32 MemLen = Accessor->count * sizeof(FVector2D);
+                if (MemLen <= BufferView->byteLength)
+                {
+                    TArray<FVector2D> WedgeTexCoord;
+                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset, MemLen, WedgeTexCoord);
+                    NewRawMesh.WedgeTexCoords[0].Append(WedgeTexCoord);
+                }
+                else
+                {
+                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
+                }
+            }
+            else
+            {
+                UE_LOG(LogglTFForUE4Ed, Error, TEXT("Sorry can support this componentType(%d)?"), Accessor->componentType);
+            }
         }
     }
 
