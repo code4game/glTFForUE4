@@ -7,8 +7,8 @@ FglTFImportOptions::FglTFImportOptions()
     , MeshScaleRatio(100.0f)
     , bInvertNormal(false)
     , bImportMaterial(false)
-    , bRecomputeNormals(true)
-    , bRecomputeTangents(true)
+    , bRecomputeNormals(false)
+    , bRecomputeTangents(false)
 {
     //
 }
