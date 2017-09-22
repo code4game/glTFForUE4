@@ -62,15 +62,27 @@ public:
     }
 
     template<typename TElem>
-    bool Get(int32 InIndex, int32 InStart, int32 InLength, TArray<TElem>& OutBufferSegment) const
+    bool Get(int32 InIndex, int32 InStart, int32 InCount, int32 InStride, TArray<TElem>& OutBufferSegment) const
     {
-        if ((sizeof(TElem) % sizeof(uint8)) != 0) return false;
-        if (InStart < 0 || InLength <= 0 || (InLength % (sizeof(TElem) / sizeof(uint8))) != 0) return false;
+        if (InStride == 0) InStride = sizeof(TElem);
+        checkfSlow(sizeof(TElem) > InStride, TEXT("Stride is too smaller!"));
+        if (sizeof(TElem) > InStride) return false;
+        if (InStart < 0 || InCount <= 0) return false;
         const TArray<uint8>& BufferSegment = (*this)[InIndex];
-        if (BufferSegment.Num() < (InStart + InLength)) return false;
+        if (BufferSegment.Num() < (InStart + InCount * InStride)) return false;
 
-        OutBufferSegment.SetNumUninitialized(InLength / (sizeof(TElem) / sizeof(uint8)));
-        FMemory::Memcpy((void*)OutBufferSegment.GetData(), (void*)(BufferSegment.GetData() + InStart), sizeof(uint8) * InLength);
+        OutBufferSegment.SetNumUninitialized(InCount);
+        if (InStride == sizeof(TElem))
+        {
+            FMemory::Memcpy((void*)OutBufferSegment.GetData(), (void*)(BufferSegment.GetData() + InStart), InCount * sizeof(TElem));
+        }
+        else
+        {
+            for (int32 i = 0; i < InCount; ++i)
+            {
+                FMemory::Memcpy((void*)(OutBufferSegment.GetData() + i), (void*)(BufferSegment.GetData() + InStart + i * InStride), InStride);
+            }
+        }
         return true;
     }
 
@@ -126,6 +138,11 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
     if (!Package)
     {
         Package = CreatePackage(nullptr, *PackageName);
+        if (!Package)
+        {
+            UE_LOG(LogglTFForUE4Ed, Error, TEXT("Can't create packate - %s"), *PackageName);
+            return nullptr;
+        }
     }
 
     FName StaticMeshName = FPackageName::GetShortFName(*PackageName);
@@ -149,10 +166,10 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
     for (const std::shared_ptr<libgltf::SMeshPrimitive>& MeshPrimitive : InMesh->primitives)
     {
         TArray<uint32> TriangleIndices;
-        TArray<FVector> Point;
-        TArray<FVector> Normal;
+        TArray<FVector> Points;
+        TArray<FVector> Normals;
         TArray<FVector4> Tangents;
-        TArray<FVector2D> TextureCoord;
+        TArray<FVector2D> TextureCoords;
         {
             const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->indices)];
             const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
@@ -162,7 +179,7 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
                 if (MemLen <= BufferView->byteLength)
                 {
                     TArray<int8> WedgeIndicesTemp;
-                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, MemLen, WedgeIndicesTemp);
+                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, WedgeIndicesTemp);
                     TriangleIndices = TArray<uint32>(WedgeIndicesTemp);
                 }
                 else
@@ -176,7 +193,7 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
                 if (MemLen <= BufferView->byteLength)
                 {
                     TArray<uint8> WedgeIndicesTemp;
-                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, MemLen, WedgeIndicesTemp);
+                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, WedgeIndicesTemp);
                     TriangleIndices = TArray<uint32>(WedgeIndicesTemp);
                 }
                 else
@@ -190,7 +207,7 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
                 if (MemLen <= BufferView->byteLength)
                 {
                     TArray<int16> WedgeIndicesTemp;
-                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, MemLen, WedgeIndicesTemp);
+                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, WedgeIndicesTemp);
                     TriangleIndices = TArray<uint32>(WedgeIndicesTemp);
                 }
                 else
@@ -204,7 +221,7 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
                 if (MemLen <= BufferView->byteLength)
                 {
                     TArray<uint16> WedgeIndicesTemp;
-                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, MemLen, WedgeIndicesTemp);
+                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, WedgeIndicesTemp);
                     TriangleIndices = TArray<uint32>(WedgeIndicesTemp);
                 }
                 else
@@ -217,7 +234,7 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
                 int32 MemLen = Accessor->count * sizeof(int32);
                 if (MemLen <= BufferView->byteLength)
                 {
-                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, MemLen, TriangleIndices);
+                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, TriangleIndices);
                 }
                 else
                 {
@@ -238,7 +255,7 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
                 int32 MemLen = Accessor->count * sizeof(FVector);
                 if (MemLen <= BufferView->byteLength)
                 {
-                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, MemLen, Point);
+                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, Points);
                 }
                 else
                 {
@@ -250,7 +267,8 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
                 UE_LOG(LogglTFForUE4Ed, Error, TEXT("Sorry can support this componentType(%d)?"), Accessor->componentType);
             }
         }
-        if (MeshPrimitive->attributes.find(TEXT("NORMAL")) != MeshPrimitive->attributes.cend())
+        if (!SrcModel.BuildSettings.bRecomputeNormals
+            && MeshPrimitive->attributes.find(TEXT("NORMAL")) != MeshPrimitive->attributes.cend())
         {
             const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->attributes[TEXT("NORMAL")])];
             if (Accessor->componentType == 5126)
@@ -259,7 +277,7 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
                 int32 MemLen = Accessor->count * sizeof(FVector);
                 if (MemLen <= BufferView->byteLength)
                 {
-                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, MemLen, Normal);
+                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, Normals);
                 }
                 else
                 {
@@ -271,7 +289,8 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
                 UE_LOG(LogglTFForUE4Ed, Error, TEXT("Sorry can support this componentType(%d)?"), Accessor->componentType);
             }
         }
-        if (MeshPrimitive->attributes.find(TEXT("TANGENT")) != MeshPrimitive->attributes.cend())
+        if (!SrcModel.BuildSettings.bRecomputeTangents
+            && MeshPrimitive->attributes.find(TEXT("TANGENT")) != MeshPrimitive->attributes.cend())
         {
             const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->attributes[TEXT("TANGENT")])];
             if (Accessor->componentType == 5126)
@@ -280,7 +299,7 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
                 int32 MemLen = Accessor->count * sizeof(FVector4);
                 if (MemLen <= BufferView->byteLength)
                 {
-                    if (InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, MemLen, Tangents))
+                    if (InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, Tangents))
                     {
                         //
                     }
@@ -304,7 +323,7 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
                 int32 MemLen = Accessor->count * sizeof(FVector2D);
                 if (MemLen <= BufferView->byteLength)
                 {
-                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, MemLen, TextureCoord);
+                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, TextureCoords);
                 }
                 else
                 {
@@ -317,24 +336,57 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
             }
         }
 
-        if (Point.Num() <= 0) break;
+        if (Points.Num() <= 0) break;
 
         for (uint32& TriangleIndex : TriangleIndices)
         {
-            if (static_cast<int32>(TriangleIndex) >= Point.Num())
+            if (static_cast<int32>(TriangleIndex) >= Points.Num())
             {
-                TriangleIndex = TriangleIndex % Point.Num();
+                TriangleIndex = TriangleIndex % Points.Num();
             }
             TriangleIndex += TriangleIndexStart;
         }
         NewRawMesh.WedgeIndices.Append(TriangleIndices);
 
-        NewRawMesh.VertexPositions.Append(Point);
+        NewRawMesh.VertexPositions.Append(Points);
         TriangleIndexStart = NewRawMesh.VertexPositions.Num();
 
-        NewRawMesh.WedgeTangentZ.Append(Normal);
+        if (Normals.Num() <= 0)
+        {
+            SrcModel.BuildSettings.bRecomputeNormals = true;
+        }
+        else
+        {
+            for (const FVector& Normal : Normals)
+            {
+                NewRawMesh.WedgeTangentZ.Add(Normal * -1.0f);
+            }
+        }
 
-        NewRawMesh.WedgeTexCoords[0].Append(TextureCoord);
+        if (Tangents.Num() <= 0)
+        {
+            SrcModel.BuildSettings.bRecomputeTangents = true;
+        }
+        else if (Tangents.Num() == Normals.Num())
+        {
+            for (const FVector4& Tangent : Tangents)
+            {
+                NewRawMesh.WedgeTangentX.Add(FVector(Tangent.X, Tangent.Y, Tangent.Z) * -1.0f);
+            }
+
+            for (int32 i = 0; i < Tangents.Num(); ++i)
+            {
+                const FVector4& Tangent = Tangents[i];
+                const FVector& Normal = Normals[i];
+                NewRawMesh.WedgeTangentY.Add(FVector::CrossProduct(Normal, FVector(Tangent.X, Tangent.Y, Tangent.Z) * -Tangent.W));
+            }
+        }
+        else
+        {
+            UE_LOG(LogglTFForUE4Ed, Error, TEXT("Why is the number of tangent not equal with the number of normal?"));
+        }
+
+        NewRawMesh.WedgeTexCoords[0].Append(TextureCoords);
     }
 
     int32 WedgeIndicesCount = NewRawMesh.WedgeIndices.Num();
