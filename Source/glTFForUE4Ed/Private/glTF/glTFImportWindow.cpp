@@ -372,7 +372,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                             SNew(STextBlock)
                                 .MinDesiredWidth(200)
                                 .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                                .Text(LOCTEXT("SglTFImportWindow_RecomputeNormals_Title", "Recompute Normals: "))
+                                .Text(LOCTEXT("SglTFImportWindow_UseMikkTSpace_Title", "Use MikkT Space: "))
                         ]
                         + SGridPanel::Slot(1, 0)
                             .Padding(2)
@@ -380,8 +380,8 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(SCheckBox)
-                                .IsChecked(glTFImportOptions.Pin()->bRecomputeNormals ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportWindow::HandleMeshRecomputeNormals)
+                                .IsChecked(glTFImportOptions.Pin()->bUseMikkTSpace ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImportWindow::HandleMeshUseMikkTSpace)
                         ]
                         + SGridPanel::Slot(0, 1)
                             .Padding(2)
@@ -391,9 +391,28 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                             SNew(STextBlock)
                                 .MinDesiredWidth(200)
                                 .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                                .Text(LOCTEXT("SglTFImportWindow_RecomputeTangents_Title", "Recompute Tangents: "))
+                                .Text(LOCTEXT("SglTFImportWindow_RecomputeNormals_Title", "Recompute Normals: "))
                         ]
                         + SGridPanel::Slot(1, 1)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(SCheckBox)
+                                .IsChecked(glTFImportOptions.Pin()->bRecomputeNormals ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImportWindow::HandleMeshRecomputeNormals)
+                        ]
+                        + SGridPanel::Slot(0, 2)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(STextBlock)
+                                .MinDesiredWidth(200)
+                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                                .Text(LOCTEXT("SglTFImportWindow_RecomputeTangents_Title", "Recompute Tangents: "))
+                        ]
+                        + SGridPanel::Slot(1, 2)
                             .Padding(2)
                             .HAlign(HAlign_Left)
                             .VAlign(VAlign_Center)
@@ -481,6 +500,20 @@ void SglTFImportWindow::HandleMeshInvertNormal(ECheckBoxState InCheckBoxState)
     glTFImportOptions.Pin()->bInvertNormal = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
+void SglTFImportWindow::HandleMaterialImportMaterial(ECheckBoxState InCheckBoxState)
+{
+    check(glTFImportOptions.IsValid());
+
+    glTFImportOptions.Pin()->bImportMaterial = (InCheckBoxState == ECheckBoxState::Checked);
+}
+
+void SglTFImportWindow::HandleMeshUseMikkTSpace(ECheckBoxState InCheckBoxState)
+{
+    check(glTFImportOptions.IsValid());
+
+    glTFImportOptions.Pin()->bUseMikkTSpace = (InCheckBoxState == ECheckBoxState::Checked);
+}
+
 void SglTFImportWindow::HandleMeshRecomputeNormals(ECheckBoxState InCheckBoxState)
 {
     check(glTFImportOptions.IsValid());
@@ -493,13 +526,6 @@ void SglTFImportWindow::HandleMeshRecomputeTangents(ECheckBoxState InCheckBoxSta
     check(glTFImportOptions.IsValid());
 
     glTFImportOptions.Pin()->bRecomputeTangents = (InCheckBoxState == ECheckBoxState::Checked);
-}
-
-void SglTFImportWindow::HandleMaterialImportMaterial(ECheckBoxState InCheckBoxState)
-{
-    check(glTFImportOptions.IsValid());
-
-    glTFImportOptions.Pin()->bImportMaterial = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
 #undef LOCTEXT_NAMESPACE

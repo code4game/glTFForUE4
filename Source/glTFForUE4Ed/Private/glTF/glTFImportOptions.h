@@ -26,6 +26,9 @@ struct FglTFImportOptions
 
     /// Build setting
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    bool bUseMikkTSpace;
+
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bRecomputeNormals;
 
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
