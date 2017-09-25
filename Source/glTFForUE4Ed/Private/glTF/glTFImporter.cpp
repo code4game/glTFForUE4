@@ -166,174 +166,39 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
     for (const std::shared_ptr<libgltf::SMeshPrimitive>& MeshPrimitive : InMesh->primitives)
     {
         TArray<uint32> TriangleIndices;
+        if (!GetTriangleIndices(InGlTF, InBufferFiles, *MeshPrimitive->indices, TriangleIndices))
+        {
+            break;
+        }
+
         TArray<FVector> Points;
+        if (MeshPrimitive->attributes.find(TEXT("POSITION")) != MeshPrimitive->attributes.cend()
+            && !GetVertexPositions(InGlTF, InBufferFiles, *MeshPrimitive->attributes[TEXT("POSITION")], Points))
+        {
+            break;
+        }
+
         TArray<FVector> Normals;
-        TArray<FVector4> Tangents;
-        TArray<FVector2D> TextureCoords;
-        {
-            const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->indices)];
-            const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
-            if (Accessor->componentType == 5120)
-            {
-                int32 MemLen = Accessor->count * sizeof(int8);
-                if (MemLen <= BufferView->byteLength)
-                {
-                    TArray<int8> WedgeIndicesTemp;
-                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, WedgeIndicesTemp);
-                    TriangleIndices = TArray<uint32>(WedgeIndicesTemp);
-                }
-                else
-                {
-                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
-                }
-            }
-            else if (Accessor->componentType == 5121)
-            {
-                int32 MemLen = Accessor->count * sizeof(uint8);
-                if (MemLen <= BufferView->byteLength)
-                {
-                    TArray<uint8> WedgeIndicesTemp;
-                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, WedgeIndicesTemp);
-                    TriangleIndices = TArray<uint32>(WedgeIndicesTemp);
-                }
-                else
-                {
-                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
-                }
-            }
-            else if (Accessor->componentType == 5122)
-            {
-                int32 MemLen = Accessor->count * sizeof(uint16);
-                if (MemLen <= BufferView->byteLength)
-                {
-                    TArray<int16> WedgeIndicesTemp;
-                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, WedgeIndicesTemp);
-                    TriangleIndices = TArray<uint32>(WedgeIndicesTemp);
-                }
-                else
-                {
-                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
-                }
-            }
-            else if (Accessor->componentType == 5123)
-            {
-                int32 MemLen = Accessor->count * sizeof(uint16);
-                if (MemLen <= BufferView->byteLength)
-                {
-                    TArray<uint16> WedgeIndicesTemp;
-                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, WedgeIndicesTemp);
-                    TriangleIndices = TArray<uint32>(WedgeIndicesTemp);
-                }
-                else
-                {
-                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
-                }
-            }
-            else if (Accessor->componentType == 5125)
-            {
-                int32 MemLen = Accessor->count * sizeof(int32);
-                if (MemLen <= BufferView->byteLength)
-                {
-                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, TriangleIndices);
-                }
-                else
-                {
-                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
-                }
-            }
-            else
-            {
-                UE_LOG(LogglTFForUE4Ed, Error, TEXT("Sorry can support this componentType(%d)?"), Accessor->componentType);
-            }
-        }
-        if (MeshPrimitive->attributes.find(TEXT("POSITION")) != MeshPrimitive->attributes.cend())
-        {
-            const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->attributes[TEXT("POSITION")])];
-            if (Accessor->componentType == 5126)
-            {
-                const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
-                int32 MemLen = Accessor->count * sizeof(FVector);
-                if (MemLen <= BufferView->byteLength)
-                {
-                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, Points);
-                }
-                else
-                {
-                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
-                }
-            }
-            else
-            {
-                UE_LOG(LogglTFForUE4Ed, Error, TEXT("Sorry can support this componentType(%d)?"), Accessor->componentType);
-            }
-        }
         if (!SrcModel.BuildSettings.bRecomputeNormals
-            && MeshPrimitive->attributes.find(TEXT("NORMAL")) != MeshPrimitive->attributes.cend())
+            && MeshPrimitive->attributes.find(TEXT("NORMAL")) != MeshPrimitive->attributes.cend()
+            && !GetVertexNormals(InGlTF, InBufferFiles, *MeshPrimitive->attributes[TEXT("NORMAL")], Normals))
         {
-            const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->attributes[TEXT("NORMAL")])];
-            if (Accessor->componentType == 5126)
-            {
-                const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
-                int32 MemLen = Accessor->count * sizeof(FVector);
-                if (MemLen <= BufferView->byteLength)
-                {
-                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, Normals);
-                }
-                else
-                {
-                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
-                }
-            }
-            else
-            {
-                UE_LOG(LogglTFForUE4Ed, Error, TEXT("Sorry can support this componentType(%d)?"), Accessor->componentType);
-            }
+            break;
         }
+
+        TArray<FVector4> Tangents;
         if (!SrcModel.BuildSettings.bRecomputeTangents
-            && MeshPrimitive->attributes.find(TEXT("TANGENT")) != MeshPrimitive->attributes.cend())
+            && MeshPrimitive->attributes.find(TEXT("TANGENT")) != MeshPrimitive->attributes.cend()
+            && !GetVertexTangents(InGlTF, InBufferFiles, *MeshPrimitive->attributes[TEXT("TANGENT")], Tangents))
         {
-            const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->attributes[TEXT("TANGENT")])];
-            if (Accessor->componentType == 5126)
-            {
-                const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
-                int32 MemLen = Accessor->count * sizeof(FVector4);
-                if (MemLen <= BufferView->byteLength)
-                {
-                    if (InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, Tangents))
-                    {
-                        //
-                    }
-                }
-                else
-                {
-                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
-                }
-            }
-            else
-            {
-                UE_LOG(LogglTFForUE4Ed, Error, TEXT("Sorry can support this componentType(%d)?"), Accessor->componentType);
-            }
+            break;
         }
-        if (MeshPrimitive->attributes.find(TEXT("TEXCOORD_0")) != MeshPrimitive->attributes.cend())
+
+        TArray<FVector2D> TextureCoords;
+        if (MeshPrimitive->attributes.find(TEXT("TEXCOORD_0")) != MeshPrimitive->attributes.cend()
+            && !GetVertexTexcoords(InGlTF, InBufferFiles, *MeshPrimitive->attributes[TEXT("TEXCOORD_0")], TextureCoords))
         {
-            const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)(*MeshPrimitive->attributes[TEXT("TEXCOORD_0")])];
-            if (Accessor->componentType == 5126)
-            {
-                const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*Accessor->bufferView)];
-                int32 MemLen = Accessor->count * sizeof(FVector2D);
-                if (MemLen <= BufferView->byteLength)
-                {
-                    InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + Accessor->byteOffset, Accessor->count, BufferView->byteStride, TextureCoords);
-                }
-                else
-                {
-                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Your glTF file has some errors?"));
-                }
-            }
-            else
-            {
-                UE_LOG(LogglTFForUE4Ed, Error, TEXT("Sorry can support this componentType(%d)?"), Accessor->componentType);
-            }
+            break;
         }
 
         if (Points.Num() <= 0) break;
@@ -533,4 +398,315 @@ bool FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>& InglTFI
         return false;
     }
     return true;
+}
+
+template<typename TEngineDataType>
+struct TAccessorTypeScale
+{
+    TEngineDataType X;
+
+    operator TEngineDataType() const
+    {
+        return X;
+    }
+
+    operator FVector2D() const
+    {
+        throw 1;
+        return FVector2D(X, 0.0f);
+    }
+
+    operator FVector() const
+    {
+        throw 1;
+        return FVector(X, 0.0f, 0.0f);
+    }
+
+    operator FVector4() const
+    {
+        throw 1;
+        return FVector4(X, 0.0f, 0.0f, 0.0f);
+    }
+};
+
+template<typename TEngineDataType>
+struct TAccessorTypeVec2
+{
+    TEngineDataType X;
+    TEngineDataType Y;
+
+    operator TEngineDataType() const
+    {
+        throw 1;
+        return X;
+    }
+
+    operator FVector2D() const
+    {
+        return FVector2D(X, Y);
+    }
+
+    operator FVector() const
+    {
+        throw 1;
+        return FVector(X, Y, 0.0f);
+    }
+
+    operator FVector4() const
+    {
+        throw 1;
+        return FVector4(X, Y, 0.0f, 0.0f);
+    }
+};
+
+template<typename TEngineDataType>
+struct TAccessorTypeVec3
+{
+    TEngineDataType X;
+    TEngineDataType Y;
+    TEngineDataType Z;
+
+    operator TEngineDataType() const
+    {
+        throw 1;
+        return X;
+    }
+
+    operator FVector2D() const
+    {
+        throw 1;
+        return FVector2D(X, Y);
+    }
+
+    operator FVector() const
+    {
+        return FVector(X, Y, Z);
+    }
+
+    operator FVector4() const
+    {
+        throw 1;
+        return FVector4(X, Y, Z, 0.0f);
+    }
+};
+
+template<typename TEngineDataType>
+struct TAccessorTypeVec4
+{
+    TEngineDataType X;
+    TEngineDataType Y;
+    TEngineDataType Z;
+    TEngineDataType W;
+
+    operator TEngineDataType() const
+    {
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+        return X;
+    }
+
+    operator FVector2D() const
+    {
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+        return FVector2D(X, Y);
+    }
+
+    operator FVector() const
+    {
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+        return FVector(X, Y, Z);
+    }
+
+    operator FVector4() const
+    {
+        return FVector4(X, Y, Z, W);
+    }
+};
+
+template<typename TAccessorDataType, typename TEngineDataType>
+bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, const std::shared_ptr<libgltf::SAccessor>& InAccessor, TArray<TEngineDataType>& OutDataArray)
+{
+    if (!InAccessor) return false;
+
+    const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*InAccessor->bufferView)];
+    if (!BufferView) return false;
+
+    if (OutDataArray.Num() > 0)
+    {
+        OutDataArray.Empty();
+    }
+
+    if (InAccessor->type == TEXT("SCALAR"))
+    {
+        TArray<TAccessorTypeScale<TAccessorDataType>> AccessorDataArray;
+        if (InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + InAccessor->byteOffset, InAccessor->count, BufferView->byteStride, AccessorDataArray))
+        {
+            try
+            {
+                for (const TAccessorTypeScale<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
+                {
+                    OutDataArray.Add(AccessorDataItem);
+                }
+            }
+            catch (...)
+            {
+                UE_LOG(LogglTFForUE4Ed, Error, TEXT("Can't convert the accessor's data(TAccessorTypeScale) to the engine's data?"));
+                return false;
+            }
+        }
+        else
+        {
+            UE_LOG(LogglTFForUE4Ed, Error, TEXT("Your glTF file has some errors?"));
+            return false;
+        }
+    }
+    else if (InAccessor->type == TEXT("VEC2"))
+    {
+        TArray<TAccessorTypeVec2<TAccessorDataType>> AccessorDataArray;
+        if (InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + InAccessor->byteOffset, InAccessor->count, BufferView->byteStride, AccessorDataArray))
+        {
+            try
+            {
+                for (const TAccessorTypeVec2<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
+                {
+                    OutDataArray.Add(AccessorDataItem);
+                }
+            }
+            catch (...)
+            {
+                UE_LOG(LogglTFForUE4Ed, Error, TEXT("Can't convert the accessor's data(TAccessorTypeVec2) to the engine's data?"));
+                return false;
+            }
+        }
+        else
+        {
+            UE_LOG(LogglTFForUE4Ed, Error, TEXT("Your glTF file has some errors?"));
+            return false;
+        }
+    }
+    else if (InAccessor->type == TEXT("VEC3"))
+    {
+        TArray<TAccessorTypeVec3<TAccessorDataType>> AccessorDataArray;
+        if (InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + InAccessor->byteOffset, InAccessor->count, BufferView->byteStride, AccessorDataArray))
+        {
+            try
+            {
+                for (const TAccessorTypeVec3<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
+                {
+                    OutDataArray.Add(AccessorDataItem);
+                }
+            }
+            catch (...)
+            {
+                UE_LOG(LogglTFForUE4Ed, Error, TEXT("Can't convert the accessor's data(TAccessorTypeVec3) to the engine's data?"));
+                return false;
+            }
+        }
+        else
+        {
+            UE_LOG(LogglTFForUE4Ed, Error, TEXT("Your glTF file has some errors?"));
+            return false;
+        }
+    }
+    else if (InAccessor->type == TEXT("VEC4"))
+    {
+        TArray<TAccessorTypeVec4<TAccessorDataType>> AccessorDataArray;
+        if (InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + InAccessor->byteOffset, InAccessor->count, BufferView->byteStride, AccessorDataArray))
+        {
+            try
+            {
+                for (const TAccessorTypeVec4<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
+                {
+                    OutDataArray.Add(AccessorDataItem);
+                }
+            }
+            catch (...)
+            {
+                UE_LOG(LogglTFForUE4Ed, Error, TEXT("Can't convert the accessor's data(TAccessorTypeVec4) to the engine's data?"));
+                return false;
+            }
+        }
+        else
+        {
+            UE_LOG(LogglTFForUE4Ed, Error, TEXT("Your glTF file has some errors?"));
+            return false;
+        }
+    }
+    else
+    {
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Not supports the accessor's type(%s)!"), InAccessor->type.c_str());
+        return false;
+    }
+    return true;
+}
+
+template<typename TEngineDataType>
+bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, const std::shared_ptr<libgltf::SAccessor>& InAccessor, TArray<TEngineDataType>& OutDataArray)
+{
+    if (!InAccessor) return false;
+
+    switch (InAccessor->componentType)
+    {
+    case 5120:
+        return GetAccessorData<int8>(InGlTF, InBufferFiles, InAccessor, OutDataArray);
+
+    case 5121:
+        return GetAccessorData<uint8>(InGlTF, InBufferFiles, InAccessor, OutDataArray);
+
+    case 5122:
+        return GetAccessorData<int16>(InGlTF, InBufferFiles, InAccessor, OutDataArray);
+
+    case 5123:
+        return GetAccessorData<uint16>(InGlTF, InBufferFiles, InAccessor, OutDataArray);
+
+    case 5125:
+        return GetAccessorData<int32>(InGlTF, InBufferFiles, InAccessor, OutDataArray);
+
+    case 5126:
+        return GetAccessorData<float>(InGlTF, InBufferFiles, InAccessor, OutDataArray);
+
+    default:
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Not support the accessor's componetType(%d)?"), InAccessor->componentType);
+        break;
+    }
+    return false;
+}
+
+bool FglTFImporter::GetTriangleIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<uint32>& OutTriangleIndices)
+{
+    if (!InGlTF) return false;
+
+    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[InAccessorIndex];
+    return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutTriangleIndices);
+}
+
+bool FglTFImporter::GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector>& OutVertexPositions)
+{
+    if (!InGlTF) return false;
+
+    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[InAccessorIndex];
+    return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutVertexPositions);
+}
+
+bool FglTFImporter::GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector>& OutVertexNormals)
+{
+    if (!InGlTF) return false;
+
+    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[InAccessorIndex];
+    return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutVertexNormals);
+}
+
+bool FglTFImporter::GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector4>& OutVertexTangents)
+{
+    if (!InGlTF) return false;
+
+    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[InAccessorIndex];
+    return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutVertexTangents);
+}
+
+bool FglTFImporter::GetVertexTexcoords(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector2D>& OutVertexTexcoords)
+{
+    if (!InGlTF) return false;
+
+    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[InAccessorIndex];
+    return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutVertexTexcoords);
 }
