@@ -39,9 +39,10 @@ protected:
     void HandleMeshScaleRatioY(float InNewValue);
     void HandleMeshScaleRatioZ(float InNewValue);
     void HandleMeshInvertNormal(ECheckBoxState InCheckBoxState);
+    void HandleMaterialImportMaterial(ECheckBoxState InCheckBoxState);
+    void HandleMeshUseMikkTSpace(ECheckBoxState InCheckBoxState);
     void HandleMeshRecomputeNormals(ECheckBoxState InCheckBoxState);
     void HandleMeshRecomputeTangents(ECheckBoxState InCheckBoxState);
-    void HandleMaterialImportMaterial(ECheckBoxState InCheckBoxState);
 
 private:
     TWeakPtr<struct FglTFImportOptions> glTFImportOptions;
