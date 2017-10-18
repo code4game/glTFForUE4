@@ -77,8 +77,24 @@ public class glTFForUE4Ed : ModuleRules
             {
                 LibPathBinary = System.IO.Path.Combine(LibPathBinary, "Release");
             }
-            PublicLibraryPaths.Add(LibPathBinary);
-            PublicAdditionalLibraries.Add(LibName + ".lib");
+            LibName = LibName + ".lib";
         }
+        else if (Target.Platform == UnrealTargetPlatform.Mac)
+        {
+            LibPathBinary = System.IO.Path.Combine(LibPathBinary, "macos");
+            if (Target.Configuration == UnrealTargetConfiguration.Debug
+                || Target.Configuration == UnrealTargetConfiguration.DebugGame)
+            {
+                LibPathBinary = System.IO.Path.Combine(LibPathBinary, "Debug");
+                LibName = LibName + "d";
+            }
+            else
+            {
+                LibPathBinary = System.IO.Path.Combine(LibPathBinary, "Release");
+            }
+            LibName = LibPathBinary + "/" + LibName + ".a";
+        }
+        PublicLibraryPaths.Add(LibPathBinary);
+        PublicAdditionalLibraries.Add(LibName);
     }
 }

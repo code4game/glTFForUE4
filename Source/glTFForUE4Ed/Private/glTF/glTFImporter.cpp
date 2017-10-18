@@ -161,6 +161,7 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
     new(StaticMesh->SourceModels) FStaticMeshSourceModel();
 
     FStaticMeshSourceModel& SrcModel = StaticMesh->SourceModels[0];
+    SrcModel.BuildSettings.bUseMikkTSpace = glTFImportOptions->bUseMikkTSpace;
     SrcModel.BuildSettings.bRecomputeNormals = glTFImportOptions->bRecomputeNormals;
     SrcModel.BuildSettings.bRecomputeTangents = glTFImportOptions->bRecomputeTangents;
 
