@@ -102,6 +102,12 @@ UObject* FglTFImporter::CreateMesh(const TWeakPtr<FglTFImportOptions>& InglTFImp
         return nullptr;
     }
 
+    if (!InGlTF->asset || InGlTF->asset->version != TEXT("2.0"))
+    {
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Invalid version: %s!"), !(InGlTF->asset) ? TEXT("none") : InGlTF->asset->version.c_str());
+        return nullptr;
+    }
+
     TSharedPtr<FglTFImportOptions> glTFImportOptions = InglTFImportOptions.Pin();
 
     const FString FolderPathInOS = FPaths::GetPath(glTFImportOptions->FilePathInOS);
@@ -122,6 +128,10 @@ UObject* FglTFImporter::CreateMesh(const TWeakPtr<FglTFImportOptions>& InglTFImp
                 StaticMesh = StaticMeshes[0];
             }
         }
+    }
+    else
+    {
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("No scene!"));
     }
     return StaticMesh;
 }
@@ -194,11 +204,16 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
             break;
         }
 
-        TArray<FVector2D> TextureCoords;
-        if (MeshPrimitive->attributes.find(TEXT("TEXCOORD_0")) != MeshPrimitive->attributes.cend()
-            && !GetVertexTexcoords(InGlTF, InBufferFiles, *MeshPrimitive->attributes[TEXT("TEXCOORD_0")], TextureCoords))
+        TArray<FVector2D> TextureCoords[MAX_MESH_TEXTURE_COORDS];
+        wchar_t texcoord_str[NAME_SIZE];
+        for (int32 i = 0; i < MAX_MESH_TEXTURE_COORDS; ++i)
         {
-            break;
+            std::swprintf(texcoord_str, NAME_SIZE, TEXT("TEXCOORD_%d"), i);
+            if (MeshPrimitive->attributes.find(texcoord_str) != MeshPrimitive->attributes.cend()
+                && !GetVertexTexcoords(InGlTF, InBufferFiles, *MeshPrimitive->attributes[texcoord_str], TextureCoords[i]))
+            {
+                break;
+            }
         }
 
         if (Points.Num() <= 0) break;
@@ -251,7 +266,11 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
             UE_LOG(LogglTFForUE4Ed, Error, TEXT("Why is the number of tangent not equal with the number of normal?"));
         }
 
-        NewRawMesh.WedgeTexCoords[0].Append(TextureCoords);
+        for (int32 i = 0; i < MAX_MESH_TEXTURE_COORDS; ++i)
+        {
+            if (TextureCoords[i].Num() <= 0) continue;
+            NewRawMesh.WedgeTexCoords[i].Append(TextureCoords[i]);
+        }
     }
 
     int32 WedgeIndicesCount = NewRawMesh.WedgeIndices.Num();
@@ -358,14 +377,24 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
         {
             for (const FText& BuildError : BuildErrors)
             {
-                UE_LOG(LogglTFForUE4Ed, Error, TEXT("BuildError: %s"),  *BuildError.ToString());
+                UE_LOG(LogglTFForUE4Ed, Warning, TEXT("BuildError: %s"),  *BuildError.ToString());
             }
-            StaticMesh = nullptr;
         }
+
+        StaticMesh->MarkPackageDirty();
     }
     else
     {
-        StaticMesh = nullptr;
+        if (StaticMesh && StaticMesh->IsValidLowLevel())
+        {
+            StaticMesh->ConditionalBeginDestroy();
+            StaticMesh = nullptr;
+        }
+        if (Package && Package->IsValidLowLevel())
+        {
+            Package->ConditionalBeginDestroy();
+            Package = nullptr;
+        }
     }
     return StaticMesh;
 }
@@ -394,10 +423,9 @@ bool FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>& InglTFI
         if (!NodeIndex) return false;
         const std::shared_ptr<libgltf::SNode>& Node = InGlTF->nodes[(int32)(*NodeIndex)];
         if (!Node) return false;
-        if (CreateStaticMesh(InglTFImportOptions, Node, InGlTF, InBufferFiles, OutStaticMeshes)) continue;
-        return false;
+        CreateStaticMesh(InglTFImportOptions, Node, InGlTF, InBufferFiles, OutStaticMeshes);
     }
-    return true;
+    return (OutStaticMeshes.Num() > 0);
 }
 
 template<typename TEngineDataType>
