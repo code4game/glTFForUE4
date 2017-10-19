@@ -1,6 +1,5 @@
 # glTF for UE4
 
-
-# License
+## License
 
 The MIT License
