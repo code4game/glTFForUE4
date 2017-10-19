@@ -129,6 +129,18 @@ UObject* FglTFImporter::CreateMesh(const TWeakPtr<FglTFImportOptions>& InglTFImp
             }
         }
     }
+    else if (InGlTF->scenes.size() > 0)
+    {
+        for (const std::shared_ptr<libgltf::SScene>& Scene : InGlTF->scenes)
+        {
+            TArray<UStaticMesh*> StaticMeshes;
+            if (CreateStaticMesh(InglTFImportOptions, Scene->nodes, InGlTF, BufferFiles, StaticMeshes)
+                && StaticMeshes.Num() > 0)
+            {
+                StaticMesh = StaticMeshes[0];
+            }
+        }
+    }
     else
     {
         UE_LOG(LogglTFForUE4Ed, Error, TEXT("No scene!"));
