@@ -53,10 +53,11 @@ public:
                 if (BufferStream.FindChar(TEXT(','), FirstCommaIndex))
                 {
                     StreamType = BufferStream.Left(FirstCommaIndex);
+                    BufferStream = BufferStream.Right(BufferStream.Len() - (FirstCommaIndex + 1));
                 }
 
                 TArray<uint8> BufferData;
-                if (StreamType == TEXT("base64") && BufferStream.RemoveFromStart(TEXT("base64,")))
+                if (StreamType.Equals(TEXT("base64"), ESearchCase::IgnoreCase))
                 {
                     if (!FBase64::Decode(BufferStream, BufferData))
                     {
@@ -72,6 +73,7 @@ public:
                 {
                     UE_LOG(LogglTFForUE4Ed, Error, TEXT("Can't decode the type(%s) of the string"), *StreamType);
                 }
+
                 IndexToUri.Add(i, BufferFileName);
                 BufferFiles.Add(BufferFileName, BufferData);
             }
@@ -133,9 +135,9 @@ private:
     const TArray<uint8> EmptyBufferFile;
 };
 
-UObject* FglTFImporter::CreateMesh(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions
+UObject* FglTFImporter::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions
     , const std::shared_ptr<libgltf::SGlTF>& InGlTF
-    , UClass* InClass, UObject* InParent) const
+    , UClass* InClass, UObject* InParent, FFeedbackContext* InWarn) const
 {
     if (!InGlTF)
     {
@@ -163,7 +165,7 @@ UObject* FglTFImporter::CreateMesh(const TWeakPtr<FglTFImportOptions>& InglTFImp
         if (Scene)
         {
             TArray<UStaticMesh*> StaticMeshes;
-            if (CreateStaticMesh(InglTFImportOptions, Scene->nodes, InGlTF, BufferFiles, StaticMeshes)
+            if (CreateNode(InglTFImportOptions, Scene->nodes, InGlTF, BufferFiles, StaticMeshes, FText::FromString(FolderPathInOS), InWarn)
                 && StaticMeshes.Num() > 0)
             {
                 StaticMesh = StaticMeshes[0];
@@ -175,7 +177,7 @@ UObject* FglTFImporter::CreateMesh(const TWeakPtr<FglTFImportOptions>& InglTFImp
         for (const std::shared_ptr<libgltf::SScene>& Scene : InGlTF->scenes)
         {
             TArray<UStaticMesh*> StaticMeshes;
-            if (CreateStaticMesh(InglTFImportOptions, Scene->nodes, InGlTF, BufferFiles, StaticMeshes)
+            if (CreateNode(InglTFImportOptions, Scene->nodes, InGlTF, BufferFiles, StaticMeshes, FText::FromString(FolderPathInOS), InWarn)
                 && StaticMeshes.Num() > 0)
             {
                 StaticMesh = StaticMeshes[0];
@@ -189,7 +191,7 @@ UObject* FglTFImporter::CreateMesh(const TWeakPtr<FglTFImportOptions>& InglTFImp
     return StaticMesh;
 }
 
-UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SMesh>& InMesh, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles) const
+UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SMesh>& InMesh, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, FFeedbackContext* InWarn) const
 {
     if (!InMesh) return nullptr;
 
@@ -433,7 +435,8 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
         {
             for (const FText& BuildError : BuildErrors)
             {
-                UE_LOG(LogglTFForUE4Ed, Warning, TEXT("BuildError: %s"),  *BuildError.ToString());
+                InWarn->Log(ELogVerbosity::Warning, BuildError.ToString());
+                //UE_LOG(LogglTFForUE4Ed, Warning, TEXT("BuildError: %s"),  *BuildError.ToString());
             }
         }
 
@@ -455,33 +458,53 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
     return StaticMesh;
 }
 
-bool FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SNode>& InNode, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, TArray<UStaticMesh*>& OutStaticMeshes) const
+bool FglTFImporter::CreateNode(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::vector<std::shared_ptr<libgltf::SGlTFId>>& InNodeIndices, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, TArray<UStaticMesh*>& OutStaticMeshes, FText InParentNodeName, FFeedbackContext* InWarn) const
 {
-    if (!InNode) return false;
+    FText ImportMessage = FText::Format(NSLOCTEXT("glTFForUE4Ed", "BeginImportingglTFNodeTask", "Importing a node {0}"), InParentNodeName);
+    InWarn->BeginSlowTask(ImportMessage, true);
 
-    const std::shared_ptr<libgltf::SGlTFId>& MeshIndex = InNode->mesh;
-    if (MeshIndex)
+    bool bIsSuccess = true;
+    for (size_t i = 0, count = InNodeIndices.size(); i < count; ++i)
     {
-        const std::shared_ptr<libgltf::SMesh>& Mesh = InGlTF->meshes[(int32)(*MeshIndex)];
-        UStaticMesh* NewStaticMesh = CreateStaticMesh(InglTFImportOptions, Mesh, InGlTF, InBufferFiles);
-        if (NewStaticMesh)
+        const std::shared_ptr<libgltf::SGlTFId>& NodeIndex = InNodeIndices[i];
+        if (!NodeIndex)
         {
-            OutStaticMeshes.Add(NewStaticMesh);
+            bIsSuccess = false;
+            break;
         }
-    }
-    return CreateStaticMesh(InglTFImportOptions, InNode->children, InGlTF, InBufferFiles, OutStaticMeshes);
-}
-
-bool FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::vector<std::shared_ptr<libgltf::SGlTFId>>& InNodeIndices, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, TArray<UStaticMesh*>& OutStaticMeshes) const
-{
-    for (const std::shared_ptr<libgltf::SGlTFId>& NodeIndex : InNodeIndices)
-    {
-        if (!NodeIndex) return false;
         const std::shared_ptr<libgltf::SNode>& Node = InGlTF->nodes[(int32)(*NodeIndex)];
-        if (!Node) return false;
-        CreateStaticMesh(InglTFImportOptions, Node, InGlTF, InBufferFiles, OutStaticMeshes);
+        if (!Node)
+        {
+            bIsSuccess = false;
+            break;
+        }
+
+        InWarn->UpdateProgress(static_cast<int32>(i), static_cast<int32>(count));
+
+        const std::shared_ptr<libgltf::SGlTFId>& MeshIndex = Node->mesh;
+        if (MeshIndex)
+        {
+            const std::shared_ptr<libgltf::SMesh>& Mesh = InGlTF->meshes[(int32)(*MeshIndex)];
+
+            if (Mesh)
+            {
+                InWarn->StatusUpdate(static_cast<int32>(i), static_cast<int32>(count), FText::FromString(Mesh->name.c_str()));
+            }
+
+            UStaticMesh* NewStaticMesh = CreateStaticMesh(InglTFImportOptions, Mesh, InGlTF, InBufferFiles, InWarn);
+            if (NewStaticMesh)
+            {
+                OutStaticMeshes.Add(NewStaticMesh);
+            }
+        }
+
+        CreateNode(InglTFImportOptions, Node->children, InGlTF, InBufferFiles, OutStaticMeshes, FText::FromString(Node->name.c_str()), InWarn);
+
+        InWarn->UpdateProgress(static_cast<int32>(i + 1), static_cast<int32>(count));
     }
-    return (OutStaticMeshes.Num() > 0);
+
+    InWarn->EndSlowTask();
+    return (bIsSuccess && OutStaticMeshes.Num() > 0);
 }
 
 template<typename TEngineDataType>

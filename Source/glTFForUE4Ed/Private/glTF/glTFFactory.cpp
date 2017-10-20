@@ -67,7 +67,7 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
         return nullptr;
     }
 
-    return FglTFImporter::Get().CreateMesh(glTFImportOptions, GlTF, InClass, InParent);
+    return FglTFImporter::Get().Create(glTFImportOptions, GlTF, InClass, InParent, InWarn);
 }
 
 #undef LOCTEXT_NAMESPACE
