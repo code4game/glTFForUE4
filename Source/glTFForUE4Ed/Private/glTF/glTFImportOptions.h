@@ -22,6 +22,9 @@ struct FglTFImportOptions
     bool bInvertNormal;
 
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    bool bImportAllScenes;
+
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bImportMaterial;
 
     /// Build setting

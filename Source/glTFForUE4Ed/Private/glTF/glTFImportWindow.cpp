@@ -186,11 +186,32 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(STextBlock)
+                                .ToolTipText(NSLOCTEXT("glTFForUE4Ed", "ImportAllScenes_ToolTip", "Import all scenes!"))
+                                .MinDesiredWidth(200)
+                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                                .Text(LOCTEXT("SglTFImportWindow_ImportAllScenes_Title", "Import All Scenes: "))
+                        ]
+                        + SGridPanel::Slot(1, 0)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(SCheckBox)
+                                .ToolTipText(NSLOCTEXT("glTFForUE4Ed", "ImportAllScenes_ToolTip", "Import all scenes!"))
+                                .IsChecked(glTFImportOptions.Pin()->bImportAllScenes ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImportWindow::HandleMeshImportAllScenes)
+                        ]
+                        + SGridPanel::Slot(0, 1)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(STextBlock)
                                 .MinDesiredWidth(200)
                                 .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
                                 .Text(LOCTEXT("SglTFImportWindow_InvertNormal_Title", "Invert Normal: "))
                         ]
-                        + SGridPanel::Slot(1, 0)
+                        + SGridPanel::Slot(1, 1)
                             .Padding(2)
                             .HAlign(HAlign_Left)
                             .VAlign(VAlign_Center)
@@ -199,7 +220,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                                 .IsChecked(glTFImportOptions.Pin()->bInvertNormal ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
                                 .OnCheckStateChanged(this, &SglTFImportWindow::HandleMeshInvertNormal)
                         ]
-                        + SGridPanel::Slot(0, 1)
+                        + SGridPanel::Slot(0, 2)
                             .Padding(2)
                             .HAlign(HAlign_Left)
                             .VAlign(VAlign_Center)
@@ -208,7 +229,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                                 .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
                                 .Text(LOCTEXT("SglTFImportWindow_InvertTangent_Title", "Scale Ratio: "))
                         ]
-                        + SGridPanel::Slot(1, 1)
+                        + SGridPanel::Slot(1, 2)
                             .Padding(2)
                             .HAlign(HAlign_Left)
                             .VAlign(VAlign_Center)
@@ -473,6 +494,20 @@ FReply SglTFImportWindow::OnCancel()
     return FReply::Handled();
 }
 
+void SglTFImportWindow::HandleMeshImportAllScenes(ECheckBoxState InCheckBoxState)
+{
+    check(glTFImportOptions.IsValid());
+
+    glTFImportOptions.Pin()->bImportAllScenes = (InCheckBoxState == ECheckBoxState::Checked);
+}
+
+void SglTFImportWindow::HandleMeshInvertNormal(ECheckBoxState InCheckBoxState)
+{
+    check(glTFImportOptions.IsValid());
+
+    glTFImportOptions.Pin()->bInvertNormal = (InCheckBoxState == ECheckBoxState::Checked);
+}
+
 void SglTFImportWindow::HandleMeshScaleRatioX(float InNewValue)
 {
     check(glTFImportOptions.IsValid());
@@ -491,13 +526,6 @@ void SglTFImportWindow::HandleMeshScaleRatioZ(float InNewValue)
     check(glTFImportOptions.IsValid());
 
     glTFImportOptions.Pin()->MeshScaleRatio.Z = InNewValue;
-}
-
-void SglTFImportWindow::HandleMeshInvertNormal(ECheckBoxState InCheckBoxState)
-{
-    check(glTFImportOptions.IsValid());
-
-    glTFImportOptions.Pin()->bInvertNormal = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
 void SglTFImportWindow::HandleMaterialImportMaterial(ECheckBoxState InCheckBoxState)

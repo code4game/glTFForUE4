@@ -9,6 +9,8 @@
 #include "RawMesh.h"
 #include "Engine/StaticMesh.h"
 #include "StaticMeshResources.h"
+#include "Misc/Base64.h"
+#include "Misc/SecureHash.h"
 #include "Runtime/Launch/Resources/Version.h"
 
 const FglTFImporter& FglTFImporter::Get()
@@ -36,13 +38,52 @@ public:
         {
             const std::shared_ptr<libgltf::SBuffer>& Buffer = InBuffers[i];
             if (!Buffer) continue;
-            const FString BufferFileName = Buffer->uri.c_str();
-            if (BufferFiles.Find(BufferFileName) != nullptr) continue;
-            const FString BufferFilePath = InFileFolderPath / BufferFileName;
-            TArray<uint8> BufferFileData;
-            if (!FFileHelper::LoadFileToArray(BufferFileData, *BufferFilePath)) continue;
-            IndexToUri.Add(i, BufferFileName);
-            BufferFiles.Add(BufferFileName, BufferFileData);
+            const FString BufferUri = Buffer->uri.c_str();
+
+            FString BufferFileName = BufferUri;
+            FString BufferStream = BufferUri;
+
+            if (BufferStream.RemoveFromStart(TEXT("data:application/octet-stream;")))
+            {
+                BufferFileName = FMD5::HashAnsiString(*BufferStream);
+                if (BufferFiles.Find(BufferFileName) != nullptr) continue;
+
+                FString StreamType;
+                int32 FirstCommaIndex = 0;
+                if (BufferStream.FindChar(TEXT(','), FirstCommaIndex))
+                {
+                    StreamType = BufferStream.Left(FirstCommaIndex);
+                }
+
+                TArray<uint8> BufferData;
+                if (StreamType == TEXT("base64") && BufferStream.RemoveFromStart(TEXT("base64,")))
+                {
+                    if (!FBase64::Decode(BufferStream, BufferData))
+                    {
+                        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Failed to decode the base64 data!"));
+                    }
+                    if (BufferData.Num() != Buffer->byteLength)
+                    {
+                        BufferData.Empty();
+                        UE_LOG(LogglTFForUE4Ed, Error, TEXT("The size of data is not same as buffer"));
+                    }
+                }
+                else
+                {
+                    UE_LOG(LogglTFForUE4Ed, Error, TEXT("Can't decode the type(%s) of the string"), *StreamType);
+                }
+                IndexToUri.Add(i, BufferFileName);
+                BufferFiles.Add(BufferFileName, BufferData);
+            }
+            else
+            {
+                if (BufferFiles.Find(BufferFileName) != nullptr) continue;
+                const FString BufferFilePath = InFileFolderPath / BufferFileName;
+                TArray<uint8> BufferData;
+                if (!FFileHelper::LoadFileToArray(BufferData, *BufferFilePath)) continue;
+                IndexToUri.Add(i, BufferFileName);
+                BufferFiles.Add(BufferFileName, BufferData);
+            }
         }
     }
 
@@ -116,10 +157,22 @@ UObject* FglTFImporter::CreateMesh(const TWeakPtr<FglTFImportOptions>& InglTFImp
     FlushRenderingCommands();
 
     UObject* StaticMesh = nullptr;
-    if (InGlTF->scene)
+    if (!glTFImportOptions->bImportAllScenes && InGlTF->scene)
     {
         const std::shared_ptr<libgltf::SScene>& Scene = InGlTF->scenes[(int32)(*InGlTF->scene)];
         if (Scene)
+        {
+            TArray<UStaticMesh*> StaticMeshes;
+            if (CreateStaticMesh(InglTFImportOptions, Scene->nodes, InGlTF, BufferFiles, StaticMeshes)
+                && StaticMeshes.Num() > 0)
+            {
+                StaticMesh = StaticMeshes[0];
+            }
+        }
+    }
+    else if (InGlTF->scenes.size() > 0)
+    {
+        for (const std::shared_ptr<libgltf::SScene>& Scene : InGlTF->scenes)
         {
             TArray<UStaticMesh*> StaticMeshes;
             if (CreateStaticMesh(InglTFImportOptions, Scene->nodes, InGlTF, BufferFiles, StaticMeshes)
@@ -142,8 +195,10 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
 
     TSharedPtr<FglTFImportOptions> glTFImportOptions = InglTFImportOptions.Pin();
 
+    FString ImportedBaseFilename = FPaths::GetBaseFilename(glTFImportOptions->FilePathInOS);
+
     /// Create new package
-    FString PackageName = FPackageName::GetLongPackagePath(glTFImportOptions->FilePathInEngine) / InMesh->name.c_str();
+    FString PackageName = FPackageName::GetLongPackagePath(glTFImportOptions->FilePathInEngine) / (ImportedBaseFilename + TEXT("_") + (InMesh->name.size() <= 0 ? TEXT("none") : InMesh->name.c_str()));
     UPackage* Package = FindPackage(nullptr, *PackageName);
     if (!Package)
     {
