@@ -60,14 +60,13 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
 
     std::shared_ptr<libgltf::SGlTF> GlTF;
     std::wstring GlTFString = InBuffer;
-    bool bIsSuccessToParse = (GlTF << GlTFString);
-    if (!bIsSuccessToParse)
+    if (!(GlTF << GlTFString))
     {
-        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Failed to parse the gltf file %s"), *InName.ToString());
+        InWarn->Log(ELogVerbosity::Error, FText::Format(NSLOCTEXT("glTFForUE4Ed", "FailedToParseTheglTFFile", "Failed to parse the glTF file {0}"), FText::FromName(InName)).ToString());
         return nullptr;
     }
 
-    return FglTFImporter::Get().Create(glTFImportOptions, GlTF, InClass, InParent, InWarn);
+    return FglTFImporter::Get(InWarn).Create(glTFImportOptions, GlTF, InClass, InParent);
 }
 
 #undef LOCTEXT_NAMESPACE

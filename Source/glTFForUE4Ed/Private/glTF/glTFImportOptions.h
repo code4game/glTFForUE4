@@ -15,6 +15,7 @@ struct FglTFImportOptions
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     FString FilePathInEngine;
 
+    /// Mesh
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     FVector MeshScaleRatio;
 
@@ -24,6 +25,7 @@ struct FglTFImportOptions
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bImportAllScenes;
 
+    /// Material
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bImportMaterial;
 
