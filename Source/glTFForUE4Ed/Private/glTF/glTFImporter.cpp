@@ -385,7 +385,8 @@ UStaticMesh* FglTFImporter::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>&
         /// And invert the position
         for (FVector& Position : NewRawMesh.VertexPositions)
         {
-            Position = Position * glTFImportOptions->MeshScaleRatio * -1.0f;
+            Position = Position * glTFImportOptions->MeshScaleRatio;
+            Swap(Position.Y, Position.Z);
         }
 
         SrcModel.RawMeshBulkData->SaveRawMesh(NewRawMesh);

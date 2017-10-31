@@ -15,6 +15,16 @@ struct FglTFImportOptions
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     FString FilePathInEngine;
 
+    /// Build setting
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    bool bImportAllScenes;
+
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    bool bImportSkeleton;
+
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    bool bImportMaterial;
+
     /// Mesh
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     FVector MeshScaleRatio;
@@ -23,14 +33,6 @@ struct FglTFImportOptions
     bool bInvertNormal;
 
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bImportAllScenes;
-
-    /// Material
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bImportMaterial;
-
-    /// Build setting
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bUseMikkTSpace;
 
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
@@ -38,6 +40,8 @@ struct FglTFImportOptions
 
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bRecomputeTangents;
+
+    /// Material
 
     static const FglTFImportOptions Default;
     static FglTFImportOptions Current;

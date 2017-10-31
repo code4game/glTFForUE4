@@ -35,12 +35,13 @@ protected:
     bool CanImport() const;
     FReply OnImport();
     FReply OnCancel();
-    void HandleMeshImportAllScenes(ECheckBoxState InCheckBoxState);
-    void HandleMeshInvertNormal(ECheckBoxState InCheckBoxState);
+    void HandleImportAllScenes(ECheckBoxState InCheckBoxState);
+    void HandleImportSkeleton(ECheckBoxState InCheckBoxState);
+    void HandleImportMaterial(ECheckBoxState InCheckBoxState);
     void HandleMeshScaleRatioX(float InNewValue);
     void HandleMeshScaleRatioY(float InNewValue);
     void HandleMeshScaleRatioZ(float InNewValue);
-    void HandleMaterialImportMaterial(ECheckBoxState InCheckBoxState);
+    void HandleMeshInvertNormal(ECheckBoxState InCheckBoxState);
     void HandleMeshUseMikkTSpace(ECheckBoxState InCheckBoxState);
     void HandleMeshRecomputeNormals(ECheckBoxState InCheckBoxState);
     void HandleMeshRecomputeTangents(ECheckBoxState InCheckBoxState);
