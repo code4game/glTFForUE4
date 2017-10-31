@@ -3,17 +3,24 @@
 #include "SlateBasics.h"
 #include "AssetRegistryModule.h"
 
+namespace libgltf
+{
+    struct SGlTF;
+}
+
 class SglTFImportWindow : public SCompoundWidget
 {
 public:
-    static TSharedPtr<struct FglTFImportOptions> Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, bool& OutCancel);
+    static TSharedPtr<struct FglTFImportOptions> Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool& OutCancel);
 
 public:
     SLATE_BEGIN_ARGS(SglTFImportWindow)
-        : _glTFImportOptions(nullptr)
+        : _GlTF(nullptr)
+        , _glTFImportOptions(nullptr)
         , _WidgetWindow(nullptr)
         {}
 
+        SLATE_ARGUMENT(TSharedPtr<libgltf::SGlTF>, GlTF)
         SLATE_ARGUMENT(TSharedPtr<struct FglTFImportOptions>, glTFImportOptions)
         SLATE_ARGUMENT(TSharedPtr<SWindow>, WidgetWindow)
     SLATE_END_ARGS()
@@ -47,6 +54,7 @@ protected:
     void HandleMeshRecomputeTangents(ECheckBoxState InCheckBoxState);
 
 private:
+    TWeakPtr<libgltf::SGlTF> GlTF;
     TWeakPtr<struct FglTFImportOptions> glTFImportOptions;
     TWeakPtr<SWindow> WidgetWindow;
 };

@@ -3,6 +3,8 @@
 
 #include "glTF/glTFImportOptions.h"
 
+#include "libgltf/libgltf.h"
+
 #include "MainFrame.h"
 #include "IDocumentation.h"
 #include "PropertyEditorModule.h"
@@ -11,8 +13,11 @@
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
 
-TSharedPtr<FglTFImportOptions> SglTFImportWindow::Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, bool& OutCancel)
+TSharedPtr<FglTFImportOptions> SglTFImportWindow::Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool& OutCancel)
 {
+    TSharedPtr<libgltf::SGlTF> GlTF = MakeShareable(new libgltf::SGlTF());
+    (*GlTF) = InGlTF;
+
     TSharedPtr<FglTFImportOptions> glTFImportOptions = MakeShareable(new FglTFImportOptions());
     (*glTFImportOptions) = FglTFImportOptions::Current;
 
@@ -35,6 +40,7 @@ TSharedPtr<FglTFImportOptions> SglTFImportWindow::Open(const FString& InFilePath
     Window->SetContent
     (
         SAssignNew(glTFImportWindow, SglTFImportWindow)
+            .GlTF(GlTF)
             .glTFImportOptions(glTFImportOptions)
             .WidgetWindow(Window)
     );
@@ -62,6 +68,7 @@ SglTFImportWindow::SglTFImportWindow()
 
 void SglTFImportWindow::Construct(const FArguments& InArgs)
 {
+    GlTF = InArgs._GlTF;
     WidgetWindow = InArgs._WidgetWindow;
     glTFImportOptions = InArgs._glTFImportOptions;
     checkf(glTFImportOptions.IsValid(), TEXT("Why the argument - glTFImportOptions is null?"));
