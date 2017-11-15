@@ -44,9 +44,18 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
         return nullptr;
     }
 
+    /// Parse and check the buffer
+    std::shared_ptr<libgltf::SGlTF> GlTF;
+    std::wstring GlTFString = InBuffer;
+    if (!(GlTF << GlTFString))
+    {
+        InWarn->Log(ELogVerbosity::Error, FText::Format(NSLOCTEXT("glTFForUE4Ed", "FailedToParseTheglTFFile", "Failed to parse the glTF file {0}"), FText::FromName(InName)).ToString());
+        return nullptr;
+    }
+
     /// Open import window, allow to configure some options
     bool bCancel = false;
-    TSharedPtr<FglTFImportOptions> glTFImportOptions = SglTFImportWindow::Open(FilePathInOS, InParent->GetPathName(), bCancel);
+    TSharedPtr<FglTFImportOptions> glTFImportOptions = SglTFImportWindow::Open(FilePathInOS, InParent->GetPathName(), *GlTF, bCancel);
     if (bCancel)
     {
         UE_LOG(LogglTFForUE4Ed, Display, TEXT("Cancel to import the file - %s"), *FilePathInOS);
@@ -58,16 +67,7 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
         return nullptr;
     }
 
-    std::shared_ptr<libgltf::SGlTF> GlTF;
-    std::wstring GlTFString = InBuffer;
-    bool bIsSuccessToParse = (GlTF << GlTFString);
-    if (!bIsSuccessToParse)
-    {
-        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Failed to parse the gltf file %s"), *InName.ToString());
-        return nullptr;
-    }
-
-    return FglTFImporter::Get().CreateMesh(glTFImportOptions, GlTF, InClass, InParent);
+    return FglTFImporter::Get(InWarn).Create(glTFImportOptions, GlTF, InClass, InParent);
 }
 
 #undef LOCTEXT_NAMESPACE

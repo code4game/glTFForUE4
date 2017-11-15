@@ -14,19 +14,21 @@ namespace libgltf
 class FglTFImporter
 {
 public:
-    static const FglTFImporter& Get();
+    static const FglTFImporter& Get(class FFeedbackContext* InFeedbackContext);
 
 private:
-    FglTFImporter();
+    explicit FglTFImporter(class FFeedbackContext* InFeedbackContext);
     virtual ~FglTFImporter();
 
 public:
-    UObject* CreateMesh(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, UClass* InClass, UObject* InParent) const;
+    UObject* Create(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, UClass* InClass, UObject* InParent) const;
 
 private:
     UStaticMesh* CreateStaticMesh(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SMesh>& InMesh, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const class FBufferFiles& InBufferFiles) const;
-    bool CreateStaticMesh(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SNode>& InNode, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const class FBufferFiles& InBufferFiles, TArray<UStaticMesh*>& OutStaticMeshes) const;
-    bool CreateStaticMesh(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::vector<std::shared_ptr<libgltf::SGlTFId>>& InNodeIndices, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const class FBufferFiles& InBufferFiles, TArray<UStaticMesh*>& OutStaticMeshes) const;
+    bool CreateNode(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::vector<std::shared_ptr<libgltf::SGlTFId>>& InNodeIndices, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const class FBufferFiles& InBufferFiles, FText InParentNodeName, TArray<UStaticMesh*>& OutStaticMeshes) const;
+
+private:
+    class FFeedbackContext* FeedbackContext;
 
 public:
     static bool GetTriangleIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const class FBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<uint32>& OutTriangleIndices);
