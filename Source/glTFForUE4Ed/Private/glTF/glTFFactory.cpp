@@ -1,9 +1,9 @@
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTFFactory.h"
 
-#include "glTF/glTFImportWindow.h"
 #include "glTF/glTFImportOptions.h"
-#include "glTF/glTFImporter.h"
+#include "glTF/glTFImportOptionsWindowEd.h"
+#include "glTF/glTFImporterEd.h"
 
 #include "libgltf/libgltf.h"
 
@@ -55,7 +55,7 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
 
     /// Open import window, allow to configure some options
     bool bCancel = false;
-    TSharedPtr<FglTFImportOptions> glTFImportOptions = SglTFImportWindow::Open(FilePathInOS, InParent->GetPathName(), *GlTF, bCancel);
+    TSharedPtr<FglTFImportOptions> glTFImportOptions = SglTFImportOptionsWindowEd::Open(FilePathInOS, InParent->GetPathName(), *GlTF, bCancel);
     if (bCancel)
     {
         UE_LOG(LogglTFForUE4Ed, Display, TEXT("Cancel to import the file - %s"), *FilePathInOS);
@@ -67,7 +67,7 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
         return nullptr;
     }
 
-    return FglTFImporter::Get(InWarn).Create(glTFImportOptions, GlTF, InClass, InParent);
+    return FglTFImporterEd::Get(InWarn).Create(glTFImportOptions, GlTF, InClass, InParent);
 }
 
 #undef LOCTEXT_NAMESPACE

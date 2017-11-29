@@ -51,5 +51,46 @@ public class glTFForUE4 : ModuleRules
 				// ... add any modules that your module loads dynamically here ...
 			}
 			);
+
+        // libgltf
+        string LibName = "libgltf";
+        string LibPathRoot = System.IO.Path.Combine(ModuleDirectory, "..", "..", "Extras", LibName);
+
+        string LibPathInclude = System.IO.Path.Combine(LibPathRoot, "include");
+        PublicIncludePaths.Add(LibPathInclude);
+
+        string LibPathBinary = System.IO.Path.Combine(LibPathRoot, "bin");
+        if (Target.Platform == UnrealTargetPlatform.Win64)
+        {
+            LibPathBinary = System.IO.Path.Combine(LibPathBinary, "win64");
+            if (Target.Configuration == UnrealTargetConfiguration.Debug
+                || Target.Configuration == UnrealTargetConfiguration.DebugGame)
+            {
+                LibPathBinary = System.IO.Path.Combine(LibPathBinary, "Debug");
+                LibName = LibName + "d";
+            }
+            else
+            {
+                LibPathBinary = System.IO.Path.Combine(LibPathBinary, "Release");
+            }
+            LibName = LibName + ".lib";
+        }
+        else if (Target.Platform == UnrealTargetPlatform.Mac)
+        {
+            LibPathBinary = System.IO.Path.Combine(LibPathBinary, "macos");
+            if (Target.Configuration == UnrealTargetConfiguration.Debug
+                || Target.Configuration == UnrealTargetConfiguration.DebugGame)
+            {
+                LibPathBinary = System.IO.Path.Combine(LibPathBinary, "Debug");
+                LibName = LibName + "d";
+            }
+            else
+            {
+                LibPathBinary = System.IO.Path.Combine(LibPathBinary, "Release");
+            }
+            LibName = LibPathBinary + "/" + LibName + ".a";
+        }
+        PublicLibraryPaths.Add(LibPathBinary);
+        PublicAdditionalLibraries.Add(LibName);
 	}
 }

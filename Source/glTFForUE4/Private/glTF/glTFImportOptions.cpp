@@ -1,5 +1,5 @@
-#include "glTFForUE4EdPrivatePCH.h"
-#include "glTFImportOptions.h"
+#include "glTFForUE4PrivatePCH.h"
+#include "glTF/glTFImportOptions.h"
 
 FglTFImportOptions::FglTFImportOptions()
     : FilePathInOS(TEXT(""))

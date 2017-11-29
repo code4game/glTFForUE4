@@ -3,7 +3,7 @@
 #include "glTFImportOptions.generated.h"
 
 USTRUCT()
-struct FglTFImportOptions
+struct GLTFFORUE4_API FglTFImportOptions
 {
     GENERATED_USTRUCT_BODY()
 
