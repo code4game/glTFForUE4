@@ -8,7 +8,7 @@
 #include "Misc/Base64.h"
 #include "Misc/SecureHash.h"
 
-FBufferFiles::FBufferFiles(const FString& InFileFolderPath, const std::vector<std::shared_ptr<libgltf::SBuffer>>& InBuffers)
+FglTFBufferFiles::FglTFBufferFiles(const FString& InFileFolderPath, const std::vector<std::shared_ptr<libgltf::SBuffer>>& InBuffers)
 {
     for (int32 i = 0; i < static_cast<int32>(InBuffers.size()); ++i)
     {
@@ -65,14 +65,14 @@ FBufferFiles::FBufferFiles(const FString& InFileFolderPath, const std::vector<st
     }
 }
 
-const TArray<uint8>& FBufferFiles::operator[](const FString& InKey) const
+const TArray<uint8>& FglTFBufferFiles::operator[](const FString& InKey) const
 {
     const TArray<uint8>* FoundBufferFile = BufferFiles.Find(InKey);
     if (!FoundBufferFile) return EmptyBufferFile;
     return *FoundBufferFile;
 }
 
-const TArray<uint8>& FBufferFiles::operator[](int32 InIndex) const
+const TArray<uint8>& FglTFBufferFiles::operator[](int32 InIndex) const
 {
     const FString* UriPtr = IndexToUri.Find(InIndex);
     if (!UriPtr) return EmptyBufferFile;
@@ -115,7 +115,7 @@ UObject* FglTFImporter::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportO
     TSharedPtr<FglTFImportOptions> glTFImportOptions = InglTFImportOptions.Pin();
 
     const FString FolderPathInOS = FPaths::GetPath(glTFImportOptions->FilePathInOS);
-    FBufferFiles BufferFiles(FolderPathInOS, InGlTF->buffers);
+    FglTFBufferFiles BufferFiles(FolderPathInOS, InGlTF->buffers);
 
     //TODO: generate the procedural mesh
 
@@ -245,7 +245,7 @@ struct TAccessorTypeVec4
 };
 
 template<typename TAccessorDataType, typename TEngineDataType>
-bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, const std::shared_ptr<libgltf::SAccessor>& InAccessor, TArray<TEngineDataType>& OutDataArray)
+bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, const std::shared_ptr<libgltf::SAccessor>& InAccessor, TArray<TEngineDataType>& OutDataArray)
 {
     if (!InAccessor) return false;
 
@@ -330,7 +330,7 @@ bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBuffe
 }
 
 template<typename TEngineDataType>
-bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, const std::shared_ptr<libgltf::SAccessor>& InAccessor, TArray<TEngineDataType>& OutDataArray)
+bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, const std::shared_ptr<libgltf::SAccessor>& InAccessor, TArray<TEngineDataType>& OutDataArray)
 {
     if (!InAccessor) return false;
 
@@ -361,7 +361,7 @@ bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBuffe
     return false;
 }
 
-bool FglTFImporter::GetTriangleIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<uint32>& OutTriangleIndices)
+bool FglTFImporter::GetTriangleIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<uint32>& OutTriangleIndices)
 {
     if (!InGlTF) return false;
 
@@ -369,7 +369,7 @@ bool FglTFImporter::GetTriangleIndices(const std::shared_ptr<libgltf::SGlTF>& In
     return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutTriangleIndices);
 }
 
-bool FglTFImporter::GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector>& OutVertexPositions)
+bool FglTFImporter::GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector>& OutVertexPositions)
 {
     if (!InGlTF) return false;
 
@@ -377,7 +377,7 @@ bool FglTFImporter::GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& In
     return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutVertexPositions);
 }
 
-bool FglTFImporter::GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector>& OutVertexNormals)
+bool FglTFImporter::GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector>& OutVertexNormals)
 {
     if (!InGlTF) return false;
 
@@ -385,7 +385,7 @@ bool FglTFImporter::GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGl
     return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutVertexNormals);
 }
 
-bool FglTFImporter::GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector4>& OutVertexTangents)
+bool FglTFImporter::GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector4>& OutVertexTangents)
 {
     if (!InGlTF) return false;
 
@@ -393,7 +393,7 @@ bool FglTFImporter::GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InG
     return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutVertexTangents);
 }
 
-bool FglTFImporter::GetVertexTexcoords(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector2D>& OutVertexTexcoords)
+bool FglTFImporter::GetVertexTexcoords(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector2D>& OutVertexTexcoords)
 {
     if (!InGlTF) return false;
 

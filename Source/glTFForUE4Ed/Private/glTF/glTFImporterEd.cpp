@@ -9,8 +9,6 @@
 #include "RawMesh.h"
 #include "Engine/StaticMesh.h"
 #include "StaticMeshResources.h"
-#include "Misc/Base64.h"
-#include "Misc/SecureHash.h"
 #include "Runtime/Launch/Resources/Version.h"
 
 const FglTFImporterEd& FglTFImporterEd::Get(FFeedbackContext* InFeedbackContext)
@@ -49,7 +47,7 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImportOptions>& InglTFImpor
     TSharedPtr<FglTFImportOptions> glTFImportOptions = InglTFImportOptions.Pin();
 
     const FString FolderPathInOS = FPaths::GetPath(glTFImportOptions->FilePathInOS);
-    FBufferFiles BufferFiles(FolderPathInOS, InGlTF->buffers);
+    FglTFBufferFiles BufferFiles(FolderPathInOS, InGlTF->buffers);
 
     FlushRenderingCommands();
 
@@ -86,7 +84,7 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImportOptions>& InglTFImpor
     return StaticMesh;
 }
 
-UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SMesh>& InMesh, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles) const
+UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SMesh>& InMesh, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles) const
 {
     if (!InMesh) return nullptr;
 
@@ -354,7 +352,7 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
     return StaticMesh;
 }
 
-bool FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::vector<std::shared_ptr<libgltf::SGlTFId>>& InNodeIndices, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FBufferFiles& InBufferFiles, FText InParentNodeName, TArray<UStaticMesh*>& OutStaticMeshes) const
+bool FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::vector<std::shared_ptr<libgltf::SGlTFId>>& InNodeIndices, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, FText InParentNodeName, TArray<UStaticMesh*>& OutStaticMeshes) const
 {
     FText ImportMessage = FText::Format(NSLOCTEXT("glTFForUE4Ed", "BeginImportingglTFNodeTask", "Importing a node {0}"), InParentNodeName);
     FeedbackContext->BeginSlowTask(ImportMessage, true);
