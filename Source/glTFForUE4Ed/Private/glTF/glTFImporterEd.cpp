@@ -93,7 +93,11 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
     FString ImportedBaseFilename = FPaths::GetBaseFilename(glTFImportOptions->FilePathInOS);
 
     /// Create new package
-    FString PackageName = FPackageName::GetLongPackagePath(glTFImportOptions->FilePathInEngine) / (ImportedBaseFilename + TEXT("_") + (InMesh->name.size() <= 0 ? TEXT("none") : InMesh->name.c_str()));
+    FString MeshName(InMesh->name.c_str());
+    MeshName = MeshName.Replace(TEXT("."), TEXT(""));
+    MeshName = MeshName.Replace(TEXT("/"), TEXT(""));
+    MeshName = MeshName.Replace(TEXT("\\"), TEXT(""));
+    FString PackageName = FPackageName::GetLongPackagePath(glTFImportOptions->FilePathInEngine) / (ImportedBaseFilename + TEXT("_") + (MeshName.IsEmpty() ? TEXT("none") : MeshName));
     UPackage* Package = FindPackage(nullptr, *PackageName);
     if (!Package)
     {
