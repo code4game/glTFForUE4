@@ -1,59 +1,47 @@
-// Copyright 2017 Code 4 Game, Inc. All Rights Reserved.
+// Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
 
 using UnrealBuildTool;
 
 public class glTFForUE4Ed : ModuleRules
 {
-	public glTFForUE4Ed(TargetInfo Target)
-	{
-		
-		PublicIncludePaths.AddRange(
-			new string[] {
-				"glTFForUE4Ed/Public"
-				// ... add public include paths required here ...
-			}
-			);
+    public glTFForUE4Ed(TargetInfo Target)
+    {
+        PublicIncludePaths.AddRange(
+            new string[] {
+                "glTFForUE4Ed/Public"
+            }
+            );
 
-		PrivateIncludePaths.AddRange(
-			new string[] {
-				"glTFForUE4Ed/Private",
-				// ... add other private include paths required here ...
-			}
-			);
+        PrivateIncludePaths.AddRange(
+            new string[] {
+                "glTFForUE4Ed/Private",
+            }
+            );
 
-		PublicDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"Core",
-				// ... add other public dependencies that you statically link with here ...
-			}
-			);
+        PublicDependencyModuleNames.AddRange(
+            new string[]
+            {
+                "Core",
+            }
+            );
 
-		PrivateDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"CoreUObject",
-				"Engine",
-				"Slate",
-				"SlateCore",
-				"InputCore",
+        PrivateDependencyModuleNames.AddRange(
+            new string[]
+            {
+                "CoreUObject",
+                "Engine",
+                "Slate",
+                "SlateCore",
+                "InputCore",
                 "RenderCore",
-				"UnrealEd",
+                "UnrealEd",
                 "MainFrame",
                 "Documentation",
                 "PropertyEditor",
                 "EditorStyle",
                 "RawMesh",
                 "glTFForUE4",
-				// ... add private dependencies that you statically link with here ...	
-			}
-			);
-
-		DynamicallyLoadedModuleNames.AddRange(
-			new string[]
-			{
-				// ... add any modules that your module loads dynamically here ...
-			}
-			);
+            }
+            );
     }
 }
