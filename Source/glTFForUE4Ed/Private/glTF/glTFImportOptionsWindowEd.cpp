@@ -1,5 +1,7 @@
+// Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
+
 #include "glTFForUE4EdPrivatePCH.h"
-#include "glTF/glTFImportWindow.h"
+#include "glTF/glTFImportOptionsWindowEd.h"
 
 #include "glTF/glTFImportOptions.h"
 
@@ -13,7 +15,7 @@
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
 
-TSharedPtr<FglTFImportOptions> SglTFImportWindow::Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool& OutCancel)
+TSharedPtr<FglTFImportOptions> SglTFImportOptionsWindowEd::Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool& OutCancel)
 {
     TSharedPtr<libgltf::SGlTF> GlTF = MakeShareable(new libgltf::SGlTF());
     (*GlTF) = InGlTF;
@@ -36,10 +38,10 @@ TSharedPtr<FglTFImportOptions> SglTFImportWindow::Open(const FString& InFilePath
         .Title(LOCTEXT("glTFImportWindowTitle", "Import glTF"))
         .SizingRule(ESizingRule::Autosized);
 
-    TSharedPtr<SglTFImportWindow> glTFImportWindow;
+    TSharedPtr<SglTFImportOptionsWindowEd> glTFImportWindow;
     Window->SetContent
     (
-        SAssignNew(glTFImportWindow, SglTFImportWindow)
+        SAssignNew(glTFImportWindow, SglTFImportOptionsWindowEd)
             .GlTF(GlTF)
             .glTFImportOptions(glTFImportOptions)
             .WidgetWindow(Window)
@@ -58,15 +60,13 @@ TSharedPtr<FglTFImportOptions> SglTFImportWindow::Open(const FString& InFilePath
     return glTFImportOptions;
 }
 
-SglTFImportWindow::SglTFImportWindow()
-    : SCompoundWidget()
-    , glTFImportOptions(nullptr)
-    , WidgetWindow(nullptr)
+SglTFImportOptionsWindowEd::SglTFImportOptionsWindowEd()
+    : Super()
 {
     //
 }
 
-void SglTFImportWindow::Construct(const FArguments& InArgs)
+void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
 {
     GlTF = InArgs._GlTF;
     WidgetWindow = InArgs._WidgetWindow;
@@ -145,8 +145,8 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                     .ToolTipText(LOCTEXT("SglTFImportWindow_OnImport_ToolTip", "Import this glTF file"))
                     .HAlign(HAlign_Center)
                     .Text(LOCTEXT("SglTFImportWindow_OnImport", "Import file"))
-                    .IsEnabled(this, &SglTFImportWindow::CanImport)
-                    .OnClicked(this, &SglTFImportWindow::OnImport)
+                    .IsEnabled(this, &SglTFImportOptionsWindowEd::CanImport)
+                    .OnClicked(this, &SglTFImportOptionsWindowEd::OnImport)
             ]
             + SUniformGridPanel::Slot(2, 0)
             [
@@ -154,7 +154,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                     .ToolTipText(LOCTEXT("SglTFImportWindow_OnCancel_ToolTip", "Cancel to import this glTF file"))
                     .HAlign(HAlign_Center)
                     .Text(LOCTEXT("SglTFImportWindow_OnCancel", "Cancel"))
-                    .OnClicked(this, &SglTFImportWindow::OnCancel)
+                    .OnClicked(this, &SglTFImportOptionsWindowEd::OnCancel)
             ]
         ]
     ];
@@ -206,7 +206,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                             SNew(SCheckBox)
                                 .ToolTipText(NSLOCTEXT("glTFForUE4Ed", "ImportAllScenes_ToolTip", "Import all scenes!"))
                                 .IsChecked(glTFImportOptions.Pin()->bImportAllScenes ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportWindow::HandleImportAllScenes)
+                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleImportAllScenes)
                         ]
                         + SGridPanel::Slot(0, 1)
                             .Padding(2)
@@ -229,7 +229,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                                 .IsEnabled(false)
                                 .ToolTipText(NSLOCTEXT("glTFForUE4Ed", "ImportSkeleton_ToolTip", "Import skeleton!"))
                                 .IsChecked(glTFImportOptions.Pin()->bImportSkeleton ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportWindow::HandleImportSkeleton)
+                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleImportSkeleton)
                         ]
                         + SGridPanel::Slot(0, 2)
                             .Padding(2)
@@ -252,7 +252,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                                 .IsEnabled(false)
                                 .ToolTipText(NSLOCTEXT("glTFForUE4Ed", "ImportMaterial_ToolTip", "This function is in developing!"))
                                 .IsChecked(glTFImportOptions.Pin()->bImportMaterial ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportWindow::HandleImportMaterial)
+                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleImportMaterial)
                         ]
                     ]
                 ]
@@ -319,7 +319,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                                     .Value(glTFImportOptions.Pin()->MeshScaleRatio.X)
                                     .MinValue(0.0f)
                                     .MaxValue(100000.0f)
-                                    .OnValueChanged(this, &SglTFImportWindow::HandleMeshScaleRatioX)
+                                    .OnValueChanged(this, &SglTFImportOptionsWindowEd::HandleMeshScaleRatioX)
                             ]
                             + SHorizontalBox::Slot()
                                 .AutoWidth()
@@ -341,7 +341,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                                     .Value(glTFImportOptions.Pin()->MeshScaleRatio.Y)
                                     .MinValue(0.0f)
                                     .MaxValue(100000.0f)
-                                    .OnValueChanged(this, &SglTFImportWindow::HandleMeshScaleRatioY)
+                                    .OnValueChanged(this, &SglTFImportOptionsWindowEd::HandleMeshScaleRatioY)
                             ]
                             + SHorizontalBox::Slot()
                                 .AutoWidth()
@@ -363,7 +363,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                                     .Value(glTFImportOptions.Pin()->MeshScaleRatio.Z)
                                     .MinValue(0.0f)
                                     .MaxValue(100000.0f)
-                                    .OnValueChanged(this, &SglTFImportWindow::HandleMeshScaleRatioZ)
+                                    .OnValueChanged(this, &SglTFImportOptionsWindowEd::HandleMeshScaleRatioZ)
                             ]
                         ]
                         + SGridPanel::Slot(0, 1)
@@ -383,7 +383,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                         [
                             SNew(SCheckBox)
                                 .IsChecked(glTFImportOptions.Pin()->bInvertNormal ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportWindow::HandleMeshInvertNormal)
+                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleMeshInvertNormal)
                         ]
                         + SGridPanel::Slot(0, 2)
                             .Padding(2)
@@ -402,7 +402,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                         [
                             SNew(SCheckBox)
                                 .IsChecked(glTFImportOptions.Pin()->bUseMikkTSpace ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportWindow::HandleMeshUseMikkTSpace)
+                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleMeshUseMikkTSpace)
                         ]
                         + SGridPanel::Slot(0, 3)
                             .Padding(2)
@@ -421,7 +421,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                         [
                             SNew(SCheckBox)
                                 .IsChecked(glTFImportOptions.Pin()->bRecomputeNormals ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportWindow::HandleMeshRecomputeNormals)
+                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleMeshRecomputeNormals)
                         ]
                         + SGridPanel::Slot(0, 4)
                             .Padding(2)
@@ -440,7 +440,7 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
                         [
                             SNew(SCheckBox)
                                 .IsChecked(glTFImportOptions.Pin()->bRecomputeTangents ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportWindow::HandleMeshRecomputeTangents)
+                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleMeshRecomputeTangents)
                         ]
                     ]
                 ]
@@ -477,120 +477,6 @@ void SglTFImportWindow::Construct(const FArguments& InArgs)
             ]
         ]
     );
-}
-
-bool SglTFImportWindow::SupportsKeyboardFocus() const
-{
-    return true;
-}
-
-FReply SglTFImportWindow::OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent)
-{
-    if (InKeyEvent.GetKey() == EKeys::Escape)
-    {
-        return OnCancel();
-    }
-
-    return FReply::Unhandled();
-}
-
-TSharedPtr<FglTFImportOptions> SglTFImportWindow::GetImportOptions()
-{
-    return glTFImportOptions.Pin();
-}
-
-bool SglTFImportWindow::CanImport() const
-{
-    return true;
-}
-
-FReply SglTFImportWindow::OnImport()
-{
-    if (WidgetWindow.IsValid())
-    {
-        WidgetWindow.Pin()->RequestDestroyWindow();
-    }
-    return FReply::Unhandled();
-}
-
-FReply SglTFImportWindow::OnCancel()
-{
-    glTFImportOptions.Reset();
-
-    if (WidgetWindow.IsValid())
-    {
-        WidgetWindow.Pin()->RequestDestroyWindow();
-    }
-    return FReply::Handled();
-}
-
-void SglTFImportWindow::HandleImportAllScenes(ECheckBoxState InCheckBoxState)
-{
-    check(glTFImportOptions.IsValid());
-
-    glTFImportOptions.Pin()->bImportAllScenes = (InCheckBoxState == ECheckBoxState::Checked);
-}
-
-void SglTFImportWindow::HandleImportSkeleton(ECheckBoxState InCheckBoxState)
-{
-    check(glTFImportOptions.IsValid());
-
-    glTFImportOptions.Pin()->bImportSkeleton = (InCheckBoxState == ECheckBoxState::Checked);
-}
-
-void SglTFImportWindow::HandleImportMaterial(ECheckBoxState InCheckBoxState)
-{
-    check(glTFImportOptions.IsValid());
-
-    glTFImportOptions.Pin()->bImportMaterial = (InCheckBoxState == ECheckBoxState::Checked);
-}
-
-void SglTFImportWindow::HandleMeshScaleRatioX(float InNewValue)
-{
-    check(glTFImportOptions.IsValid());
-    glTFImportOptions.Pin()->MeshScaleRatio.X = InNewValue;
-}
-
-void SglTFImportWindow::HandleMeshScaleRatioY(float InNewValue)
-{
-    check(glTFImportOptions.IsValid());
-
-    glTFImportOptions.Pin()->MeshScaleRatio.Y = InNewValue;
-}
-
-void SglTFImportWindow::HandleMeshScaleRatioZ(float InNewValue)
-{
-    check(glTFImportOptions.IsValid());
-
-    glTFImportOptions.Pin()->MeshScaleRatio.Z = InNewValue;
-}
-
-void SglTFImportWindow::HandleMeshInvertNormal(ECheckBoxState InCheckBoxState)
-{
-    check(glTFImportOptions.IsValid());
-
-    glTFImportOptions.Pin()->bInvertNormal = (InCheckBoxState == ECheckBoxState::Checked);
-}
-
-void SglTFImportWindow::HandleMeshUseMikkTSpace(ECheckBoxState InCheckBoxState)
-{
-    check(glTFImportOptions.IsValid());
-
-    glTFImportOptions.Pin()->bUseMikkTSpace = (InCheckBoxState == ECheckBoxState::Checked);
-}
-
-void SglTFImportWindow::HandleMeshRecomputeNormals(ECheckBoxState InCheckBoxState)
-{
-    check(glTFImportOptions.IsValid());
-
-    glTFImportOptions.Pin()->bRecomputeNormals = (InCheckBoxState == ECheckBoxState::Checked);
-}
-
-void SglTFImportWindow::HandleMeshRecomputeTangents(ECheckBoxState InCheckBoxState)
-{
-    check(glTFImportOptions.IsValid());
-
-    glTFImportOptions.Pin()->bRecomputeTangents = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
 #undef LOCTEXT_NAMESPACE

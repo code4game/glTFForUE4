@@ -1,20 +1,21 @@
+// Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
+
 #pragma once
 
 #include "SlateBasics.h"
-#include "AssetRegistryModule.h"
 
 namespace libgltf
 {
     struct SGlTF;
 }
 
-class SglTFImportWindow : public SCompoundWidget
+class GLTFFORUE4_API SglTFImportOptionsWindow : public SCompoundWidget
 {
 public:
     static TSharedPtr<struct FglTFImportOptions> Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool& OutCancel);
 
 public:
-    SLATE_BEGIN_ARGS(SglTFImportWindow)
+    SLATE_BEGIN_ARGS(SglTFImportOptionsWindow)
         : _GlTF(nullptr)
         , _glTFImportOptions(nullptr)
         , _WidgetWindow(nullptr)
@@ -26,10 +27,10 @@ public:
     SLATE_END_ARGS()
 
 public:
-    SglTFImportWindow();
+    SglTFImportOptionsWindow();
 
 public:
-    void Construct(const FArguments& InArgs);
+    virtual void Construct(const FArguments& InArgs);
 
 public:
     virtual bool SupportsKeyboardFocus() const override;
@@ -53,7 +54,7 @@ protected:
     void HandleMeshRecomputeNormals(ECheckBoxState InCheckBoxState);
     void HandleMeshRecomputeTangents(ECheckBoxState InCheckBoxState);
 
-private:
+protected:
     TWeakPtr<libgltf::SGlTF> GlTF;
     TWeakPtr<struct FglTFImportOptions> glTFImportOptions;
     TWeakPtr<SWindow> WidgetWindow;

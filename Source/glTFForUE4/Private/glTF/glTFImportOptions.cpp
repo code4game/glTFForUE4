@@ -1,5 +1,7 @@
-#include "glTFForUE4EdPrivatePCH.h"
-#include "glTFImportOptions.h"
+// Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
+
+#include "glTFForUE4PrivatePCH.h"
+#include "glTF/glTFImportOptions.h"
 
 FglTFImportOptions::FglTFImportOptions()
     : FilePathInOS(TEXT(""))
