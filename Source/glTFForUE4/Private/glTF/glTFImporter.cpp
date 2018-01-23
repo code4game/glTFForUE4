@@ -16,7 +16,7 @@ FglTFBufferFiles::FglTFBufferFiles(const FString& InFileFolderPath, const std::v
     {
         const std::shared_ptr<libgltf::SBuffer>& Buffer = InBuffers[i];
         if (!Buffer) continue;
-        const FString BufferUri = Buffer->uri.c_str();
+        const FString BufferUri = UTF8_TO_TCHAR(Buffer->uri.c_str());
 
         FString BufferFileName = BufferUri;
         FString BufferStream = BufferUri;
@@ -110,7 +110,7 @@ UObject* FglTFImporter::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportO
 
     if (!InGlTF->asset || InGlTF->asset->version != TEXT("2.0"))
     {
-        UE_LOG(LogglTFForUE4, Error, TEXT("Invalid version: %s!"), !(InGlTF->asset) ? TEXT("none") : InGlTF->asset->version.c_str());
+        UE_LOG(LogglTFForUE4, Error, TEXT("Invalid version: %s!"), !(InGlTF->asset) ? TEXT("none") : UTF8_TO_TCHAR(InGlTF->asset->version.c_str()));
         return nullptr;
     }
 
@@ -325,7 +325,7 @@ bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFB
     }
     else
     {
-        UE_LOG(LogglTFForUE4, Error, TEXT("Not supports the accessor's type(%s)!"), InAccessor->type.c_str());
+        UE_LOG(LogglTFForUE4, Error, TEXT("Not supports the accessor's type(%s)!"), UTF8_TO_TCHAR(InAccessor->type.c_str()));
         return false;
     }
     return true;
