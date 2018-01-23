@@ -15,11 +15,17 @@
 
 ## Engine Version
 
-Support: 4.10 ~ 4.18
-
-## Release
-
-[![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4)
+| UE4 | Download |
+|:---:|:--------:|
+| [![Support UE4.10](https://img.shields.io/badge/ue-4%2E10-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) |
+| [![Support UE4.11](https://img.shields.io/badge/ue-4%2E11-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) |
+| [![Support UE4.12](https://img.shields.io/badge/ue-4%2E12-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) |
+| [![Support UE4.13](https://img.shields.io/badge/ue-4%2E13-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) |
+| [![Support UE4.14](https://img.shields.io/badge/ue-4%2E14-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) |
+| [![Support UE4.15](https://img.shields.io/badge/ue-4%2E15-green.svg?style=flat)](#) | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
+| [![Support UE4.16](https://img.shields.io/badge/ue-4%2E16-green.svg?style=flat)](#) | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
+| [![Support UE4.17](https://img.shields.io/badge/ue-4%2E17-green.svg?style=flat)](#) | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
+| [![Support UE4.18](https://img.shields.io/badge/ue-4%2E18-green.svg?style=flat)](#) | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
 
 ## License
 
