@@ -108,7 +108,7 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImportOptions>& InglTFImpor
 
     if (!InGlTF->asset || InGlTF->asset->version != TEXT("2.0"))
     {
-        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Invalid version: %s!"), !(InGlTF->asset) ? TEXT("none") : UTF8_TO_TCHAR(InGlTF->asset->version.c_str()));
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Invalid version: %s!"), !(InGlTF->asset) ? TEXT("none") : InGlTF->asset->version.c_str());
         return nullptr;
     }
 
@@ -173,7 +173,7 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
 
     if (InputClass != UStaticMesh::StaticClass() || !InputParent || !InputName.IsValid()) return nullptr;
 
-    FString SceneName(UTF8_TO_TCHAR(InScene->name.c_str()));
+    FString SceneName(InScene->name.c_str());
     FText TaskName = FText::Format(LOCTEXT("BeginImportMeshTask", "Importing the scene ({0}) as a static mesh ({1})"), FText::FromString(SceneName), FText::FromName(InputName));
     glTFForUE4::FFeedbackTaskWrapper FeedbackTaskWrapper(FeedbackContext, TaskName, true);
 
@@ -241,7 +241,7 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
     FString ImportedBaseFilename = FPaths::GetBaseFilename(glTFImportOptions->FilePathInOS);
 
     /// Create new package
-    FString MeshName(UTF8_TO_TCHAR(InMesh->name.c_str()));
+    FString MeshName(InMesh->name.c_str());
     MeshName = MeshName.Replace(TEXT("."), TEXT(""));
     MeshName = MeshName.Replace(TEXT("/"), TEXT(""));
     MeshName = MeshName.Replace(TEXT("\\"), TEXT(""));
@@ -535,7 +535,7 @@ bool FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImportOptions>& InglTFImpor
 
             if (Mesh)
             {
-                FeedbackTaskWrapper.StatusUpdate(static_cast<int32>(i), static_cast<int32>(count), FText::FromString(UTF8_TO_TCHAR(Mesh->name.c_str())));
+                FeedbackTaskWrapper.StatusUpdate(static_cast<int32>(i), static_cast<int32>(count), FText::FromString(Mesh->name.c_str()));
             }
 
             UStaticMesh* NewStaticMesh = CreateStaticMesh(InglTFImportOptions, Mesh, InGlTF, InBufferFiles);
@@ -545,7 +545,7 @@ bool FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImportOptions>& InglTFImpor
             }
         }
 
-        CreateNode(InglTFImportOptions, Node->children, InGlTF, InBufferFiles, FText::FromString(UTF8_TO_TCHAR(Node->name.c_str())), OutStaticMeshes);
+        CreateNode(InglTFImportOptions, Node->children, InGlTF, InBufferFiles, FText::FromString(Node->name.c_str()), OutStaticMeshes);
 
         FeedbackTaskWrapper.UpdateProgress(static_cast<int32>(i + 1), static_cast<int32>(count));
     }
