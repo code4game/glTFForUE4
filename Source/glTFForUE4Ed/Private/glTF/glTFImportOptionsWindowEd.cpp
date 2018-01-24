@@ -205,8 +205,8 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                         [
                             SNew(SCheckBox)
                                 .ToolTipText(NSLOCTEXT("glTFForUE4Ed", "ImportAllScenes_ToolTip", "Import all scenes!"))
-                                .IsChecked(glTFImportOptions.Pin()->bImportAllScenes ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleImportAllScenes)
+                                .IsChecked(glTFImportOptions.Pin()->bImportScene ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleImportScene)
                         ]
                         + SGridPanel::Slot(0, 1)
                             .Padding(2)

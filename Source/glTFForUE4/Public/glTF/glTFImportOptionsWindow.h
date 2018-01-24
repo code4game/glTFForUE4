@@ -43,7 +43,7 @@ protected:
     bool CanImport() const;
     FReply OnImport();
     FReply OnCancel();
-    void HandleImportAllScenes(ECheckBoxState InCheckBoxState);
+    void HandleImportScene(ECheckBoxState InCheckBoxState);
     void HandleImportSkeleton(ECheckBoxState InCheckBoxState);
     void HandleImportMaterial(ECheckBoxState InCheckBoxState);
     void HandleMeshScaleRatioX(float InNewValue);

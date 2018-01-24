@@ -17,7 +17,7 @@ struct GLTFFORUE4_API FglTFImportOptions
 
     /// Build setting
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bImportAllScenes;
+    bool bImportScene;
 
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bImportSkeleton;

@@ -54,7 +54,7 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImportOptions>& InglTFImpor
     FlushRenderingCommands();
 
     UObject* StaticMesh = nullptr;
-    if (!glTFImportOptions->bImportAllScenes && InGlTF->scene)
+    if (!glTFImportOptions->bImportScene && InGlTF->scene)
     {
         const std::shared_ptr<libgltf::SScene>& Scene = InGlTF->scenes[(int32)(*InGlTF->scene)];
         if (Scene)

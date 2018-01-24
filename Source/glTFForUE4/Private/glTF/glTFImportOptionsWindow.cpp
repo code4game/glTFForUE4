@@ -167,7 +167,7 @@ void SglTFImportOptionsWindow::Construct(const FArguments& InArgs)
                 [
                     SNew(STextBlock)
                         .Font(FCoreStyle::Get().GetFontStyle("CurveEd.InfoFont"))
-                        .Text(LOCTEXT("SglTFImportWindow_BuildSetting_Title", "Build Setting"))
+                        .Text(LOCTEXT("SglTFImportWindow_ImportSettings_Title", "Import Settings"))
                 ]
                 + SVerticalBox::Slot()
                     .AutoHeight()
@@ -183,10 +183,11 @@ void SglTFImportOptionsWindow::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(STextBlock)
-                                .ToolTipText(NSLOCTEXT("glTFForUE4Ed", "ImportAllScenes_ToolTip", "Import all scenes!"))
+                                .IsEnabled(false)
+                                .ToolTipText(LOCTEXT("SglTFImportWindow_ImportScene_ToolTip", "Import scene!"))
                                 .MinDesiredWidth(200)
                                 .Font(FCoreStyle::Get().GetFontStyle("CurveEd.InfoFont"))
-                                .Text(LOCTEXT("SglTFImportWindow_ImportAllScenes_Title", "Import All Scenes"))
+                                .Text(LOCTEXT("SglTFImportWindow_ImportScene_Title", "Import Scene"))
                         ]
                         + SGridPanel::Slot(1, 0)
                             .Padding(2)
@@ -194,9 +195,9 @@ void SglTFImportOptionsWindow::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(SCheckBox)
-                                .ToolTipText(NSLOCTEXT("glTFForUE4Ed", "ImportAllScenes_ToolTip", "Import all scenes!"))
-                                .IsChecked(glTFImportOptions.Pin()->bImportAllScenes ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportOptionsWindow::HandleImportAllScenes)
+                                .IsEnabled(false)
+                                .IsChecked(glTFImportOptions.Pin()->bImportScene ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImportOptionsWindow::HandleImportScene)
                         ]
                         + SGridPanel::Slot(0, 1)
                             .Padding(2)
@@ -205,7 +206,7 @@ void SglTFImportOptionsWindow::Construct(const FArguments& InArgs)
                         [
                             SNew(STextBlock)
                                 .IsEnabled(false)
-                                .ToolTipText(NSLOCTEXT("glTFForUE4Ed", "ImportSkeleton_ToolTip", "Import skeleton!"))
+                                .ToolTipText(LOCTEXT("SglTFImportWindow_ImportSkeleton_ToolTip", "Import skeleton!"))
                                 .MinDesiredWidth(200)
                                 .Font(FCoreStyle::Get().GetFontStyle("CurveEd.InfoFont"))
                                 .Text(LOCTEXT("SglTFImportWindow_ImportSkeleton_Title", "Import Skeleton"))
@@ -217,7 +218,6 @@ void SglTFImportOptionsWindow::Construct(const FArguments& InArgs)
                         [
                             SNew(SCheckBox)
                                 .IsEnabled(false)
-                                .ToolTipText(NSLOCTEXT("glTFForUE4Ed", "ImportSkeleton_ToolTip", "Import skeleton!"))
                                 .IsChecked(glTFImportOptions.Pin()->bImportSkeleton ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
                                 .OnCheckStateChanged(this, &SglTFImportOptionsWindow::HandleImportSkeleton)
                         ]
@@ -228,10 +228,10 @@ void SglTFImportOptionsWindow::Construct(const FArguments& InArgs)
                         [
                             SNew(STextBlock)
                                 .IsEnabled(false)
-                                .ToolTipText(NSLOCTEXT("glTFForUE4Ed", "ImportMaterial_ToolTip", "This function is in developing!"))
+                                .ToolTipText(LOCTEXT("SglTFImportWindow_ImportMaterial_ToolTip", "Import material!"))
                                 .MinDesiredWidth(200)
                                 .Font(FCoreStyle::Get().GetFontStyle("CurveEd.InfoFont"))
-                                .Text(LOCTEXT("SglTFImportWindow_ImportMaterial_Title", "Import Material: "))
+                                .Text(LOCTEXT("SglTFImportWindow_ImportMaterial_Title", "Import Material"))
                         ]
                         + SGridPanel::Slot(1, 2)
                             .Padding(2)
@@ -240,7 +240,6 @@ void SglTFImportOptionsWindow::Construct(const FArguments& InArgs)
                         [
                             SNew(SCheckBox)
                                 .IsEnabled(false)
-                                .ToolTipText(NSLOCTEXT("glTFForUE4Ed", "ImportMaterial_ToolTip", "This function is in developing!"))
                                 .IsChecked(glTFImportOptions.Pin()->bImportMaterial ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
                                 .OnCheckStateChanged(this, &SglTFImportOptionsWindow::HandleImportMaterial)
                         ]
@@ -514,11 +513,11 @@ FReply SglTFImportOptionsWindow::OnCancel()
     return FReply::Handled();
 }
 
-void SglTFImportOptionsWindow::HandleImportAllScenes(ECheckBoxState InCheckBoxState)
+void SglTFImportOptionsWindow::HandleImportScene(ECheckBoxState InCheckBoxState)
 {
     check(glTFImportOptions.IsValid());
 
-    glTFImportOptions.Pin()->bImportAllScenes = (InCheckBoxState == ECheckBoxState::Checked);
+    glTFImportOptions.Pin()->bImportScene = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
 void SglTFImportOptionsWindow::HandleImportSkeleton(ECheckBoxState InCheckBoxState)

@@ -6,7 +6,7 @@
 FglTFImportOptions::FglTFImportOptions()
     : FilePathInOS(TEXT(""))
     , FilePathInEngine(TEXT(""))
-    , bImportAllScenes(false)
+    , bImportScene(false)
     , bImportSkeleton(false)
     , bImportMaterial(false)
     , MeshScaleRatio(100.0f)
