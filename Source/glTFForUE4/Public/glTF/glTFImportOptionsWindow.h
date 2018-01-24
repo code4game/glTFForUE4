@@ -46,6 +46,7 @@ protected:
     void HandleImportScene(ECheckBoxState InCheckBoxState);
     void HandleImportSkeleton(ECheckBoxState InCheckBoxState);
     void HandleImportMaterial(ECheckBoxState InCheckBoxState);
+    void HandleMeshScaleRatio(FVector InNewValue);
     void HandleMeshScaleRatioX(float InNewValue);
     void HandleMeshScaleRatioY(float InNewValue);
     void HandleMeshScaleRatioZ(float InNewValue);

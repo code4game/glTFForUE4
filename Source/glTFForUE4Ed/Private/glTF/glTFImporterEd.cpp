@@ -13,14 +13,70 @@
 #include "StaticMeshResources.h"
 #include "Runtime/Launch/Resources/Version.h"
 
-const FglTFImporterEd& FglTFImporterEd::Get(FFeedbackContext* InFeedbackContext)
+#define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
+
+namespace glTFForUE4
 {
-    static const FglTFImporterEd glTFImporterInstance(InFeedbackContext);
-    return glTFImporterInstance;
+    class FFeedbackTaskWrapper
+    {
+    public:
+        explicit FFeedbackTaskWrapper(FFeedbackContext* InFeedbackContext, const FText& InTask, bool InShowProgressDialog)
+            : FeedbackContext(InFeedbackContext)
+        {
+            if (FeedbackContext)
+            {
+                FeedbackContext->BeginSlowTask(InTask, InShowProgressDialog);
+            }
+        }
+
+        virtual ~FFeedbackTaskWrapper()
+        {
+            if (FeedbackContext)
+            {
+                FeedbackContext->EndSlowTask();
+                FeedbackContext = nullptr;
+            }
+        }
+
+    public:
+        void UpdateProgress(int32 InNumerator, int32 InDenominator)
+        {
+            if (FeedbackContext)
+            {
+                FeedbackContext->UpdateProgress(InNumerator, InDenominator);
+            }
+        }
+
+        void StatusUpdate(int32 InNumerator, int32 InDenominator, const FText& InStatusText)
+        {
+            if (FeedbackContext)
+            {
+                FeedbackContext->StatusUpdate(InNumerator, InDenominator, InStatusText);
+            }
+        }
+
+        void StatusForceUpdate(int32 InNumerator, int32 InDenominator, const FText& InStatusText)
+        {
+            if (FeedbackContext)
+            {
+                FeedbackContext->StatusForceUpdate(InNumerator, InDenominator, InStatusText);
+            }
+        }
+
+    private:
+        FFeedbackContext* FeedbackContext;
+    };
 }
 
-FglTFImporterEd::FglTFImporterEd(FFeedbackContext* InFeedbackContext)
-    : Super(InFeedbackContext)
+TSharedPtr<FglTFImporterEd> FglTFImporterEd::Get(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext)
+{
+    TSharedPtr<FglTFImporterEd> glTFImporterEd = MakeShareable(new FglTFImporterEd);
+    glTFImporterEd->Set(InClass, InParent, InName, InFlags, InFeedbackContext);
+    return glTFImporterEd;
+}
+
+FglTFImporterEd::FglTFImporterEd()
+    : Super()
 {
     //
 }
@@ -30,9 +86,7 @@ FglTFImporterEd::~FglTFImporterEd()
     //
 }
 
-UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions
-    , const std::shared_ptr<libgltf::SGlTF>& InGlTF
-    , UClass* InClass, UObject* InParent) const
+UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF) const
 {
     if (!InGlTF)
     {
@@ -54,17 +108,16 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImportOptions>& InglTFImpor
     FlushRenderingCommands();
 
     UObject* StaticMesh = nullptr;
-    if (!glTFImportOptions->bImportScene && InGlTF->scene)
+    if (InGlTF->scene)
     {
         const std::shared_ptr<libgltf::SScene>& Scene = InGlTF->scenes[(int32)(*InGlTF->scene)];
         if (Scene)
         {
-            TArray<UStaticMesh*> StaticMeshes;
-            if (CreateNode(InglTFImportOptions, Scene->nodes, InGlTF, BufferFiles, FText::FromString(FolderPathInOS), StaticMeshes)
-                && StaticMeshes.Num() > 0)
-            {
-                StaticMesh = StaticMeshes[0];
-            }
+            StaticMesh = CreateStaticMesh(InglTFImportOptions, InGlTF, Scene, BufferFiles);
+        }
+        else
+        {
+            UE_LOG(LogglTFForUE4Ed, Error, TEXT("Invalid scene!"));
         }
     }
     else if (InGlTF->scenes.size() > 0)
@@ -84,6 +137,28 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImportOptions>& InglTFImpor
         UE_LOG(LogglTFForUE4Ed, Error, TEXT("No scene!"));
     }
     return StaticMesh;
+}
+
+UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SScene>& InScene, const FglTFBufferFiles& InBufferFiles) const
+{
+    if (!InGlTF || !InScene) return nullptr;
+
+    TSharedPtr<FglTFImportOptions> glTFImportOptions = InglTFImportOptions.Pin();
+
+    FString ImportedBaseFilename = FPaths::GetBaseFilename(glTFImportOptions->FilePathInOS);
+
+    if (InputClass != UStaticMesh::StaticClass() || !InputParent || !InputName.IsValid()) return nullptr;
+
+    FString SceneName(UTF8_TO_TCHAR(InScene->name.c_str()));
+    FText TaskName = FText::Format(LOCTEXT("BeginImportMeshTask", "Importing the scene ({0}) as a static mesh ({1})"), FText::FromString(SceneName), FText::FromName(InputName));
+    glTFForUE4::FFeedbackTaskWrapper FeedbackTaskWrapper(FeedbackContext, TaskName, true);
+
+    /// Create new static mesh
+    UStaticMesh* StaticMesh = NewObject<UStaticMesh>(InputParent, InputClass, InputName, InputFlags);
+    if (!StaticMesh) return nullptr;
+
+    //
+    return nullptr;
 }
 
 UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SMesh>& InMesh, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles) const
@@ -335,8 +410,7 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
         {
             for (const FText& BuildError : BuildErrors)
             {
-                FeedbackContext->Log(ELogVerbosity::Warning, BuildError.ToString());
-                //UE_LOG(LogglTFForUE4Ed, Warning, TEXT("BuildError: %s"),  *BuildError.ToString());
+                Feedback(ELogVerbosity::Warning, BuildError);
             }
         }
 
@@ -360,8 +434,9 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
 
 bool FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::vector<std::shared_ptr<libgltf::SGlTFId>>& InNodeIndices, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, FText InParentNodeName, TArray<UStaticMesh*>& OutStaticMeshes) const
 {
-    FText ImportMessage = FText::Format(NSLOCTEXT("glTFForUE4Ed", "BeginImportingglTFNodeTask", "Importing a node {0}"), InParentNodeName);
-    FeedbackContext->BeginSlowTask(ImportMessage, true);
+    FText ImportMessage = FText::Format(LOCTEXT("BeginImportingglTFNodeTask", "Importing a node {0}"), InParentNodeName);
+
+    glTFForUE4::FFeedbackTaskWrapper FeedbackTaskWrapper(FeedbackContext, ImportMessage, true);
 
     bool bIsSuccess = true;
     for (size_t i = 0, count = InNodeIndices.size(); i < count; ++i)
@@ -379,7 +454,7 @@ bool FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImportOptions>& InglTFImpor
             break;
         }
 
-        FeedbackContext->UpdateProgress(static_cast<int32>(i), static_cast<int32>(count));
+        FeedbackTaskWrapper.UpdateProgress(static_cast<int32>(i), static_cast<int32>(count));
 
         const std::shared_ptr<libgltf::SGlTFId>& MeshIndex = Node->mesh;
         if (MeshIndex)
@@ -388,7 +463,7 @@ bool FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImportOptions>& InglTFImpor
 
             if (Mesh)
             {
-                FeedbackContext->StatusUpdate(static_cast<int32>(i), static_cast<int32>(count), FText::FromString(UTF8_TO_TCHAR(Mesh->name.c_str())));
+                FeedbackTaskWrapper.StatusUpdate(static_cast<int32>(i), static_cast<int32>(count), FText::FromString(UTF8_TO_TCHAR(Mesh->name.c_str())));
             }
 
             UStaticMesh* NewStaticMesh = CreateStaticMesh(InglTFImportOptions, Mesh, InGlTF, InBufferFiles);
@@ -400,9 +475,10 @@ bool FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImportOptions>& InglTFImpor
 
         CreateNode(InglTFImportOptions, Node->children, InGlTF, InBufferFiles, FText::FromString(UTF8_TO_TCHAR(Node->name.c_str())), OutStaticMeshes);
 
-        FeedbackContext->UpdateProgress(static_cast<int32>(i + 1), static_cast<int32>(count));
+        FeedbackTaskWrapper.UpdateProgress(static_cast<int32>(i + 1), static_cast<int32>(count));
     }
 
-    FeedbackContext->EndSlowTask();
     return (bIsSuccess && OutStaticMeshes.Num() > 0);
 }
+
+#undef LOCTEXT_NAMESPACE

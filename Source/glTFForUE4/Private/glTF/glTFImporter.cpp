@@ -81,16 +81,21 @@ const TArray<uint8>& FglTFBufferFiles::operator[](int32 InIndex) const
     return (*this)[*UriPtr];
 }
 
-const FglTFImporter& FglTFImporter::Get(FFeedbackContext* InFeedbackContext)
+TSharedPtr<FglTFImporter> FglTFImporter::Get(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
 {
-    static const FglTFImporter glTFImporterInstance(InFeedbackContext);
-    return glTFImporterInstance;
+    TSharedPtr<FglTFImporter> glTFImporter = MakeShareable(new FglTFImporter);
+    glTFImporter->Set(InClass, InParent, InName, InFlags, InFeedbackContext);
+    return glTFImporter;
 }
 
-FglTFImporter::FglTFImporter(FFeedbackContext* InFeedbackContext)
-    : FeedbackContext(InFeedbackContext)
+FglTFImporter::FglTFImporter()
+    : InputClass(nullptr)
+    , InputParent(nullptr)
+    , InputName()
+    , InputFlags(RF_NoFlags)
+    , FeedbackContext(nullptr)
 {
-    check(FeedbackContext);
+    //
 }
 
 FglTFImporter::~FglTFImporter()
@@ -98,9 +103,17 @@ FglTFImporter::~FglTFImporter()
     //
 }
 
-UObject* FglTFImporter::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions
-    , const std::shared_ptr<libgltf::SGlTF>& InGlTF
-    , UClass* InClass, UObject* InParent) const
+FglTFImporter& FglTFImporter::Set(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext)
+{
+    InputClass = InClass;
+    InputParent = InParent;
+    InputName = InName;
+    InputFlags = InFlags;
+    FeedbackContext = InFeedbackContext;
+    return *this;
+}
+
+UObject* FglTFImporter::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF) const
 {
     if (!InGlTF)
     {
@@ -122,6 +135,15 @@ UObject* FglTFImporter::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportO
     //TODO: generate the procedural mesh
 
     return nullptr;
+}
+
+const FglTFImporter& FglTFImporter::Feedback(ELogVerbosity::Type InLogVerbosity, const FText& InMessge) const
+{
+    if (FeedbackContext)
+    {
+        FeedbackContext->Log(InLogVerbosity, InMessge.ToString());
+    }
+    return *this;
 }
 
 template<typename TEngineDataType>

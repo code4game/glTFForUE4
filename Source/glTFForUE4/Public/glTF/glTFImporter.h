@@ -9,8 +9,9 @@ namespace libgltf
 {
     struct SGlTF;
     struct SGlTFId;
-    struct SMesh;
+    struct SScene;
     struct SNode;
+    struct SMesh;
     struct SBuffer;
 }
 
@@ -57,16 +58,24 @@ private:
 class GLTFFORUE4_API FglTFImporter
 {
 public:
-    static const FglTFImporter& Get(class FFeedbackContext* InFeedbackContext);
+    static TSharedPtr<FglTFImporter> Get(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
 
-protected:
-    explicit FglTFImporter(class FFeedbackContext* InFeedbackContext);
+public:
+    FglTFImporter();
     virtual ~FglTFImporter();
 
 public:
-    virtual class UObject* Create(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, class UClass* InClass, class UObject* InParent) const;
+    virtual FglTFImporter& Set(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
+    virtual class UObject* Create(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF) const;
 
 protected:
+    const FglTFImporter& Feedback(ELogVerbosity::Type InLogVerbosity, const FText& InMessge) const;
+
+protected:
+    UClass* InputClass;
+    UObject* InputParent;
+    FName InputName;
+    EObjectFlags InputFlags;
     class FFeedbackContext* FeedbackContext;
 
 public:
