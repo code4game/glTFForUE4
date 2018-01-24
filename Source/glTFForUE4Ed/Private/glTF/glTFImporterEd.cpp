@@ -39,28 +39,40 @@ namespace glTFForUE4
         }
 
     public:
-        void UpdateProgress(int32 InNumerator, int32 InDenominator)
+        const FFeedbackTaskWrapper& Log(ELogVerbosity::Type InLogVerbosity, const FText& InMessge) const
+        {
+            if (FeedbackContext)
+            {
+                FeedbackContext->Log(InLogVerbosity, *InMessge.ToString());
+            }
+            return *this;
+        }
+
+        const FFeedbackTaskWrapper& UpdateProgress(int32 InNumerator, int32 InDenominator) const
         {
             if (FeedbackContext)
             {
                 FeedbackContext->UpdateProgress(InNumerator, InDenominator);
             }
+            return *this;
         }
 
-        void StatusUpdate(int32 InNumerator, int32 InDenominator, const FText& InStatusText)
+        const FFeedbackTaskWrapper& StatusUpdate(int32 InNumerator, int32 InDenominator, const FText& InStatusText) const
         {
             if (FeedbackContext)
             {
                 FeedbackContext->StatusUpdate(InNumerator, InDenominator, InStatusText);
             }
+            return *this;
         }
 
-        void StatusForceUpdate(int32 InNumerator, int32 InDenominator, const FText& InStatusText)
+        const FFeedbackTaskWrapper&  StatusForceUpdate(int32 InNumerator, int32 InDenominator, const FText& InStatusText) const
         {
             if (FeedbackContext)
             {
                 FeedbackContext->StatusForceUpdate(InNumerator, InDenominator, InStatusText);
             }
+            return *this;
         }
 
     private:
@@ -113,7 +125,19 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImportOptions>& InglTFImpor
         const std::shared_ptr<libgltf::SScene>& Scene = InGlTF->scenes[(int32)(*InGlTF->scene)];
         if (Scene)
         {
-            StaticMesh = CreateStaticMesh(InglTFImportOptions, InGlTF, Scene, BufferFiles);
+            if (0)
+            {
+                StaticMesh = CreateStaticMesh(InglTFImportOptions, InGlTF, Scene, BufferFiles); //TEST
+            }
+            else
+            {
+                TArray<UStaticMesh*> StaticMeshes;
+                if (CreateNode(InglTFImportOptions, Scene->nodes, InGlTF, BufferFiles, FText::FromString(FolderPathInOS), StaticMeshes)
+                    && StaticMeshes.Num() > 0)
+                {
+                    StaticMesh = StaticMeshes[0];
+                }
+            }
         }
         else
         {
@@ -157,8 +181,55 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
     UStaticMesh* StaticMesh = NewObject<UStaticMesh>(InputParent, InputClass, InputName, InputFlags);
     if (!StaticMesh) return nullptr;
 
-    //
-    return nullptr;
+    StaticMesh->SourceModels.Empty();
+    new(StaticMesh->SourceModels) FStaticMeshSourceModel();
+
+    FStaticMeshSourceModel& SourceModel = StaticMesh->SourceModels[0];
+    SourceModel.BuildSettings.bUseMikkTSpace = glTFImportOptions->bUseMikkTSpace;
+    SourceModel.BuildSettings.bRecomputeNormals = glTFImportOptions->bRecomputeNormals;
+    SourceModel.BuildSettings.bRecomputeTangents = glTFImportOptions->bRecomputeTangents;
+
+    StaticMesh->LightingGuid = FGuid::NewGuid();
+    StaticMesh->LightMapResolution = 64;
+    StaticMesh->LightMapCoordinateIndex = 1;
+
+    FRawMesh NewRawMesh;
+    SourceModel.RawMeshBulkData->LoadRawMesh(NewRawMesh);
+    NewRawMesh.Empty();
+
+    //TODO: gather mesh data
+
+    if (NewRawMesh.IsValidOrFixable())
+    {
+        SourceModel.RawMeshBulkData->SaveRawMesh(NewRawMesh);
+
+        /// Build the static mesh
+        TArray<FText> BuildErrors;
+        StaticMesh->Build(false, &BuildErrors);
+        if (BuildErrors.Num() <= 0)
+        {
+            //TODO: create material
+        }
+        else
+        {
+            FeedbackTaskWrapper.Log(ELogVerbosity::Warning, FText::FromString(TEXT("Failed to build the static mesh!")));
+            for (const FText& BuildError : BuildErrors)
+            {
+                FeedbackTaskWrapper.Log(ELogVerbosity::Warning, BuildError);
+            }
+        }
+
+        if (StaticMesh->AssetImportData)
+        {
+            StaticMesh->AssetImportData->Update(glTFImportOptions->FilePathInOS);
+        }
+    }
+    else
+    {
+        StaticMesh->ConditionalBeginDestroy();
+        StaticMesh = nullptr;
+    }
+    return StaticMesh;
 }
 
 UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SMesh>& InMesh, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles) const
@@ -191,17 +262,17 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
     StaticMesh->SourceModels.Empty();
     new(StaticMesh->SourceModels) FStaticMeshSourceModel();
 
-    FStaticMeshSourceModel& SrcModel = StaticMesh->SourceModels[0];
-    SrcModel.BuildSettings.bUseMikkTSpace = glTFImportOptions->bUseMikkTSpace;
-    SrcModel.BuildSettings.bRecomputeNormals = glTFImportOptions->bRecomputeNormals;
-    SrcModel.BuildSettings.bRecomputeTangents = glTFImportOptions->bRecomputeTangents;
+    FStaticMeshSourceModel& SourceModel = StaticMesh->SourceModels[0];
+    SourceModel.BuildSettings.bUseMikkTSpace = glTFImportOptions->bUseMikkTSpace;
+    SourceModel.BuildSettings.bRecomputeNormals = glTFImportOptions->bRecomputeNormals;
+    SourceModel.BuildSettings.bRecomputeTangents = glTFImportOptions->bRecomputeTangents;
 
     StaticMesh->LightingGuid = FGuid::NewGuid();
     StaticMesh->LightMapResolution = 64;
     StaticMesh->LightMapCoordinateIndex = 1;
 
     FRawMesh NewRawMesh;
-    SrcModel.RawMeshBulkData->LoadRawMesh(NewRawMesh);
+    SourceModel.RawMeshBulkData->LoadRawMesh(NewRawMesh);
     NewRawMesh.Empty();
 
     uint32 TriangleIndexStart = 0;
@@ -221,7 +292,7 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
         }
 
         TArray<FVector> Normals;
-        if (!SrcModel.BuildSettings.bRecomputeNormals
+        if (!SourceModel.BuildSettings.bRecomputeNormals
             && MeshPrimitive->attributes.find(TEXT("NORMAL")) != MeshPrimitive->attributes.cend()
             && !GetVertexNormals(InGlTF, InBufferFiles, *MeshPrimitive->attributes[TEXT("NORMAL")], Normals))
         {
@@ -229,7 +300,7 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
         }
 
         TArray<FVector4> Tangents;
-        if (!SrcModel.BuildSettings.bRecomputeTangents
+        if (!SourceModel.BuildSettings.bRecomputeTangents
             && MeshPrimitive->attributes.find(TEXT("TANGENT")) != MeshPrimitive->attributes.cend()
             && !GetVertexTangents(InGlTF, InBufferFiles, *MeshPrimitive->attributes[TEXT("TANGENT")], Tangents))
         {
@@ -265,7 +336,7 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
 
         if (Normals.Num() <= 0)
         {
-            SrcModel.BuildSettings.bRecomputeNormals = true;
+            SourceModel.BuildSettings.bRecomputeNormals = true;
         }
         else
         {
@@ -277,7 +348,7 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
 
         if (Tangents.Num() <= 0)
         {
-            SrcModel.BuildSettings.bRecomputeTangents = true;
+            SourceModel.BuildSettings.bRecomputeTangents = true;
         }
         else if (Tangents.Num() == Normals.Num())
         {
@@ -362,7 +433,7 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
             Swap(Position.Y, Position.Z);
         }
 
-        SrcModel.RawMeshBulkData->SaveRawMesh(NewRawMesh);
+        SourceModel.RawMeshBulkData->SaveRawMesh(NewRawMesh);
 
         if (glTFImportOptions->bImportMaterial)
         {
@@ -408,9 +479,10 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
         }
         else
         {
+            UE_LOG(LogglTFForUE4Ed, Error, TEXT("Failed to build the static mesh!"));
             for (const FText& BuildError : BuildErrors)
             {
-                Feedback(ELogVerbosity::Warning, BuildError);
+                UE_LOG(LogglTFForUE4Ed, Error, TEXT("BuildError: %s"), *BuildError.ToString());
             }
         }
 

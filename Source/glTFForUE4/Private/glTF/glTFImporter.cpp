@@ -137,15 +137,6 @@ UObject* FglTFImporter::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportO
     return nullptr;
 }
 
-const FglTFImporter& FglTFImporter::Feedback(ELogVerbosity::Type InLogVerbosity, const FText& InMessge) const
-{
-    if (FeedbackContext)
-    {
-        FeedbackContext->Log(InLogVerbosity, InMessge.ToString());
-    }
-    return *this;
-}
-
 template<typename TEngineDataType>
 struct TAccessorTypeScale
 {

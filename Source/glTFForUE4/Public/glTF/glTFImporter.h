@@ -69,9 +69,6 @@ public:
     virtual class UObject* Create(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF) const;
 
 protected:
-    const FglTFImporter& Feedback(ELogVerbosity::Type InLogVerbosity, const FText& InMessge) const;
-
-protected:
     UClass* InputClass;
     UObject* InputParent;
     FName InputName;
