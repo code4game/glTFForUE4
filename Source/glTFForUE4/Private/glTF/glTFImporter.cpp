@@ -10,6 +10,63 @@
 #include "Misc/Base64.h"
 #include "Misc/SecureHash.h"
 
+namespace glTFForUE4
+{
+    FFeedbackTaskWrapper::FFeedbackTaskWrapper(FFeedbackContext* InFeedbackContext, const FText& InTask, bool InShowProgressDialog)
+        : FeedbackContext(InFeedbackContext)
+    {
+        if (FeedbackContext)
+        {
+            FeedbackContext->BeginSlowTask(InTask, InShowProgressDialog);
+        }
+    }
+
+    FFeedbackTaskWrapper::~FFeedbackTaskWrapper()
+    {
+        if (FeedbackContext)
+        {
+            FeedbackContext->EndSlowTask();
+            FeedbackContext = nullptr;
+        }
+    }
+
+    const FFeedbackTaskWrapper& FFeedbackTaskWrapper::Log(ELogVerbosity::Type InLogVerbosity, const FText& InMessge) const
+    {
+        if (FeedbackContext)
+        {
+            FeedbackContext->Log(InLogVerbosity, *InMessge.ToString());
+        }
+        return *this;
+    }
+
+    const FFeedbackTaskWrapper& FFeedbackTaskWrapper::UpdateProgress(int32 InNumerator, int32 InDenominator) const
+    {
+        if (FeedbackContext)
+        {
+            FeedbackContext->UpdateProgress(InNumerator, InDenominator);
+        }
+        return *this;
+    }
+
+    const FFeedbackTaskWrapper& FFeedbackTaskWrapper::StatusUpdate(int32 InNumerator, int32 InDenominator, const FText& InStatusText) const
+    {
+        if (FeedbackContext)
+        {
+            FeedbackContext->StatusUpdate(InNumerator, InDenominator, InStatusText);
+        }
+        return *this;
+    }
+
+    const FFeedbackTaskWrapper& FFeedbackTaskWrapper::StatusForceUpdate(int32 InNumerator, int32 InDenominator, const FText& InStatusText) const
+    {
+        if (FeedbackContext)
+        {
+            FeedbackContext->StatusForceUpdate(InNumerator, InDenominator, InStatusText);
+        }
+        return *this;
+    }
+}
+
 FglTFBufferFiles::FglTFBufferFiles(const FString& InFileFolderPath, const std::vector<std::shared_ptr<libgltf::SBuffer>>& InBuffers)
 {
     for (int32 i = 0; i < static_cast<int32>(InBuffers.size()); ++i)

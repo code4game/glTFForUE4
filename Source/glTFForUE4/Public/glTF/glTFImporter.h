@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vector>
+#include <map>
 #include <memory>
 
 namespace libgltf
@@ -12,7 +13,27 @@ namespace libgltf
     struct SScene;
     struct SNode;
     struct SMesh;
+    struct SMeshPrimitive;
     struct SBuffer;
+}
+
+namespace glTFForUE4
+{
+    class GLTFFORUE4_API FFeedbackTaskWrapper
+    {
+    public:
+        explicit FFeedbackTaskWrapper(class FFeedbackContext* InFeedbackContext, const FText& InTask, bool InShowProgressDialog);
+        virtual ~FFeedbackTaskWrapper();
+
+    public:
+        const FFeedbackTaskWrapper& Log(ELogVerbosity::Type InLogVerbosity, const FText& InMessge) const;
+        const FFeedbackTaskWrapper& UpdateProgress(int32 InNumerator, int32 InDenominator) const;
+        const FFeedbackTaskWrapper& StatusUpdate(int32 InNumerator, int32 InDenominator, const FText& InStatusText) const;
+        const FFeedbackTaskWrapper& StatusForceUpdate(int32 InNumerator, int32 InDenominator, const FText& InStatusText) const;
+
+    private:
+        class FFeedbackContext* FeedbackContext;
+    };
 }
 
 class GLTFFORUE4_API FglTFBufferFiles
