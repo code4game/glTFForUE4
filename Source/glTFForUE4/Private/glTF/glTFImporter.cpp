@@ -10,13 +10,70 @@
 #include "Misc/Base64.h"
 #include "Misc/SecureHash.h"
 
+namespace glTFForUE4
+{
+    FFeedbackTaskWrapper::FFeedbackTaskWrapper(FFeedbackContext* InFeedbackContext, const FText& InTask, bool InShowProgressDialog)
+        : FeedbackContext(InFeedbackContext)
+    {
+        if (FeedbackContext)
+        {
+            FeedbackContext->BeginSlowTask(InTask, InShowProgressDialog);
+        }
+    }
+
+    FFeedbackTaskWrapper::~FFeedbackTaskWrapper()
+    {
+        if (FeedbackContext)
+        {
+            FeedbackContext->EndSlowTask();
+            FeedbackContext = nullptr;
+        }
+    }
+
+    const FFeedbackTaskWrapper& FFeedbackTaskWrapper::Log(ELogVerbosity::Type InLogVerbosity, const FText& InMessge) const
+    {
+        if (FeedbackContext)
+        {
+            FeedbackContext->Log(InLogVerbosity, *InMessge.ToString());
+        }
+        return *this;
+    }
+
+    const FFeedbackTaskWrapper& FFeedbackTaskWrapper::UpdateProgress(int32 InNumerator, int32 InDenominator) const
+    {
+        if (FeedbackContext)
+        {
+            FeedbackContext->UpdateProgress(InNumerator, InDenominator);
+        }
+        return *this;
+    }
+
+    const FFeedbackTaskWrapper& FFeedbackTaskWrapper::StatusUpdate(int32 InNumerator, int32 InDenominator, const FText& InStatusText) const
+    {
+        if (FeedbackContext)
+        {
+            FeedbackContext->StatusUpdate(InNumerator, InDenominator, InStatusText);
+        }
+        return *this;
+    }
+
+    const FFeedbackTaskWrapper& FFeedbackTaskWrapper::StatusForceUpdate(int32 InNumerator, int32 InDenominator, const FText& InStatusText) const
+    {
+        if (FeedbackContext)
+        {
+            FeedbackContext->StatusForceUpdate(InNumerator, InDenominator, InStatusText);
+        }
+        return *this;
+    }
+}
+
 FglTFBufferFiles::FglTFBufferFiles(const FString& InFileFolderPath, const std::vector<std::shared_ptr<libgltf::SBuffer>>& InBuffers)
 {
     for (int32 i = 0; i < static_cast<int32>(InBuffers.size()); ++i)
     {
         const std::shared_ptr<libgltf::SBuffer>& Buffer = InBuffers[i];
         if (!Buffer) continue;
-        const FString BufferUri = UTF8_TO_TCHAR(Buffer->uri.c_str());
+        const FString BufferUri = Buffer->uri.c_str();
 
         FString BufferFileName = BufferUri;
         FString BufferStream = BufferUri;
@@ -81,16 +138,21 @@ const TArray<uint8>& FglTFBufferFiles::operator[](int32 InIndex) const
     return (*this)[*UriPtr];
 }
 
-const FglTFImporter& FglTFImporter::Get(FFeedbackContext* InFeedbackContext)
+TSharedPtr<FglTFImporter> FglTFImporter::Get(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
 {
-    static const FglTFImporter glTFImporterInstance(InFeedbackContext);
-    return glTFImporterInstance;
+    TSharedPtr<FglTFImporter> glTFImporter = MakeShareable(new FglTFImporter);
+    glTFImporter->Set(InClass, InParent, InName, InFlags, InFeedbackContext);
+    return glTFImporter;
 }
 
-FglTFImporter::FglTFImporter(FFeedbackContext* InFeedbackContext)
-    : FeedbackContext(InFeedbackContext)
+FglTFImporter::FglTFImporter()
+    : InputClass(nullptr)
+    , InputParent(nullptr)
+    , InputName()
+    , InputFlags(RF_NoFlags)
+    , FeedbackContext(nullptr)
 {
-    check(FeedbackContext);
+    //
 }
 
 FglTFImporter::~FglTFImporter()
@@ -98,9 +160,17 @@ FglTFImporter::~FglTFImporter()
     //
 }
 
-UObject* FglTFImporter::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions
-    , const std::shared_ptr<libgltf::SGlTF>& InGlTF
-    , UClass* InClass, UObject* InParent) const
+FglTFImporter& FglTFImporter::Set(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext)
+{
+    InputClass = InClass;
+    InputParent = InParent;
+    InputName = InName;
+    InputFlags = InFlags;
+    FeedbackContext = InFeedbackContext;
+    return *this;
+}
+
+UObject* FglTFImporter::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF) const
 {
     if (!InGlTF)
     {
@@ -110,7 +180,7 @@ UObject* FglTFImporter::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportO
 
     if (!InGlTF->asset || InGlTF->asset->version != TEXT("2.0"))
     {
-        UE_LOG(LogglTFForUE4, Error, TEXT("Invalid version: %s!"), !(InGlTF->asset) ? TEXT("none") : UTF8_TO_TCHAR(InGlTF->asset->version.c_str()));
+        UE_LOG(LogglTFForUE4, Error, TEXT("Invalid version: %s!"), !(InGlTF->asset) ? TEXT("none") : InGlTF->asset->version.c_str());
         return nullptr;
     }
 
@@ -325,7 +395,7 @@ bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFB
     }
     else
     {
-        UE_LOG(LogglTFForUE4, Error, TEXT("Not supports the accessor's type(%s)!"), UTF8_TO_TCHAR(InAccessor->type.c_str()));
+        UE_LOG(LogglTFForUE4, Error, TEXT("Not supports the accessor's type(%s)!"), InAccessor->type.c_str());
         return false;
     }
     return true;

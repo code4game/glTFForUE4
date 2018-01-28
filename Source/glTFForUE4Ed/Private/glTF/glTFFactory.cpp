@@ -28,7 +28,7 @@ UglTFFactory::UglTFFactory(const FObjectInitializer& InObjectInitializer)
 
 bool UglTFFactory::DoesSupportClass(UClass* InClass)
 {
-    //TODO:
+    //TODO: support more mesh classes
     return (InClass == UStaticMesh::StaticClass());
 }
 
@@ -69,7 +69,7 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
         return nullptr;
     }
 
-    return FglTFImporterEd::Get(InWarn).Create(glTFImportOptions, GlTF, InClass, InParent);
+    return FglTFImporterEd::Get(InClass, InParent, InName, Flags, InWarn)->Create(glTFImportOptions, GlTF);
 }
 
 #undef LOCTEXT_NAMESPACE
