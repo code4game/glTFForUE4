@@ -8,16 +8,10 @@
 
 namespace libgltf
 {
-#if defined(PLATFORM_WINDOWS)
-#   if defined(UNICODE)
+#if defined(LIBGLTF_USE_WCHAR)
     typedef std::wstring                                        GLTFString;
-#   else
-    typedef std::string                                         GLTFString;
-#   endif
-#elif defined(PLATFORM_LINUX) || defined(PLATFORM_MACOS) || defined(PLATFORM_ANDROID) || defined(PLATFORM_IOS)
-    typedef std::string                                         GLTFString;
 #else
-#error Sorry, not support your platform.
+    typedef std::string                                         GLTFString;
 #endif
 
     struct SGlTF;
@@ -39,6 +33,49 @@ namespace libgltf
     };
 
     /*!
+     * struct: SGlTFChildofRootProperty
+     */
+    struct SGlTFChildofRootProperty : SGlTFProperty
+    {
+        SGlTFChildofRootProperty();
+
+        // Check valid
+        operator bool() const;
+
+        // The user-defined name of this object.
+        GLTFString name;
+    };
+
+    /*!
+     * struct: SMaterial
+     * The material appearance of a primitive.
+     */
+    struct SMaterial : SGlTFChildofRootProperty
+    {
+        SMaterial();
+
+        // Check valid
+        operator bool() const;
+
+        // The alpha cutoff value of the material.
+        float alphaCutoff;
+        // The emissive map texture.
+        std::shared_ptr<struct STextureInfo> emissiveTexture;
+        // A set of parameter values that are used to define the metallic-roughness material model from Physically-Based Rendering (PBR) methodology. When not specified, all the default values of `pbrMetallicRoughness` apply.
+        std::shared_ptr<struct SMaterialPBRMetallicRoughness> pbrMetallicRoughness;
+        // The occlusion map texture.
+        std::shared_ptr<struct SMaterialOcclusionTextureInfo> occlusionTexture;
+        // The alpha rendering mode of the material.
+        GLTFString alphaMode;
+        // Specifies whether the material is double sided.
+        bool doubleSided;
+        // The normal map texture.
+        std::shared_ptr<struct SMaterialNormalTextureInfo> normalTexture;
+        // The emissive color of the material.
+        std::vector<float> emissiveFactor;
+    };
+
+    /*!
      * struct: SAsset
      * Metadata about the glTF asset.
      */
@@ -57,20 +94,6 @@ namespace libgltf
         GLTFString generator;
         // A copyright message suitable for display to credit the content creator.
         GLTFString copyright;
-    };
-
-    /*!
-     * struct: SGlTFChildofRootProperty
-     */
-    struct SGlTFChildofRootProperty : SGlTFProperty
-    {
-        SGlTFChildofRootProperty();
-
-        // Check valid
-        operator bool() const;
-
-        // The user-defined name of this object.
-        GLTFString name;
     };
 
     /*!
@@ -114,32 +137,16 @@ namespace libgltf
     };
 
     /*!
-     * struct: SMaterial
-     * The material appearance of a primitive.
+     * struct: SExtras
+     * Application-specific data.
      */
-    struct SMaterial : SGlTFChildofRootProperty
+    struct SExtras
     {
-        SMaterial();
+        SExtras();
 
         // Check valid
         operator bool() const;
 
-        // The alpha cutoff value of the material.
-        float alphaCutoff;
-        // The emissive map texture.
-        std::shared_ptr<struct STextureInfo> emissiveTexture;
-        // A set of parameter values that are used to define the metallic-roughness material model from Physically-Based Rendering (PBR) methodology. When not specified, all the default values of `pbrMetallicRoughness` apply.
-        std::shared_ptr<struct SMaterialPBRMetallicRoughness> pbrMetallicRoughness;
-        // The occlusion map texture.
-        std::shared_ptr<struct SMaterialOcclusionTextureInfo> occlusionTexture;
-        // The alpha rendering mode of the material.
-        GLTFString alphaMode;
-        // Specifies whether the material is double sided.
-        bool doubleSided;
-        // The normal map texture.
-        std::shared_ptr<struct SMaterialNormalTextureInfo> normalTexture;
-        // The emissive color of the material.
-        std::vector<float> emissiveFactor;
     };
 
     /*!
@@ -281,16 +288,20 @@ namespace libgltf
     };
 
     /*!
-     * struct: SExtras
-     * Application-specific data.
+     * struct: SMesh
+     * A set of primitives to be rendered.  A node can contain one mesh.  A node's transform places the mesh in the scene.
      */
-    struct SExtras
+    struct SMesh : SGlTFChildofRootProperty
     {
-        SExtras();
+        SMesh();
 
         // Check valid
         operator bool() const;
 
+        // An array of primitives, each defining geometry to be rendered with a material.
+        std::vector<std::shared_ptr<struct SMeshPrimitive>> primitives;
+        // Array of weights to be applied to the Morph Targets.
+        std::vector<float> weights;
     };
 
     /*!
@@ -526,23 +537,6 @@ namespace libgltf
         std::shared_ptr<struct SGlTFId> bufferView;
         // The uri of the image.
         GLTFString uri;
-    };
-
-    /*!
-     * struct: SMesh
-     * A set of primitives to be rendered.  A node can contain one mesh.  A node's transform places the mesh in the scene.
-     */
-    struct SMesh : SGlTFChildofRootProperty
-    {
-        SMesh();
-
-        // Check valid
-        operator bool() const;
-
-        // An array of primitives, each defining geometry to be rendered with a material.
-        std::vector<std::shared_ptr<struct SMeshPrimitive>> primitives;
-        // Array of weights to be applied to the Morph Targets.
-        std::vector<float> weights;
     };
 
     /*!

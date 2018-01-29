@@ -49,6 +49,8 @@ public class glTFForUE4 : ModuleRules
         string LibPathInclude = System.IO.Path.Combine(LibPathRoot, "include");
         PublicIncludePaths.Add(LibPathInclude);
 
+        Definitions.Add("LIBGLTF_USE_WCHAR");
+
         string LibPathLibrary = System.IO.Path.Combine(LibPathRoot, "lib");
         if (Target.Platform == UnrealTargetPlatform.Win64)
         {
