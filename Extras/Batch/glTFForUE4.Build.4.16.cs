@@ -84,7 +84,7 @@ public class glTFForUE4 : ModuleRules
         {
             LibPathLibrary = System.IO.Path.Combine(LibPathLibrary, "Release");
         }
-        LibName = LibName + "." + LibExtension;
+        LibName = LibPathLibrary + "/" + LibName + "." + LibExtension;
 
         PublicLibraryPaths.Add(LibPathLibrary);
         PublicAdditionalLibraries.Add(LibName);
