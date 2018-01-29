@@ -4,57 +4,46 @@ using UnrealBuildTool;
 
 public class glTFForUE4Ed : ModuleRules
 {
-	public glTFForUE4Ed(ReadOnlyTargetRules Target) : base(Target)
-	{
-		PCHUsage = PCHUsageMode.UseSharedPCHs;
-		
-		PublicIncludePaths.AddRange(
-			new string[] {
-				"glTFForUE4Ed/Public"
-				// ... add public include paths required here ...
-			}
-			);
+    public glTFForUE4Ed(ReadOnlyTargetRules Target) : base(Target)
+    {
+        PCHUsage = PCHUsageMode.UseSharedPCHs;
 
-		PrivateIncludePaths.AddRange(
-			new string[] {
-				"glTFForUE4Ed/Private",
-				// ... add other private include paths required here ...
-			}
-			);
+        PublicIncludePaths.AddRange(
+            new string[] {
+                "glTFForUE4Ed/Public"
+            }
+            );
 
-		PublicDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"Core",
-				// ... add other public dependencies that you statically link with here ...
-			}
-			);
+        PrivateIncludePaths.AddRange(
+            new string[] {
+                "glTFForUE4Ed/Private",
+            }
+            );
 
-		PrivateDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"CoreUObject",
-				"Engine",
-				"Slate",
-				"SlateCore",
-				"InputCore",
+        PublicDependencyModuleNames.AddRange(
+            new string[]
+            {
+                "Core",
+            }
+            );
+
+        PrivateDependencyModuleNames.AddRange(
+            new string[]
+            {
+                "CoreUObject",
+                "Engine",
+                "Slate",
+                "SlateCore",
+                "InputCore",
                 "RenderCore",
-				"UnrealEd",
+                "UnrealEd",
                 "MainFrame",
                 "Documentation",
                 "PropertyEditor",
                 "EditorStyle",
                 "RawMesh",
                 "glTFForUE4",
-				// ... add private dependencies that you statically link with here ...	
-			}
-			);
-
-		DynamicallyLoadedModuleNames.AddRange(
-			new string[]
-			{
-				// ... add any modules that your module loads dynamically here ...
-			}
-			);
+            }
+            );
     }
 }

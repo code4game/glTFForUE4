@@ -6,7 +6,6 @@ public class glTFForUE4 : ModuleRules
 {
     public glTFForUE4(TargetInfo Target)
     {
-
         PublicIncludePaths.AddRange(
             new string[] {
                 "glTFForUE4/Public"

@@ -4,94 +4,89 @@ using UnrealBuildTool;
 
 public class glTFForUE4 : ModuleRules
 {
-	public glTFForUE4(ReadOnlyTargetRules Target) : base(Target)
-	{
-		PCHUsage = PCHUsageMode.UseSharedPCHs;
-		
-		PublicIncludePaths.AddRange(
-			new string[] {
-				"glTFForUE4/Public"
-				// ... add public include paths required here ...
-			}
-			);
-				
-		
-		PrivateIncludePaths.AddRange(
-			new string[] {
-				"glTFForUE4/Private",
-				// ... add other private include paths required here ...
-			}
-			);
-			
-		
-		PublicDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"Core",
-				// ... add other public dependencies that you statically link with here ...
-			}
-			);
-			
-		
-		PrivateDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"CoreUObject",
-				"Engine",
-				"Slate",
-				"SlateCore",
-				"InputCore",
-				// ... add private dependencies that you statically link with here ...	
-			}
-			);
-		
-		
-		DynamicallyLoadedModuleNames.AddRange(
-			new string[]
-			{
-				// ... add any modules that your module loads dynamically here ...
-			}
-			);
+    public glTFForUE4(ReadOnlyTargetRules Target) : base(Target)
+    {
+        PCHUsage = PCHUsageMode.UseSharedPCHs;
+
+        PublicIncludePaths.AddRange(
+            new string[] {
+                "glTFForUE4/Public"
+            }
+            );
+
+
+        PrivateIncludePaths.AddRange(
+            new string[] {
+                "glTFForUE4/Private",
+            }
+            );
+
+
+        PublicDependencyModuleNames.AddRange(
+            new string[]
+            {
+                "Core",
+            }
+            );
+
+
+        PrivateDependencyModuleNames.AddRange(
+            new string[]
+            {
+                "CoreUObject",
+                "Engine",
+                "Slate",
+                "SlateCore",
+                "InputCore",
+            }
+            );
 
         // libgltf
         string LibName = "libgltf";
+        string LibExtension = "";
         string LibPathRoot = System.IO.Path.Combine(ModuleDirectory, "..", "..", "Extras", LibName);
 
         string LibPathInclude = System.IO.Path.Combine(LibPathRoot, "include");
         PublicIncludePaths.Add(LibPathInclude);
 
-        string LibPathBinary = System.IO.Path.Combine(LibPathRoot, "bin");
+        string LibPathLibrary = System.IO.Path.Combine(LibPathRoot, "lib");
         if (Target.Platform == UnrealTargetPlatform.Win64)
         {
-            LibPathBinary = System.IO.Path.Combine(LibPathBinary, "win64");
-            if (Target.Configuration == UnrealTargetConfiguration.Debug
-                || Target.Configuration == UnrealTargetConfiguration.DebugGame)
-            {
-                LibPathBinary = System.IO.Path.Combine(LibPathBinary, "Debug");
-                LibName = LibName + "d";
-            }
-            else
-            {
-                LibPathBinary = System.IO.Path.Combine(LibPathBinary, "Release");
-            }
-            LibName = LibName + ".lib";
+            LibPathLibrary = System.IO.Path.Combine(LibPathLibrary, "win64");
+            LibExtension = "lib";
+        }
+        else if (Target.Platform == UnrealTargetPlatform.Win32)
+        {
+            LibPathLibrary = System.IO.Path.Combine(LibPathLibrary, "win32");
+            LibExtension = "lib";
         }
         else if (Target.Platform == UnrealTargetPlatform.Mac)
         {
-            LibPathBinary = System.IO.Path.Combine(LibPathBinary, "macos");
-            if (Target.Configuration == UnrealTargetConfiguration.Debug
-                || Target.Configuration == UnrealTargetConfiguration.DebugGame)
-            {
-                LibPathBinary = System.IO.Path.Combine(LibPathBinary, "Debug");
-                LibName = LibName + "d";
-            }
-            else
-            {
-                LibPathBinary = System.IO.Path.Combine(LibPathBinary, "Release");
-            }
-            LibName = LibPathBinary + "/" + LibName + ".a";
+            LibPathLibrary = System.IO.Path.Combine(LibPathLibrary, "macos");
+            LibExtension = "a";
         }
-        PublicLibraryPaths.Add(LibPathBinary);
+        else if (Target.Platform == UnrealTargetPlatform.Linux)
+        {
+            LibPathLibrary = System.IO.Path.Combine(LibPathLibrary, "linux");
+            LibExtension = "a";
+        }
+        else if (Target.Platform == UnrealTargetPlatform.Android)
+        {
+            LibPathLibrary = System.IO.Path.Combine(LibPathLibrary, "android");
+            LibExtension = "a";
+        }
+        else if (Target.Platform == UnrealTargetPlatform.IOS)
+        {
+            LibPathLibrary = System.IO.Path.Combine(LibPathLibrary, "ios");
+            LibExtension = "a";
+        }
+        if (System.IO.Directory.Exists(System.IO.Path.Combine(LibPathLibrary, "Release")))
+        {
+            LibPathLibrary = System.IO.Path.Combine(LibPathLibrary, "Release");
+        }
+        LibName = LibName + "." + LibExtension;
+
+        PublicLibraryPaths.Add(LibPathLibrary);
         PublicAdditionalLibraries.Add(LibName);
 	}
 }
