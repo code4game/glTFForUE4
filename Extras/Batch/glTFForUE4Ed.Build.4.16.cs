@@ -2,23 +2,23 @@
 
 using UnrealBuildTool;
 
-public class glTFForUE4 : ModuleRules
+public class glTFForUE4Ed : ModuleRules
 {
-    public glTFForUE4(TargetInfo Target)
+    public glTFForUE4Ed(ReadOnlyTargetRules Target) : base(Target)
     {
+        PCHUsage = PCHUsageMode.UseSharedPCHs;
+
         PublicIncludePaths.AddRange(
             new string[] {
-                "glTFForUE4/Public"
+                "glTFForUE4Ed/Public"
             }
             );
-
 
         PrivateIncludePaths.AddRange(
             new string[] {
-                "glTFForUE4/Private",
+                "glTFForUE4Ed/Private",
             }
             );
-
 
         PublicDependencyModuleNames.AddRange(
             new string[]
@@ -26,7 +26,6 @@ public class glTFForUE4 : ModuleRules
                 "Core",
             }
             );
-
 
         PrivateDependencyModuleNames.AddRange(
             new string[]
@@ -36,6 +35,14 @@ public class glTFForUE4 : ModuleRules
                 "Slate",
                 "SlateCore",
                 "InputCore",
+                "RenderCore",
+                "UnrealEd",
+                "MainFrame",
+                "Documentation",
+                "PropertyEditor",
+                "EditorStyle",
+                "RawMesh",
+                "glTFForUE4",
             }
             );
 
