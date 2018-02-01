@@ -11,9 +11,14 @@
 #include "RawMesh.h"
 #include "Engine/StaticMesh.h"
 #include "StaticMeshResources.h"
+#include "Materials/MaterialExpressionScalarParameter.h"
+#include "Materials/MaterialExpressionVectorParameter.h"
+#include "Materials/MaterialExpressionTextureSampleParameter.h"
 #include "Runtime/Launch/Resources/Version.h"
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
+
+#define GLTF_MATERIAL_ORIGIN TEXT("/glTFForUE4/Materials/M_PBRMetallicRoughnessOrigin.M_PBRMetallicRoughnessOrigin")
 
 namespace glTFForUE4Ed
 {
@@ -56,6 +61,13 @@ namespace glTFForUE4Ed
     }
 }
 
+FglTFImporterEd::FglTFMaterialInfo::FglTFMaterialInfo(int32 InId, FString InPrimitiveName)
+    : Id(InId)
+    , PrimitiveName(InPrimitiveName)
+{
+    //
+}
+
 TSharedPtr<FglTFImporterEd> FglTFImporterEd::Get(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext)
 {
     TSharedPtr<FglTFImporterEd> glTFImporterEd = MakeShareable(new FglTFImporterEd);
@@ -88,7 +100,7 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImportOptions>& InglTFImpor
         return nullptr;
     }
 
-    TSharedPtr<FglTFImportOptions> glTFImportOptions = InglTFImportOptions.Pin();
+    const TSharedPtr<FglTFImportOptions> glTFImportOptions = InglTFImportOptions.Pin();
 
     const FString FolderPathInOS = FPaths::GetPath(glTFImportOptions->FilePathInOS);
     FglTFBufferFiles BufferFiles(FolderPathInOS, InGlTF->buffers);
@@ -140,7 +152,7 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
     SourceModel.RawMeshBulkData->LoadRawMesh(NewRawMesh);
     NewRawMesh.Empty();
 
-    TArray<int32> MaterialIds;
+    TArray<FglTFMaterialInfo> glTFMaterialInfos;
     for (const auto& ScenePtr : InScenes)
     {
         for (const auto& NodeIdPtr : ScenePtr->nodes)
@@ -156,7 +168,7 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
                 checkSlow(0);
                 continue;
             }
-            if (!GenerateRawMesh(InGlTF, FMatrix::Identity, InGlTF->nodes[NodeId], InBufferFiles, NewRawMesh, MaterialIds, FeedbackTaskWrapper))
+            if (!GenerateRawMesh(InGlTF, FMatrix::Identity, InGlTF->nodes[NodeId], InBufferFiles, NewRawMesh, glTFMaterialInfos, FeedbackTaskWrapper))
             {
                 checkSlow(0);
             }
@@ -185,52 +197,51 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
         StaticMesh->Build(false, &BuildErrors);
         if (BuildErrors.Num() > 0)
         {
-            FeedbackTaskWrapper.Log(ELogVerbosity::Warning, FText::FromString(TEXT("Failed to build the static mesh!")));
+            FeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("StaticMeshBuildHasError", "Failed to build the static mesh!"));
             for (const FText& BuildError : BuildErrors)
             {
                 FeedbackTaskWrapper.Log(ELogVerbosity::Warning, BuildError);
             }
         }
 
-        //TODO: generate material
-        for (int32 MaterialId : MaterialIds)
+        FMeshSectionInfoMap NewMap;
+        UMaterial* glTFMaterialOrigin = LoadObject<UMaterial>(nullptr, GLTF_MATERIAL_ORIGIN);
+        if (!glTFMaterialOrigin)
         {
-#if (ENGINE_MINOR_VERSION < 14)
-            StaticMesh->Materials.Add(UMaterial::GetDefaultMaterial(MD_Surface));
-#else
-            StaticMesh->StaticMaterials.Add(UMaterial::GetDefaultMaterial(MD_Surface));
-#endif
+            FeedbackTaskWrapper.Log(ELogVerbosity::Error, LOCTEXT("glTFMaterialOriginHasError", "The glTF material origin must be a `UMaterial`!"));
         }
-
-        // this is damage control. After build, we'd like to absolutely sure that 
-        // all index is pointing correctly and they're all used. Otherwise we remove them
-        FMeshSectionInfoMap OldSectionInfoMap = StaticMesh->SectionInfoMap;
-        StaticMesh->SectionInfoMap.Clear();
-        // fix up section data
-        for (int32 LODResoureceIndex = 0; LODResoureceIndex < StaticMesh->RenderData->LODResources.Num(); ++LODResoureceIndex)
+        for (int32 i = 0; i < glTFMaterialInfos.Num(); ++i)
         {
-            FStaticMeshLODResources& LOD = StaticMesh->RenderData->LODResources[LODResoureceIndex];
-            int32 NumSections = LOD.Sections.Num();
-            for (int32 SectionIndex = 0; SectionIndex < NumSections; ++SectionIndex)
+            const FglTFMaterialInfo& glTFMaterialInfo = glTFMaterialInfos[i];
+            UMaterialInterface* NewMaterial = nullptr;
+            if (glTFMaterialOrigin)
             {
-                FMeshSectionInfo Info = OldSectionInfoMap.Get(LODResoureceIndex, SectionIndex);
-#if (ENGINE_MINOR_VERSION < 14)
-                if (StaticMesh->Materials.IsValidIndex(Info.MaterialIndex))
-#else
-                if (StaticMesh->StaticMaterials.IsValidIndex(Info.MaterialIndex))
-#endif
-                {
-                    StaticMesh->SectionInfoMap.Set(LODResoureceIndex, SectionIndex, Info);
-                }
+                NewMaterial = CreateMaterial(InglTFImportOptions, InGlTF, glTFMaterialInfo, glTFMaterialOrigin);
             }
-        }
+            if (!NewMaterial)
+            {
+                NewMaterial = UMaterial::GetDefaultMaterial(MD_Surface);
+            }
 
-        StaticMesh->MarkPackageDirty();
+            FMeshSectionInfo Info = StaticMesh->SectionInfoMap.Get(0, i);
+
+#if (ENGINE_MINOR_VERSION < 14)
+            int32 Index = StaticMesh->Materials.Add(NewMaterial);
+#else
+            int32 Index = StaticMesh->StaticMaterials.Add(NewMaterial);
+#endif
+            Info.MaterialIndex = Index;
+            NewMap.Set(0, i, Info);
+        }
+        StaticMesh->SectionInfoMap.Clear();
+        StaticMesh->SectionInfoMap.CopyFrom(NewMap);
 
         if (StaticMesh->AssetImportData)
         {
             StaticMesh->AssetImportData->Update(glTFImportOptions->FilePathInOS);
         }
+
+        StaticMesh->MarkPackageDirty();
     }
     else
     {
@@ -240,7 +251,7 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
     return StaticMesh;
 }
 
-bool FglTFImporterEd::GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FMatrix& InMatrix, const std::shared_ptr<libgltf::SNode>& InNode, const FglTFBufferFiles& InBufferFiles, FRawMesh& OutRawMesh, TArray<int32>& InOutMaterialIds, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
+bool FglTFImporterEd::GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FMatrix& InMatrix, const std::shared_ptr<libgltf::SNode>& InNode, const FglTFBufferFiles& InBufferFiles, FRawMesh& OutRawMesh, TArray<FglTFMaterialInfo>& InOutglTFMaterialInfos, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
 {
     if (!InGlTF || !InNode) return false;
 
@@ -288,7 +299,7 @@ bool FglTFImporterEd::GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InG
         const int32_t MeshId = *(InNode->mesh);
         if (MeshId < 0 || MeshId >= InGlTF->meshes.size()) return false;
         const auto& Mesh = InGlTF->meshes[MeshId];
-        if (!GenerateRawMesh(InGlTF, Matrix, Mesh, InBufferFiles, OutRawMesh, InOutMaterialIds, InFeedbackTaskWrapper))
+        if (!GenerateRawMesh(InGlTF, Matrix, Mesh, InBufferFiles, OutRawMesh, InOutglTFMaterialInfos, InFeedbackTaskWrapper))
         {
             checkSlow(0);
             return false;
@@ -314,7 +325,7 @@ bool FglTFImporterEd::GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InG
             checkSlow(0);
             continue;
         }
-        if (!GenerateRawMesh(InGlTF, Matrix, NodePtr, InBufferFiles, OutRawMesh, InOutMaterialIds, InFeedbackTaskWrapper))
+        if (!GenerateRawMesh(InGlTF, Matrix, NodePtr, InBufferFiles, OutRawMesh, InOutglTFMaterialInfos, InFeedbackTaskWrapper))
         {
             checkSlow(0);
             return false;
@@ -324,19 +335,19 @@ bool FglTFImporterEd::GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InG
     return true;
 }
 
-bool FglTFImporterEd::GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FMatrix& InMatrix, const std::shared_ptr<libgltf::SMesh>& InMesh, const FglTFBufferFiles& InBufferFiles, FRawMesh& OutRawMesh, TArray<int32>& InOutMaterialIds, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
+bool FglTFImporterEd::GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FMatrix& InMatrix, const std::shared_ptr<libgltf::SMesh>& InMesh, const FglTFBufferFiles& InBufferFiles, FRawMesh& OutRawMesh, TArray<FglTFMaterialInfo>& InOutglTFMaterialInfos, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
 {
     if (!InMesh) return false;
 
-    for (const auto& Primitive : InMesh->primitives)
+    FString MeshName = InMesh->name.c_str();
+    for (int32 i = 0; i < InMesh->primitives.size(); ++i)
     {
+        const auto& Primitive = InMesh->primitives[i];
         FRawMesh NewRawMesh;
-        int32 MaterialId = 0;
+        int32 MaterialId = INDEX_NONE;
+        if (!!Primitive->material)
         {
-            if (InOutMaterialIds.Num() > 0)
-            {
-                MaterialId = InOutMaterialIds.Last() + 1;
-            }
+            MaterialId = (*Primitive->material);
         }
         if (!GenerateRawMesh(InGlTF, InMatrix, Primitive, InBufferFiles, NewRawMesh, MaterialId, InFeedbackTaskWrapper))
         {
@@ -348,7 +359,8 @@ bool FglTFImporterEd::GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InG
             checkSlow(0);
             continue;
         }
-        InOutMaterialIds.Add(MaterialId);
+        FString PrimitiveName = FString::Printf(TEXT("%s_%d"), *MeshName, i);
+        InOutglTFMaterialInfos.Add(FglTFMaterialInfo(MaterialId, PrimitiveName));
     }
     return true;
 }
@@ -481,6 +493,179 @@ bool FglTFImporterEd::GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InG
         }
     }
     return OutRawMesh.IsValidOrFixable();
+}
+
+UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const FglTFMaterialInfo& InglTFMaterialInfo, UMaterial* InOrigin) const
+{
+    if (!InputParent) return nullptr;
+    if (!InglTF || InglTFMaterialInfo.Id < 0 || InglTFMaterialInfo.Id >= InglTF->materials.size() || !InOrigin) return nullptr;
+
+    const TSharedPtr<FglTFImportOptions> glTFImportOptions = InglTFImportOptions.Pin();
+
+    const std::shared_ptr<libgltf::SMaterial>& glTFMaterial = InglTF->materials[InglTFMaterialInfo.Id];
+
+    FString MaterialName = FString::Printf(TEXT("M_%s"), *InglTFMaterialInfo.PrimitiveName);
+    FString PackageName = FPackageName::GetLongPackagePath(InputParent->GetPathName()) / MaterialName;
+    UPackage* MaterialPackage = FindPackage(nullptr, *PackageName);
+    if (!MaterialPackage)
+    {
+        MaterialPackage = CreatePackage(nullptr, *PackageName);
+    }
+    if (!MaterialPackage) return nullptr;
+    MaterialPackage->FullyLoad();
+
+    UMaterial* NewMaterial = Cast<UMaterial>(StaticDuplicateObject(InOrigin, MaterialPackage, *MaterialName, InputFlags, InOrigin->GetClass()));
+    if (!NewMaterial) return nullptr;
+
+    TMap<FName, FGuid> ScalarParameterNameToGuid;
+    {
+        TArray<FName> ParameterNames;
+        TArray<FGuid> ParameterGuids;
+        NewMaterial->GetAllScalarParameterNames(ParameterNames, ParameterGuids);
+        if (ParameterNames.Num() == ParameterGuids.Num())
+        {
+            for (int32 i = 0; i < ParameterNames.Num(); ++i)
+            {
+                ScalarParameterNameToGuid.FindOrAdd(ParameterNames[i]) = ParameterGuids[i];
+            }
+        }
+    }
+    TMap<FName, FGuid> VectorParameterNameToGuid;
+    {
+        TArray<FName> ParameterNames;
+        TArray<FGuid> ParameterGuids;
+        NewMaterial->GetAllVectorParameterNames(ParameterNames, ParameterGuids);
+        if (ParameterNames.Num() == ParameterGuids.Num())
+        {
+            for (int32 i = 0; i < ParameterNames.Num(); ++i)
+            {
+                VectorParameterNameToGuid.FindOrAdd(ParameterNames[i]) = ParameterGuids[i];
+            }
+        }
+    }
+    TMap<FName, FGuid> TextureParameterNameToGuid;
+    {
+        TArray<FName> ParameterNames;
+        TArray<FGuid> ParameterGuids;
+        NewMaterial->GetAllTextureParameterNames(ParameterNames, ParameterGuids);
+        if (ParameterNames.Num() == ParameterGuids.Num())
+        {
+            for (int32 i = 0; i < ParameterNames.Num(); ++i)
+            {
+                TextureParameterNameToGuid.FindOrAdd(ParameterNames[i]) = ParameterGuids[i];
+            }
+        }
+    }
+
+    if (ScalarParameterNameToGuid.Contains(TEXT("alphaCutoff")))
+    {
+        if (UMaterialExpressionScalarParameter* ScalarParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionScalarParameter>(ScalarParameterNameToGuid[TEXT("alphaCutoff")]))
+        {
+            ScalarParameter->DefaultValue = glTFMaterial->alphaCutoff;
+        }
+    }
+    if (!!glTFMaterial->emissiveTexture && TextureParameterNameToGuid.Contains(TEXT("emissiveTexture")))
+    {
+        if (UMaterialExpressionTextureSampleParameter* SampleParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionTextureSampleParameter>(TextureParameterNameToGuid[TEXT("emissiveTexture")]))
+        {
+            //
+            SampleParameter = nullptr;
+        }
+    }
+    if (!!(glTFMaterial->pbrMetallicRoughness))
+    {
+        const std::shared_ptr<libgltf::SMaterialPBRMetallicRoughness>& pbrMetallicRoughness = glTFMaterial->pbrMetallicRoughness;
+        if (ScalarParameterNameToGuid.Contains(TEXT("roughnessFactor")))
+        {
+            if (UMaterialExpressionScalarParameter* ScalarParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionScalarParameter>(ScalarParameterNameToGuid[TEXT("roughnessFactor")]))
+            {
+                ScalarParameter->DefaultValue = pbrMetallicRoughness->roughnessFactor;
+            }
+        }
+        if (!!(pbrMetallicRoughness->baseColorTexture) && TextureParameterNameToGuid.Contains(TEXT("baseColorTexture")))
+        {
+            if (UMaterialExpressionTextureSampleParameter* SampleParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionTextureSampleParameter>(TextureParameterNameToGuid[TEXT("baseColorTexture")]))
+            {
+                //
+                SampleParameter = nullptr;
+            }
+        }
+        if (ScalarParameterNameToGuid.Contains(TEXT("metallicFactor")))
+        {
+            if (UMaterialExpressionScalarParameter* ScalarParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionScalarParameter>(ScalarParameterNameToGuid[TEXT("metallicFactor")]))
+            {
+                ScalarParameter->DefaultValue = pbrMetallicRoughness->metallicFactor;
+            }
+        }
+        if (pbrMetallicRoughness->baseColorFactor.size() > 0 && VectorParameterNameToGuid.Contains(TEXT("baseColorFactor")))
+        {
+            if (UMaterialExpressionVectorParameter* VectorParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionVectorParameter>(VectorParameterNameToGuid[TEXT("baseColorFactor")]))
+            {
+                if (pbrMetallicRoughness->baseColorFactor.size() > 0) VectorParameter->DefaultValue.R = pbrMetallicRoughness->baseColorFactor[0];
+                if (pbrMetallicRoughness->baseColorFactor.size() > 1) VectorParameter->DefaultValue.G = pbrMetallicRoughness->baseColorFactor[1];
+                if (pbrMetallicRoughness->baseColorFactor.size() > 2) VectorParameter->DefaultValue.B = pbrMetallicRoughness->baseColorFactor[2];
+                if (pbrMetallicRoughness->baseColorFactor.size() > 3) VectorParameter->DefaultValue.A = pbrMetallicRoughness->baseColorFactor[3];
+            }
+        }
+        if (!!(pbrMetallicRoughness->metallicRoughnessTexture) && TextureParameterNameToGuid.Contains(TEXT("metallicRoughnessTexture")))
+        {
+            if (UMaterialExpressionTextureSampleParameter* SampleParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionTextureSampleParameter>(TextureParameterNameToGuid[TEXT("metallicRoughnessTexture")]))
+            {
+                //
+                SampleParameter = nullptr;
+            }
+        }
+    }
+    if (!!(glTFMaterial->occlusionTexture))
+    {
+        const std::shared_ptr<libgltf::SMaterialOcclusionTextureInfo>& occlusionTexture = glTFMaterial->occlusionTexture;
+        if (TextureParameterNameToGuid.Contains(TEXT("occlusionTexture")))
+        {
+            if (UMaterialExpressionTextureSampleParameter* SampleParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionTextureSampleParameter>(TextureParameterNameToGuid[TEXT("occlusionTexture")]))
+            {
+                //
+                SampleParameter = nullptr;
+            }
+        }
+        if (ScalarParameterNameToGuid.Contains(TEXT("strength")))
+        {
+            if (UMaterialExpressionScalarParameter* ScalarParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionScalarParameter>(ScalarParameterNameToGuid[TEXT("strength")]))
+            {
+                ScalarParameter->DefaultValue = occlusionTexture->strength;
+            }
+        }
+    }
+    //TODO: alphaMode
+    NewMaterial->TwoSided = glTFMaterial->doubleSided;
+    if (!!glTFMaterial->normalTexture && TextureParameterNameToGuid.Contains(TEXT("normalTexture")))
+    {
+        if (UMaterialExpressionTextureSampleParameter* SampleParamter = NewMaterial->FindExpressionByGUID<UMaterialExpressionTextureSampleParameter>(TextureParameterNameToGuid[TEXT("normalTexture")]))
+        {
+            //
+            SampleParamter = nullptr;
+        }
+    }
+    if (glTFMaterial->emissiveFactor.size() > 0 && VectorParameterNameToGuid.Contains(TEXT("emissiveFactor")))
+    {
+        if (UMaterialExpressionVectorParameter* VectorParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionVectorParameter>(VectorParameterNameToGuid[TEXT("emissiveFactor")]))
+        {
+            if (glTFMaterial->emissiveFactor.size() > 0) VectorParameter->DefaultValue.R = glTFMaterial->emissiveFactor[0];
+            if (glTFMaterial->emissiveFactor.size() > 1) VectorParameter->DefaultValue.G = glTFMaterial->emissiveFactor[1];
+            if (glTFMaterial->emissiveFactor.size() > 2) VectorParameter->DefaultValue.B = glTFMaterial->emissiveFactor[2];
+            if (glTFMaterial->emissiveFactor.size() > 3) VectorParameter->DefaultValue.A = glTFMaterial->emissiveFactor[3];
+        }
+    }
+
+    NewMaterial->ForceRecompileForRendering();
+    NewMaterial->MarkPackageDirty();
+    return NewMaterial;
+}
+
+UTexture* FglTFImporterEd::CreateTexture(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, int32 InTextureId, const FString& InPackageName) const
+{
+    if (!InglTF || InTextureId < 0 || InTextureId >= InglTF->textures.size()) return nullptr;
+    //TODO: generate texture
+    return nullptr;
 }
 
 #undef LOCTEXT_NAMESPACE
