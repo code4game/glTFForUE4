@@ -33,9 +33,9 @@ private:
     bool GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const struct FMatrix& InMatrix, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const class FglTFBufferFiles& InBufferFiles, struct FRawMesh& OutRawMesh, int32 InMaterialIndex, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const;
 
 private:
-    class UMaterial* CreateMaterial(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const FglTFMaterialInfo& InglTFMaterialInfo, class UMaterial* InOrigin, TMap<FString, class UTexture*>& InOutTextureLibrary) const;
-    bool ConstructSampleParameter(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STextureInfo>& InglTFTextureInfo, const FString& InParameterName, TMap<FString, class UTexture*>& InOutTextureLibrary, class UMaterialExpressionTextureSampleParameter* InSampleParameter, bool InIsNormalmap = false) const;
-    class UTexture* CreateTexture(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STexture>& InglTFTexture, const FString& InTextureName, bool InIsNormalmap = false) const;
+    class UMaterial* CreateMaterial(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const FglTFMaterialInfo& InglTFMaterialInfo, class UMaterial* InOrigin, TMap<FString, class UTexture*>& InOutTextureLibrary, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const;
+    bool ConstructSampleParameter(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STextureInfo>& InglTFTextureInfo, const FString& InParameterName, TMap<FString, class UTexture*>& InOutTextureLibrary, class UMaterialExpressionTextureSampleParameter* InSampleParameter, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const;
+    class UTexture* CreateTexture(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STexture>& InglTFTexture, const FString& InTextureName, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const;
 
 private:
     class UFactory* InputFactory;
