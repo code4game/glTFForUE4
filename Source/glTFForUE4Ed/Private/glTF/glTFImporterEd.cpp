@@ -18,7 +18,7 @@
 #include "ImageWrapper.h"
 #else
 #include "IImageWrapper.h"
-#else
+#include "IImageWrapperModule.h"
 #endif
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
@@ -631,7 +631,16 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
     {
         TArray<FName> ParameterNames;
         TArray<FGuid> ParameterGuids;
+#if (ENGINE_MINOR_VERSION < 18)
         NewMaterial->GetAllScalarParameterNames(ParameterNames, ParameterGuids);
+#else
+        TArray<FMaterialParameterInfo> ParameterInfos;
+        NewMaterial->GetAllScalarParameterInfo(ParameterInfos, ParameterGuids);
+        for (const FMaterialParameterInfo& ParameterInfo : ParameterInfos)
+        {
+            ParameterNames.Add(ParameterInfo.Name);
+        }
+#endif
         if (ParameterNames.Num() == ParameterGuids.Num())
         {
             for (int32 i = 0; i < ParameterNames.Num(); ++i)
@@ -644,7 +653,16 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
     {
         TArray<FName> ParameterNames;
         TArray<FGuid> ParameterGuids;
+#if (ENGINE_MINOR_VERSION < 18)
         NewMaterial->GetAllVectorParameterNames(ParameterNames, ParameterGuids);
+#else
+        TArray<FMaterialParameterInfo> ParameterInfos;
+        NewMaterial->GetAllVectorParameterInfo(ParameterInfos, ParameterGuids);
+        for (const FMaterialParameterInfo& ParameterInfo : ParameterInfos)
+        {
+            ParameterNames.Add(ParameterInfo.Name);
+        }
+#endif
         if (ParameterNames.Num() == ParameterGuids.Num())
         {
             for (int32 i = 0; i < ParameterNames.Num(); ++i)
@@ -657,7 +675,16 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
     {
         TArray<FName> ParameterNames;
         TArray<FGuid> ParameterGuids;
+#if (ENGINE_MINOR_VERSION < 18)
         NewMaterial->GetAllTextureParameterNames(ParameterNames, ParameterGuids);
+#else
+        TArray<FMaterialParameterInfo> ParameterInfos;
+        NewMaterial->GetAllTextureParameterInfo(ParameterInfos, ParameterGuids);
+        for (const FMaterialParameterInfo& ParameterInfo : ParameterInfos)
+        {
+            ParameterNames.Add(ParameterInfo.Name);
+        }
+#endif
         if (ParameterNames.Num() == ParameterGuids.Num())
         {
             for (int32 i = 0; i < ParameterNames.Num(); ++i)
@@ -867,6 +894,7 @@ UTexture* FglTFImporterEd::CreateTexture(const TWeakPtr<FglTFImportOptions>& Ing
     UTexture2D* NewTexture = nullptr;
 
     IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
+#if (ENGINE_MINOR_VERSION < 16)
     IImageWrapperPtr ImageWrappers[7] = {
         ImageWrapperModule.CreateImageWrapper(EImageFormat::PNG),
         ImageWrapperModule.CreateImageWrapper(EImageFormat::JPEG),
@@ -876,7 +904,17 @@ UTexture* FglTFImporterEd::CreateTexture(const TWeakPtr<FglTFImportOptions>& Ing
         ImageWrapperModule.CreateImageWrapper(EImageFormat::EXR),
         ImageWrapperModule.CreateImageWrapper(EImageFormat::ICNS),
     };
-
+#else
+    TSharedPtr<IImageWrapper> ImageWrappers[7] = {
+        ImageWrapperModule.CreateImageWrapper(EImageFormat::PNG),
+        ImageWrapperModule.CreateImageWrapper(EImageFormat::JPEG),
+        ImageWrapperModule.CreateImageWrapper(EImageFormat::GrayscaleJPEG),
+        ImageWrapperModule.CreateImageWrapper(EImageFormat::BMP),
+        ImageWrapperModule.CreateImageWrapper(EImageFormat::ICO),
+        ImageWrapperModule.CreateImageWrapper(EImageFormat::EXR),
+        ImageWrapperModule.CreateImageWrapper(EImageFormat::ICNS),
+    };
+#endif
 
     for (auto ImageWrapper : ImageWrappers)
     {
@@ -888,7 +926,11 @@ UTexture* FglTFImporterEd::CreateTexture(const TWeakPtr<FglTFImportOptions>& Ing
         int32 InSizeX = ImageWrapper->GetWidth();
         int32 InSizeY = ImageWrapper->GetWidth();
         int32 BitDepth = ImageWrapper->GetBitDepth();
+#if (ENGINE_MINOR_VERSION < 18)
         ERGBFormat::Type ImageFormat = ImageWrapper->GetFormat();
+#else
+        ERGBFormat ImageFormat = ImageWrapper->GetFormat();
+#endif
 
         if (ImageFormat == ERGBFormat::Gray)
         {
