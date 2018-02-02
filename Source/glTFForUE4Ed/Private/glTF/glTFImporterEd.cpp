@@ -631,7 +631,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
     {
         TArray<FName> ParameterNames;
         TArray<FGuid> ParameterGuids;
-#if (ENGINE_MINOR_VERSION < 18)
+#if (ENGINE_MINOR_VERSION < 19)
         NewMaterial->GetAllScalarParameterNames(ParameterNames, ParameterGuids);
 #else
         TArray<FMaterialParameterInfo> ParameterInfos;
@@ -653,7 +653,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
     {
         TArray<FName> ParameterNames;
         TArray<FGuid> ParameterGuids;
-#if (ENGINE_MINOR_VERSION < 18)
+#if (ENGINE_MINOR_VERSION < 19)
         NewMaterial->GetAllVectorParameterNames(ParameterNames, ParameterGuids);
 #else
         TArray<FMaterialParameterInfo> ParameterInfos;
@@ -675,7 +675,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
     {
         TArray<FName> ParameterNames;
         TArray<FGuid> ParameterGuids;
-#if (ENGINE_MINOR_VERSION < 18)
+#if (ENGINE_MINOR_VERSION < 19)
         NewMaterial->GetAllTextureParameterNames(ParameterNames, ParameterGuids);
 #else
         TArray<FMaterialParameterInfo> ParameterInfos;
