@@ -224,6 +224,7 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
 
     /// Create new static mesh
     UStaticMesh* StaticMesh = NewObject<UStaticMesh>(InputParent, InputClass, InputName, InputFlags);
+    checkSlow(StaticMesh);
     if (!StaticMesh) return nullptr;
 
     StaticMesh->SourceModels.Empty();
@@ -331,6 +332,7 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
             StaticMesh->AssetImportData->Update(glTFImportOptions->FilePathInOS);
         }
 
+        StaticMesh->PostEditChange();
         StaticMesh->MarkPackageDirty();
     }
     else
@@ -618,6 +620,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
     MaterialPackage->FullyLoad();
 
     UMaterial* NewMaterial = Cast<UMaterial>(StaticDuplicateObject(InOrigin, MaterialPackage, *MaterialName, InputFlags, InOrigin->GetClass()));
+    checkSlow(NewMaterial);
     if (!NewMaterial) return nullptr;
 
     TMap<FName, FGuid> ScalarParameterNameToGuid;
@@ -790,7 +793,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
         }
     }
 
-    NewMaterial->ForceRecompileForRendering();
+    NewMaterial->PostEditChange();
     NewMaterial->MarkPackageDirty();
     return NewMaterial;
 }
@@ -922,6 +925,8 @@ UTexture* FglTFImporterEd::CreateTexture(const TWeakPtr<FglTFImportOptions>& Ing
         }
 
         NewTexture = NewObject<UTexture2D>(TexturePackage, UTexture2D::StaticClass(), *InTextureName, InputFlags);
+        checkSlow(NewTexture);
+        if (!NewTexture) break;
         NewTexture->Source.Init(InSizeX, InSizeY, 1, 1, TextureFormat);
         NewTexture->SRGB = !InIsNormalmap;
         NewTexture->CompressionSettings = !InIsNormalmap ? TC_Default : TC_Normalmap;
@@ -953,6 +958,8 @@ UTexture* FglTFImporterEd::CreateTexture(const TWeakPtr<FglTFImportOptions>& Ing
     {
         NewTexture->UpdateResource();
         NewTexture->AssetImportData->Update(*ImageFilePath);
+
+        NewTexture->PostEditChange();
         NewTexture->MarkPackageDirty();
     }
     return NewTexture;
