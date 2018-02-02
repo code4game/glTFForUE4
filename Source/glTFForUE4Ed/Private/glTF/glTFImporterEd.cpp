@@ -617,8 +617,6 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
     const std::shared_ptr<libgltf::SMaterial>& glTFMaterial = InglTF->materials[InglTFMaterialInfo.Id];
     if (!glTFMaterial) return nullptr;
 
-    glTFForUE4::FFeedbackTaskWrapper FeedbackTaskWrapper(FeedbackContext, LOCTEXT("BeginImportMaterialTask", "Importing the glTF material"), true);
-
     FString MaterialName;
     if (glTFMaterial->name.size() > 0)
     {
@@ -724,7 +722,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
         {
             if (!ConstructSampleParameter(InglTFImportOptions, InglTF, glTFMaterial->emissiveTexture, TEXT("emissiveTexture"), InOutTextureLibrary, SampleParameter))
             {
-                FeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("CantConstructSampleParameter_emissiveTexture", "Failed to construct the `emissiveTexture`"));
+                UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Failed to construct the `emissiveTexture`"));
             }
         }
     }
@@ -744,7 +742,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
             {
                 if (!ConstructSampleParameter(InglTFImportOptions, InglTF, pbrMetallicRoughness->baseColorTexture, TEXT("baseColorTexture"), InOutTextureLibrary, SampleParameter))
                 {
-                    FeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("CantConstructSampleParameter_baseColorTexture", "Failed to construct the `baseColorTexture`"));
+                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Failed to construct the `baseColorTexture`"));
                 }
             }
         }
@@ -771,7 +769,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
             {
                 if (!ConstructSampleParameter(InglTFImportOptions, InglTF, pbrMetallicRoughness->metallicRoughnessTexture, TEXT("metallicRoughnessTexture"), InOutTextureLibrary, SampleParameter))
                 {
-                    FeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("CantConstructSampleParameter_metallicRoughnessTexture", "Failed to construct the `metallicRoughnessTexture`"));
+                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Failed to construct the `metallicRoughnessTexture`"));
                 }
             }
         }
@@ -785,7 +783,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
             {
                 if (!ConstructSampleParameter(InglTFImportOptions, InglTF, glTFMaterial->occlusionTexture, TEXT("occlusionTexture"), InOutTextureLibrary, SampleParameter))
                 {
-                    FeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("CantConstructSampleParameter_occlusionTexture", "Failed to construct the `occlusionTexture`"));
+                    UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Failed to construct the `occlusionTexture`"));
                 }
             }
         }
@@ -823,7 +821,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
         {
             if (!ConstructSampleParameter(InglTFImportOptions, InglTF, glTFMaterial->normalTexture, TEXT("normalTexture"), InOutTextureLibrary, SampleParameter, true))
             {
-                FeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("CantConstructSampleParameter_normalTexture", "Failed to construct the `normalTexture`"));
+                UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Failed to construct the `normalTexture`"));
             }
         }
     }
@@ -904,8 +902,6 @@ UTexture* FglTFImporterEd::CreateTexture(const TWeakPtr<FglTFImportOptions>& Ing
     if (!TexturePackage) return nullptr;
     TexturePackage->FullyLoad();
 
-    glTFForUE4::FFeedbackTaskWrapper FeedbackTaskWrapper(FeedbackContext, LOCTEXT("BeginImportTextureTask", "Importing the texture"), true);
-
     UTexture2D* NewTexture = nullptr;
 
     IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
@@ -938,8 +934,15 @@ UTexture* FglTFImporterEd::CreateTexture(const TWeakPtr<FglTFImportOptions>& Ing
 
         ETextureSourceFormat TextureFormat = TSF_Invalid;
 
-        int32 InSizeX = ImageWrapper->GetWidth();
-        int32 InSizeY = ImageWrapper->GetWidth();
+        int32 Width = ImageWrapper->GetWidth();
+        int32 Height = ImageWrapper->GetHeight();
+
+        // TODO: Do create a texture with bad dimensions.
+        if ((Width & (Width - 1)) || (Height & (Height - 1)))
+        {
+            break;
+        }
+
         int32 BitDepth = ImageWrapper->GetBitDepth();
 #if (ENGINE_MINOR_VERSION < 18)
         ERGBFormat::Type ImageFormat = ImageWrapper->GetFormat();
@@ -981,14 +984,14 @@ UTexture* FglTFImporterEd::CreateTexture(const TWeakPtr<FglTFImportOptions>& Ing
 
         if (TextureFormat == TSF_Invalid)
         {
-            FeedbackTaskWrapper.Log(ELogVerbosity::Error, LOCTEXT("UnsupportedImageFormat", "It is an unsupported image format."));
+            UE_LOG(LogglTFForUE4Ed, Error, TEXT("It is an unsupported image format."));
             break;
         }
 
         NewTexture = NewObject<UTexture2D>(TexturePackage, UTexture2D::StaticClass(), *InTextureName, InputFlags);
         checkSlow(NewTexture);
         if (!NewTexture) break;
-        NewTexture->Source.Init(InSizeX, InSizeY, 1, 1, TextureFormat);
+        NewTexture->Source.Init2DWithMipChain(Width, Height, TextureFormat);
         NewTexture->SRGB = !InIsNormalmap;
         NewTexture->CompressionSettings = !InIsNormalmap ? TC_Default : TC_Normalmap;
         const TArray<uint8>* RawData = nullptr;
