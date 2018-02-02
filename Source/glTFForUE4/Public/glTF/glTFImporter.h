@@ -15,6 +15,8 @@ namespace libgltf
     struct SMesh;
     struct SMeshPrimitive;
     struct SBuffer;
+    struct STextureInfo;
+    struct STexture;
 }
 
 namespace glTFForUE4

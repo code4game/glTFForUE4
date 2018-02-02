@@ -34,6 +34,7 @@ public class glTFForUE4Ed : ModuleRules
                 "SlateCore",
                 "InputCore",
                 "RenderCore",
+                "ImageWrapper",
                 "UnrealEd",
                 "MainFrame",
                 "Documentation",

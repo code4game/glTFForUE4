@@ -69,7 +69,7 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
         return nullptr;
     }
 
-    return FglTFImporterEd::Get(InClass, InParent, InName, Flags, InWarn)->Create(glTFImportOptions, GlTF);
+    return FglTFImporterEd::Get(this, InClass, InParent, InName, Flags, InWarn)->Create(glTFImportOptions, GlTF);
 }
 
 #undef LOCTEXT_NAMESPACE

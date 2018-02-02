@@ -117,77 +117,41 @@ FReply SglTFImportOptionsWindow::OnCancel()
 
 void SglTFImportOptionsWindow::HandleImportScene(ECheckBoxState InCheckBoxState)
 {
-    check(glTFImportOptions.IsValid());
-
     glTFImportOptions.Pin()->bImportAsScene = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
 void SglTFImportOptionsWindow::HandleImportSkeleton(ECheckBoxState InCheckBoxState)
 {
-    check(glTFImportOptions.IsValid());
-
     glTFImportOptions.Pin()->bImportAsSkeleton = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
 void SglTFImportOptionsWindow::HandleImportMaterial(ECheckBoxState InCheckBoxState)
 {
-    check(glTFImportOptions.IsValid());
-
     glTFImportOptions.Pin()->bImportMaterial = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
-void SglTFImportOptionsWindow::HandleMeshScaleRatio(FVector InNewValue)
+void SglTFImportOptionsWindow::HandleMeshScaleRatio(float InNewValue)
 {
-    check(glTFImportOptions.IsValid());
-
     glTFImportOptions.Pin()->MeshScaleRatio = InNewValue;
-}
-
-void SglTFImportOptionsWindow::HandleMeshScaleRatioX(float InNewValue)
-{
-    check(glTFImportOptions.IsValid());
-    glTFImportOptions.Pin()->MeshScaleRatio.X = InNewValue;
-}
-
-void SglTFImportOptionsWindow::HandleMeshScaleRatioY(float InNewValue)
-{
-    check(glTFImportOptions.IsValid());
-
-    glTFImportOptions.Pin()->MeshScaleRatio.Y = InNewValue;
-}
-
-void SglTFImportOptionsWindow::HandleMeshScaleRatioZ(float InNewValue)
-{
-    check(glTFImportOptions.IsValid());
-
-    glTFImportOptions.Pin()->MeshScaleRatio.Z = InNewValue;
 }
 
 void SglTFImportOptionsWindow::HandleMeshInvertNormal(ECheckBoxState InCheckBoxState)
 {
-    check(glTFImportOptions.IsValid());
-
     glTFImportOptions.Pin()->bInvertNormal = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
 void SglTFImportOptionsWindow::HandleMeshUseMikkTSpace(ECheckBoxState InCheckBoxState)
 {
-    check(glTFImportOptions.IsValid());
-
     glTFImportOptions.Pin()->bUseMikkTSpace = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
 void SglTFImportOptionsWindow::HandleMeshRecomputeNormals(ECheckBoxState InCheckBoxState)
 {
-    check(glTFImportOptions.IsValid());
-
     glTFImportOptions.Pin()->bRecomputeNormals = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
 void SglTFImportOptionsWindow::HandleMeshRecomputeTangents(ECheckBoxState InCheckBoxState)
 {
-    check(glTFImportOptions.IsValid());
-
     glTFImportOptions.Pin()->bRecomputeTangents = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
