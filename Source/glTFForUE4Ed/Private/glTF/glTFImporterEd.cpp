@@ -149,6 +149,21 @@ namespace glTFForUE4Ed
 
         return SanitizedName;
     }
+
+    template<typename TMaterialExpression>
+    TMaterialExpression* FindExpressionParameterByGUID(UMaterial* InMaterial, const FGuid& InGuid)
+    {
+        if (!InMaterial || !InGuid.IsValid()) return nullptr;
+
+        for (UMaterialExpression* Expression : InMaterial->Expressions)
+        {
+            if (!Expression || !UMaterial::IsParameter(Expression)) continue;
+            TMaterialExpression* ExpressionTemp  = Cast<TMaterialExpression>(Expression);
+            if (!ExpressionTemp || ExpressionTemp->ExpressionGUID != InGuid) continue;
+            return ExpressionTemp;
+        }
+        return nullptr;
+    }
 }
 
 FglTFImporterEd::FglTFMaterialInfo::FglTFMaterialInfo(int32 InId, FString InPrimitiveName)
@@ -696,7 +711,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
 
     if (ScalarParameterNameToGuid.Contains(TEXT("alphaCutoff")))
     {
-        if (UMaterialExpressionScalarParameter* ScalarParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionScalarParameter>(ScalarParameterNameToGuid[TEXT("alphaCutoff")]))
+        if (UMaterialExpressionScalarParameter* ScalarParameter = glTFForUE4Ed::FindExpressionParameterByGUID<UMaterialExpressionScalarParameter>(NewMaterial, ScalarParameterNameToGuid[TEXT("alphaCutoff")]))
         {
             ScalarParameter->DefaultValue = glTFMaterial->alphaCutoff;
         }
@@ -705,7 +720,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
         && !!(glTFMaterial->emissiveTexture->index)
         && TextureParameterNameToGuid.Contains(TEXT("emissiveTexture")))
     {
-        if (UMaterialExpressionTextureSampleParameter* SampleParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionTextureSampleParameter>(TextureParameterNameToGuid[TEXT("emissiveTexture")]))
+        if (UMaterialExpressionTextureSampleParameter* SampleParameter = glTFForUE4Ed::FindExpressionParameterByGUID<UMaterialExpressionTextureSampleParameter>(NewMaterial, TextureParameterNameToGuid[TEXT("emissiveTexture")]))
         {
             if (!ConstructSampleParameter(InglTFImportOptions, InglTF, glTFMaterial->emissiveTexture, TEXT("emissiveTexture"), InOutTextureLibrary, SampleParameter))
             {
@@ -718,14 +733,14 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
         const std::shared_ptr<libgltf::SMaterialPBRMetallicRoughness>& pbrMetallicRoughness = glTFMaterial->pbrMetallicRoughness;
         if (ScalarParameterNameToGuid.Contains(TEXT("roughnessFactor")))
         {
-            if (UMaterialExpressionScalarParameter* ScalarParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionScalarParameter>(ScalarParameterNameToGuid[TEXT("roughnessFactor")]))
+            if (UMaterialExpressionScalarParameter* ScalarParameter = glTFForUE4Ed::FindExpressionParameterByGUID<UMaterialExpressionScalarParameter>(NewMaterial, ScalarParameterNameToGuid[TEXT("roughnessFactor")]))
             {
                 ScalarParameter->DefaultValue = pbrMetallicRoughness->roughnessFactor;
             }
         }
         if (!!(pbrMetallicRoughness->baseColorTexture) && TextureParameterNameToGuid.Contains(TEXT("baseColorTexture")))
         {
-            if (UMaterialExpressionTextureSampleParameter* SampleParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionTextureSampleParameter>(TextureParameterNameToGuid[TEXT("baseColorTexture")]))
+            if (UMaterialExpressionTextureSampleParameter* SampleParameter = glTFForUE4Ed::FindExpressionParameterByGUID<UMaterialExpressionTextureSampleParameter>(NewMaterial, TextureParameterNameToGuid[TEXT("baseColorTexture")]))
             {
                 if (!ConstructSampleParameter(InglTFImportOptions, InglTF, pbrMetallicRoughness->baseColorTexture, TEXT("baseColorTexture"), InOutTextureLibrary, SampleParameter))
                 {
@@ -735,14 +750,14 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
         }
         if (ScalarParameterNameToGuid.Contains(TEXT("metallicFactor")))
         {
-            if (UMaterialExpressionScalarParameter* ScalarParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionScalarParameter>(ScalarParameterNameToGuid[TEXT("metallicFactor")]))
+            if (UMaterialExpressionScalarParameter* ScalarParameter = glTFForUE4Ed::FindExpressionParameterByGUID<UMaterialExpressionScalarParameter>(NewMaterial, ScalarParameterNameToGuid[TEXT("metallicFactor")]))
             {
                 ScalarParameter->DefaultValue = pbrMetallicRoughness->metallicFactor;
             }
         }
         if (pbrMetallicRoughness->baseColorFactor.size() > 0 && VectorParameterNameToGuid.Contains(TEXT("baseColorFactor")))
         {
-            if (UMaterialExpressionVectorParameter* VectorParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionVectorParameter>(VectorParameterNameToGuid[TEXT("baseColorFactor")]))
+            if (UMaterialExpressionVectorParameter* VectorParameter = glTFForUE4Ed::FindExpressionParameterByGUID<UMaterialExpressionVectorParameter>(NewMaterial, VectorParameterNameToGuid[TEXT("baseColorFactor")]))
             {
                 if (pbrMetallicRoughness->baseColorFactor.size() > 0) VectorParameter->DefaultValue.R = pbrMetallicRoughness->baseColorFactor[0];
                 if (pbrMetallicRoughness->baseColorFactor.size() > 1) VectorParameter->DefaultValue.G = pbrMetallicRoughness->baseColorFactor[1];
@@ -752,7 +767,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
         }
         if (!!(pbrMetallicRoughness->metallicRoughnessTexture) && TextureParameterNameToGuid.Contains(TEXT("metallicRoughnessTexture")))
         {
-            if (UMaterialExpressionTextureSampleParameter* SampleParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionTextureSampleParameter>(TextureParameterNameToGuid[TEXT("metallicRoughnessTexture")]))
+            if (UMaterialExpressionTextureSampleParameter* SampleParameter = glTFForUE4Ed::FindExpressionParameterByGUID<UMaterialExpressionTextureSampleParameter>(NewMaterial, TextureParameterNameToGuid[TEXT("metallicRoughnessTexture")]))
             {
                 if (!ConstructSampleParameter(InglTFImportOptions, InglTF, pbrMetallicRoughness->metallicRoughnessTexture, TEXT("metallicRoughnessTexture"), InOutTextureLibrary, SampleParameter))
                 {
@@ -766,7 +781,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
         const std::shared_ptr<libgltf::SMaterialOcclusionTextureInfo>& occlusionTexture = glTFMaterial->occlusionTexture;
         if (TextureParameterNameToGuid.Contains(TEXT("occlusionTexture")))
         {
-            if (UMaterialExpressionTextureSampleParameter* SampleParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionTextureSampleParameter>(TextureParameterNameToGuid[TEXT("occlusionTexture")]))
+            if (UMaterialExpressionTextureSampleParameter* SampleParameter = glTFForUE4Ed::FindExpressionParameterByGUID<UMaterialExpressionTextureSampleParameter>(NewMaterial, TextureParameterNameToGuid[TEXT("occlusionTexture")]))
             {
                 if (!ConstructSampleParameter(InglTFImportOptions, InglTF, glTFMaterial->occlusionTexture, TEXT("occlusionTexture"), InOutTextureLibrary, SampleParameter))
                 {
@@ -776,7 +791,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
         }
         if (ScalarParameterNameToGuid.Contains(TEXT("strength")))
         {
-            if (UMaterialExpressionScalarParameter* ScalarParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionScalarParameter>(ScalarParameterNameToGuid[TEXT("strength")]))
+            if (UMaterialExpressionScalarParameter* ScalarParameter = glTFForUE4Ed::FindExpressionParameterByGUID<UMaterialExpressionScalarParameter>(NewMaterial, ScalarParameterNameToGuid[TEXT("strength")]))
             {
                 ScalarParameter->DefaultValue = occlusionTexture->strength;
             }
@@ -804,7 +819,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
 
     if (!!glTFMaterial->normalTexture && TextureParameterNameToGuid.Contains(TEXT("normalTexture")))
     {
-        if (UMaterialExpressionTextureSampleParameter* SampleParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionTextureSampleParameter>(TextureParameterNameToGuid[TEXT("normalTexture")]))
+        if (UMaterialExpressionTextureSampleParameter* SampleParameter = glTFForUE4Ed::FindExpressionParameterByGUID<UMaterialExpressionTextureSampleParameter>(NewMaterial, TextureParameterNameToGuid[TEXT("normalTexture")]))
         {
             if (!ConstructSampleParameter(InglTFImportOptions, InglTF, glTFMaterial->normalTexture, TEXT("normalTexture"), InOutTextureLibrary, SampleParameter, true))
             {
@@ -815,7 +830,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
 
     if (glTFMaterial->emissiveFactor.size() > 0 && VectorParameterNameToGuid.Contains(TEXT("emissiveFactor")))
     {
-        if (UMaterialExpressionVectorParameter* VectorParameter = NewMaterial->FindExpressionByGUID<UMaterialExpressionVectorParameter>(VectorParameterNameToGuid[TEXT("emissiveFactor")]))
+        if (UMaterialExpressionVectorParameter* VectorParameter = glTFForUE4Ed::FindExpressionParameterByGUID<UMaterialExpressionVectorParameter>(NewMaterial, VectorParameterNameToGuid[TEXT("emissiveFactor")]))
         {
             if (glTFMaterial->emissiveFactor.size() > 0) VectorParameter->DefaultValue.R = glTFMaterial->emissiveFactor[0];
             if (glTFMaterial->emissiveFactor.size() > 1) VectorParameter->DefaultValue.G = glTFMaterial->emissiveFactor[1];
