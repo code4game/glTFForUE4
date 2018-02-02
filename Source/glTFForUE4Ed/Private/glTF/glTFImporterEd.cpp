@@ -210,17 +210,18 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
         {
             FeedbackTaskWrapper.Log(ELogVerbosity::Error, LOCTEXT("glTFMaterialOriginHasError", "The glTF material origin must be a `UMaterial`!"));
         }
+        static UMaterial* DefaultMaterial = UMaterial::GetDefaultMaterial(MD_Surface);
         for (int32 i = 0; i < glTFMaterialInfos.Num(); ++i)
         {
             const FglTFMaterialInfo& glTFMaterialInfo = glTFMaterialInfos[i];
             UMaterialInterface* NewMaterial = nullptr;
-            if (glTFMaterialOrigin)
+            if (glTFImportOptions->bImportMaterial)
             {
                 NewMaterial = CreateMaterial(InglTFImportOptions, InGlTF, glTFMaterialInfo, glTFMaterialOrigin);
             }
             if (!NewMaterial)
             {
-                NewMaterial = UMaterial::GetDefaultMaterial(MD_Surface);
+                NewMaterial = DefaultMaterial;
             }
 
             FMeshSectionInfo Info = StaticMesh->SectionInfoMap.Get(0, i);

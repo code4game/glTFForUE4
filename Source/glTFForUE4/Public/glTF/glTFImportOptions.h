@@ -27,7 +27,7 @@ struct GLTFFORUE4_API FglTFImportOptions
 
     /// Mesh options
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    FVector MeshScaleRatio;
+    float MeshScaleRatio;
 
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bInvertNormal;
