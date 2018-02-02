@@ -14,8 +14,12 @@
 #include "Materials/MaterialExpressionScalarParameter.h"
 #include "Materials/MaterialExpressionVectorParameter.h"
 #include "Materials/MaterialExpressionTextureSampleParameter.h"
+#if (ENGINE_MINOR_VERSION < 18)
 #include "ImageWrapper.h"
-#include "Runtime/Launch/Resources/Version.h"
+#else
+#include "IImageWrapper.h"
+#else
+#endif
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
 
