@@ -290,6 +290,13 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
         glTFForUE4Ed::SwapYZ(NewRawMesh.WedgeTangentX);
         glTFForUE4Ed::SwapYZ(NewRawMesh.WedgeTangentY);
         glTFForUE4Ed::SwapYZ(NewRawMesh.WedgeTangentZ);
+        if (glTFImportOptions->bInvertNormal)
+        {
+            for (FVector& Normal : NewRawMesh.WedgeTangentZ)
+            {
+                Normal *= -1.0f;
+            }
+        }
 
         for (FVector& Position : NewRawMesh.VertexPositions)
         {
