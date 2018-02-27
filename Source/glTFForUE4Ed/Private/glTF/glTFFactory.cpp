@@ -9,8 +9,8 @@
 
 #include "libgltf/libgltf.h"
 
-#include "Engine/StaticMesh.h"
 #include "Misc/Paths.h"
+#include "Engine/StaticMesh.h"
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
 
@@ -37,7 +37,22 @@ bool UglTFFactory::FactoryCanImport(const FString& InFilePathInOS)
     return FPaths::GetExtension(InFilePathInOS).Equals(TEXT("gltf"), ESearchCase::IgnoreCase);
 }
 
-UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* InContext, const TCHAR* InType, const TCHAR*& InBuffer, const TCHAR* InBufferEnd, FFeedbackContext* InWarn)
+UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, UObject* InContext, const TCHAR* InType, const TCHAR*& InBuffer, const TCHAR* InBufferEnd, FFeedbackContext* InWarn)
+{
+    if (!InBuffer || !InBufferEnd || InBuffer >= InBufferEnd)
+    {
+        InWarn->Log(ELogVerbosity::Error, FText::Format(NSLOCTEXT("glTFForUE4Ed", "BufferHasErrorInFactoryCreateText", "Buffer has some errors when create the glTF file {0}"), FText::FromName(InName)).ToString());
+        return nullptr;
+    }
+
+    uint64 BufferSize = InBufferEnd - InBuffer;
+
+    FString glTFJson;
+    glTFJson.Append(InBuffer, BufferSize);
+    return FactoryCreate(InClass, InParent, InName, InFlags, InContext, InType, InWarn, glTFJson);
+}
+
+UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, UObject* InContext, const TCHAR* InType, FFeedbackContext* InWarn, const FString& InglTFJson, const TSharedPtr<FglTFBufferBinaries>& InglTFBufferBinaries /*= nullptr*/)
 {
     const FString& FilePathInOS = UFactory::GetCurrentFilename();
     if (!FPaths::GetBaseFilename(FilePathInOS).Equals(InName.ToString()))
@@ -48,7 +63,7 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
 
     /// Parse and check the buffer
     std::shared_ptr<libgltf::SGlTF> GlTF;
-    std::wstring GlTFString = InBuffer;
+    std::wstring GlTFString = *InglTFJson;
     if (!(GlTF << GlTFString))
     {
         InWarn->Log(ELogVerbosity::Error, FText::Format(NSLOCTEXT("glTFForUE4Ed", "FailedToParseTheglTFFile", "Failed to parse the glTF file {0}"), FText::FromName(InName)).ToString());
@@ -69,7 +84,12 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
         return nullptr;
     }
 
-    return FglTFImporterEd::Get(this, InClass, InParent, InName, Flags, InWarn)->Create(glTFImportOptions, GlTF);
+    const FString FolderPathInOS = FPaths::GetPath(glTFImportOptions->FilePathInOS);
+    FglTFBuffers glTFBuffers;
+    glTFBuffers.Binaries = MakeShareable(new FglTFBufferBinaries(InglTFBufferBinaries));
+    glTFBuffers.Files = MakeShareable(new FglTFBufferFiles(FolderPathInOS, GlTF->buffers));
+
+    return FglTFImporterEd::Get(this, InClass, InParent, InName, InFlags, InWarn)->Create(glTFImportOptions, GlTF, glTFBuffers);
 }
 
 #undef LOCTEXT_NAMESPACE

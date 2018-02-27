@@ -3,8 +3,14 @@
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTFBinaryFactory.h"
 
-#include "Engine/StaticMesh.h"
+#include "glTFImporterEd.h"
+
+#include "Misc/CoreMisc.h"
 #include "Misc/Paths.h"
+#include "Engine/StaticMesh.h"
+
+#define GLTF_FILE_SIZE_MAX      0x7FFFFFFF
+#define GLTF_ASCII_UINT32(x)    ((((x) & 0xFF000000) >> 24) | (((x) & 0x000000FF) << 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8))
 
 UglTFBinaryFactory::UglTFBinaryFactory(const FObjectInitializer& InObjectInitializer)
     : Super(InObjectInitializer)
@@ -18,12 +24,6 @@ UglTFBinaryFactory::UglTFBinaryFactory(const FObjectInitializer& InObjectInitial
     bEditorImport = true;
 }
 
-bool UglTFBinaryFactory::DoesSupportClass(UClass* InClass)
-{
-    //TODO:
-    return (InClass == UStaticMesh::StaticClass());
-}
-
 bool UglTFBinaryFactory::FactoryCanImport(const FString& InFilename)
 {
     return FPaths::GetExtension(InFilename).Equals(TEXT("glb"), ESearchCase::IgnoreCase);
@@ -31,6 +31,88 @@ bool UglTFBinaryFactory::FactoryCanImport(const FString& InFilename)
 
 UObject* UglTFBinaryFactory::FactoryCreateBinary(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, UObject* InContext, const TCHAR* InType, const uint8*& InBuffer, const uint8* InBufferEnd, FFeedbackContext* InWarn)
 {
-    //TODO:
-    return nullptr;
+    if (!InClass || !InParent || !InBuffer || !InBufferEnd || InBuffer == InBufferEnd) return nullptr;
+
+    uint64 BuffSize = InBufferEnd - InBuffer;
+    if (BuffSize <= 0 || BuffSize >= GLTF_FILE_SIZE_MAX)
+    {
+        //TODO:
+        return nullptr;
+    }
+
+    struct FglTFFileHeader
+    {
+        uint32 Magic;
+        uint32 Version;
+        uint32 Length;
+    };
+
+    uint64 Offset = 0;
+    if (BuffSize < sizeof(FglTFFileHeader))
+    {
+        //TODO:
+        return nullptr;
+    }
+
+    FglTFFileHeader glTFFileHeader;
+    FMemory::Memcpy(&glTFFileHeader, InBuffer + Offset, sizeof(FglTFFileHeader));
+    Offset += sizeof(FglTFFileHeader);
+
+    if (glTFFileHeader.Magic != GLTF_ASCII_UINT32('glTF')
+        || glTFFileHeader.Version != 2
+        || glTFFileHeader.Length != BuffSize)
+    {
+        //TODO:
+        return nullptr;
+    }
+
+    struct FglTFChunkHeader
+    {
+        uint32 Length;
+        uint32 Type;
+    };
+
+    FString glTFJson;
+    TSharedPtr<FglTFBufferBinaries> glTFBufferBinaries = MakeShareable(new FglTFBufferBinaries);
+    while (Offset < BuffSize)
+    {
+        FglTFChunkHeader glTFChunkHeader;
+        FMemory::Memcpy(&glTFChunkHeader, InBuffer + Offset, sizeof(FglTFChunkHeader));
+        Offset += sizeof(FglTFChunkHeader);
+
+        if ((Offset + glTFChunkHeader.Length) > BuffSize)
+        {
+            //TODO:
+            return nullptr;
+        }
+
+        if (glTFChunkHeader.Type == GLTF_ASCII_UINT32('JSON'))
+        {
+            if (glTFJson.IsEmpty())
+            {
+                FFileHelper::BufferToString(glTFJson, InBuffer + Offset, glTFChunkHeader.Length);
+                if (glTFJson.IsEmpty())
+                {
+                    //TODO:
+                    return nullptr;
+                }
+            }
+            else
+            {
+                //TODO:
+                return nullptr;
+            }
+        }
+        else if (glTFChunkHeader.Type == GLTF_ASCII_UINT32('BIN\0'))
+        {
+            TArray<uint8> ChunkData;
+            ChunkData.SetNumZeroed(glTFChunkHeader.Length);
+            FMemory::Memcpy(ChunkData.GetData(), InBuffer + Offset, glTFChunkHeader.Length);
+            glTFBufferBinaries->Add(ChunkData);
+        }
+
+        Offset += glTFChunkHeader.Length;
+    }
+
+    return FactoryCreate(InClass, InParent, InName, InFlags, InContext, InType, InWarn, glTFJson, glTFBufferBinaries);
 }
