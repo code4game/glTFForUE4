@@ -67,7 +67,22 @@ namespace glTFForUE4
     }
 }
 
+FglTFBufferDatas::FglTFBufferDatas()
+    : BufferBinaries()
+    , BufferFiles()
+{
+    //
+}
+
+FglTFBufferDatas::~FglTFBufferDatas()
+{
+    //
+}
+
 FglTFBufferFiles::FglTFBufferFiles(const FString& InFileFolderPath, const std::vector<std::shared_ptr<libgltf::SBuffer>>& InBuffers)
+    : Super()
+    , IndexToUri()
+    , EmptyBufferFile()
 {
     for (int32 i = 0; i < static_cast<int32>(InBuffers.size()); ++i)
     {
@@ -124,6 +139,11 @@ FglTFBufferFiles::FglTFBufferFiles(const FString& InFileFolderPath, const std::v
     }
 }
 
+FglTFBufferFiles::~FglTFBufferFiles()
+{
+    //
+}
+
 const TArray<uint8>& FglTFBufferFiles::operator[](const FString& InKey) const
 {
     const TArray<uint8>* FoundBufferFile = BufferFiles.Find(InKey);
@@ -136,6 +156,45 @@ const TArray<uint8>& FglTFBufferFiles::operator[](int32 InIndex) const
     const FString* UriPtr = IndexToUri.Find(InIndex);
     if (!UriPtr) return EmptyBufferFile;
     return (*this)[*UriPtr];
+}
+
+FglTFBufferBinaries::FglTFBufferBinaries()
+    : Super()
+    , EmptyBufferBinary()
+{
+    //
+}
+
+FglTFBufferBinaries::FglTFBufferBinaries(const TSharedPtr<FglTFBufferBinaries> InAnother)
+    : FglTFBufferBinaries()
+{
+    if (InAnother.IsValid())
+    {
+        BufferBinaries = InAnother->BufferBinaries;
+    }
+}
+
+FglTFBufferBinaries::~FglTFBufferBinaries()
+{
+    //
+}
+
+const TArray<uint8>& FglTFBufferBinaries::operator[](int32 InIndex) const
+{
+    if (InIndex >= BufferBinaries.Num()) return EmptyBufferBinary;
+    return BufferBinaries[InIndex];
+}
+
+void FglTFBufferBinaries::Add(const TArray<uint8>& InBufferBinaries)
+{
+    BufferBinaries.Add(BufferBinaries.Num(), InBufferBinaries);
+}
+
+FglTFBuffers::FglTFBuffers()
+    : Binaries(nullptr)
+    , Files(nullptr)
+{
+    //
 }
 
 TSharedPtr<FglTFImporter> FglTFImporter::Get(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
@@ -170,7 +229,7 @@ FglTFImporter& FglTFImporter::Set(UClass* InClass, UObject* InParent, FName InNa
     return *this;
 }
 
-UObject* FglTFImporter::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF) const
+UObject* FglTFImporter::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers) const
 {
     if (!InGlTF)
     {
@@ -317,22 +376,33 @@ struct TAccessorTypeVec4
 };
 
 template<typename TAccessorDataType, typename TEngineDataType>
-bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, const std::shared_ptr<libgltf::SAccessor>& InAccessor, TArray<TEngineDataType>& OutDataArray)
+bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBuffers, const std::shared_ptr<libgltf::SAccessor>& InAccessor, TArray<TEngineDataType>& OutDataArray)
 {
+    if (!InBuffers.Files.IsValid()) return false;
     if (!InAccessor) return false;
 
     const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*InAccessor->bufferView)];
     if (!BufferView) return false;
 
-    if (OutDataArray.Num() > 0)
+    OutDataArray.Empty();
+
+    const FglTFBufferDatas* glTFBufferDatas = InBuffers.Files.Get();
+
+    const std::shared_ptr<libgltf::SBuffer>& Buffer = InGlTF->buffers[(int32)(*BufferView->buffer)];
+    if (Buffer->uri.empty())
     {
-        OutDataArray.Empty();
+        glTFBufferDatas = InBuffers.Binaries.Get();
+    }
+
+    if (!glTFBufferDatas)
+    {
+        return false;
     }
 
     if (InAccessor->type == TEXT("SCALAR"))
     {
         TArray<TAccessorTypeScale<TAccessorDataType>> AccessorDataArray;
-        if (InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + InAccessor->byteOffset, InAccessor->count, BufferView->byteStride, AccessorDataArray))
+        if (glTFBufferDatas->Get((int32)(*BufferView->buffer), BufferView->byteOffset + InAccessor->byteOffset, InAccessor->count, BufferView->byteStride, AccessorDataArray))
         {
             for (const TAccessorTypeScale<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
             {
@@ -348,7 +418,7 @@ bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFB
     else if (InAccessor->type == TEXT("VEC2"))
     {
         TArray<TAccessorTypeVec2<TAccessorDataType>> AccessorDataArray;
-        if (InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + InAccessor->byteOffset, InAccessor->count, BufferView->byteStride, AccessorDataArray))
+        if (glTFBufferDatas->Get((int32)(*BufferView->buffer), BufferView->byteOffset + InAccessor->byteOffset, InAccessor->count, BufferView->byteStride, AccessorDataArray))
         {
             for (const TAccessorTypeVec2<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
             {
@@ -364,7 +434,7 @@ bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFB
     else if (InAccessor->type == TEXT("VEC3"))
     {
         TArray<TAccessorTypeVec3<TAccessorDataType>> AccessorDataArray;
-        if (InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + InAccessor->byteOffset, InAccessor->count, BufferView->byteStride, AccessorDataArray))
+        if (glTFBufferDatas->Get((int32)(*BufferView->buffer), BufferView->byteOffset + InAccessor->byteOffset, InAccessor->count, BufferView->byteStride, AccessorDataArray))
         {
             for (const TAccessorTypeVec3<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
             {
@@ -380,7 +450,7 @@ bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFB
     else if (InAccessor->type == TEXT("VEC4"))
     {
         TArray<TAccessorTypeVec4<TAccessorDataType>> AccessorDataArray;
-        if (InBufferFiles.Get((int32)(*BufferView->buffer), BufferView->byteOffset + InAccessor->byteOffset, InAccessor->count, BufferView->byteStride, AccessorDataArray))
+        if (glTFBufferDatas->Get((int32)(*BufferView->buffer), BufferView->byteOffset + InAccessor->byteOffset, InAccessor->count, BufferView->byteStride, AccessorDataArray))
         {
             for (const TAccessorTypeVec4<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
             {
@@ -402,29 +472,29 @@ bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFB
 }
 
 template<typename TEngineDataType>
-bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, const std::shared_ptr<libgltf::SAccessor>& InAccessor, TArray<TEngineDataType>& OutDataArray)
+bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBuffers, const std::shared_ptr<libgltf::SAccessor>& InAccessor, TArray<TEngineDataType>& OutDataArray)
 {
     if (!InAccessor) return false;
 
     switch (InAccessor->componentType)
     {
     case 5120:
-        return GetAccessorData<int8>(InGlTF, InBufferFiles, InAccessor, OutDataArray);
+        return GetAccessorData<int8>(InGlTF, InBuffers, InAccessor, OutDataArray);
 
     case 5121:
-        return GetAccessorData<uint8>(InGlTF, InBufferFiles, InAccessor, OutDataArray);
+        return GetAccessorData<uint8>(InGlTF, InBuffers, InAccessor, OutDataArray);
 
     case 5122:
-        return GetAccessorData<int16>(InGlTF, InBufferFiles, InAccessor, OutDataArray);
+        return GetAccessorData<int16>(InGlTF, InBuffers, InAccessor, OutDataArray);
 
     case 5123:
-        return GetAccessorData<uint16>(InGlTF, InBufferFiles, InAccessor, OutDataArray);
+        return GetAccessorData<uint16>(InGlTF, InBuffers, InAccessor, OutDataArray);
 
     case 5125:
-        return GetAccessorData<int32>(InGlTF, InBufferFiles, InAccessor, OutDataArray);
+        return GetAccessorData<int32>(InGlTF, InBuffers, InAccessor, OutDataArray);
 
     case 5126:
-        return GetAccessorData<float>(InGlTF, InBufferFiles, InAccessor, OutDataArray);
+        return GetAccessorData<float>(InGlTF, InBuffers, InAccessor, OutDataArray);
 
     default:
         UE_LOG(LogglTFForUE4, Error, TEXT("Not support the accessor's componetType(%d)?"), InAccessor->componentType);
@@ -433,42 +503,42 @@ bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFB
     return false;
 }
 
-bool FglTFImporter::GetTriangleIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<uint32>& OutTriangleIndices)
+bool FglTFImporter::GetTriangleIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBuffers, int32 InAccessorIndex, TArray<uint32>& OutTriangleIndices)
 {
     if (!InGlTF) return false;
 
     const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[InAccessorIndex];
-    return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutTriangleIndices);
+    return GetAccessorData(InGlTF, InBuffers, Accessor, OutTriangleIndices);
 }
 
-bool FglTFImporter::GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector>& OutVertexPositions)
+bool FglTFImporter::GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBuffers, int32 InAccessorIndex, TArray<FVector>& OutVertexPositions)
 {
     if (!InGlTF) return false;
 
     const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[InAccessorIndex];
-    return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutVertexPositions);
+    return GetAccessorData(InGlTF, InBuffers, Accessor, OutVertexPositions);
 }
 
-bool FglTFImporter::GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector>& OutVertexNormals)
+bool FglTFImporter::GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBuffers, int32 InAccessorIndex, TArray<FVector>& OutVertexNormals)
 {
     if (!InGlTF) return false;
 
     const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[InAccessorIndex];
-    return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutVertexNormals);
+    return GetAccessorData(InGlTF, InBuffers, Accessor, OutVertexNormals);
 }
 
-bool FglTFImporter::GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector4>& OutVertexTangents)
+bool FglTFImporter::GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBuffers, int32 InAccessorIndex, TArray<FVector4>& OutVertexTangents)
 {
     if (!InGlTF) return false;
 
     const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[InAccessorIndex];
-    return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutVertexTangents);
+    return GetAccessorData(InGlTF, InBuffers, Accessor, OutVertexTangents);
 }
 
-bool FglTFImporter::GetVertexTexcoords(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector2D>& OutVertexTexcoords)
+bool FglTFImporter::GetVertexTexcoords(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBuffers, int32 InAccessorIndex, TArray<FVector2D>& OutVertexTexcoords)
 {
     if (!InGlTF) return false;
 
     const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[InAccessorIndex];
-    return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutVertexTexcoords);
+    return GetAccessorData(InGlTF, InBuffers, Accessor, OutVertexTexcoords);
 }

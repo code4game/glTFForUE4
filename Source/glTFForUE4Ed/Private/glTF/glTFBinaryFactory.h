@@ -12,7 +12,6 @@ class UglTFBinaryFactory : public UglTFFactory
 
 public:
     // Begin UFactory Interface
-    virtual bool DoesSupportClass(UClass* InClass) override;
     virtual bool FactoryCanImport(const FString& InFilename) override;
     // End UFactory Interface
 
