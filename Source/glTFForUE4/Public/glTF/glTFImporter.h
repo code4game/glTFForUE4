@@ -38,14 +38,14 @@ namespace glTFForUE4
     };
 }
 
-class GLTFFORUE4_API FglTFBufferFiles
+class GLTFFORUE4_API FglTFBufferDatas
 {
 public:
-    explicit FglTFBufferFiles(const FString& InFileFolderPath, const std::vector<std::shared_ptr<libgltf::SBuffer>>& InBuffers);
+    FglTFBufferDatas();
+    virtual ~FglTFBufferDatas();
 
 public:
-    const TArray<uint8>& operator[](const FString& InKey) const;
-    const TArray<uint8>& operator[](int32 InIndex) const;
+    virtual const TArray<uint8>& operator[](int32 InIndex) const = 0;
 
     template<typename TElem>
     bool Get(int32 InIndex, int32 InStart, int32 InCount, int32 InStride, TArray<TElem>& OutBufferSegment) const
@@ -72,10 +72,54 @@ public:
         return true;
     }
 
+protected:
+    TMap<int32, TArray<uint8>> BufferBinaries;
+    TMap<FString, TArray<uint8>> BufferFiles;
+};
+
+class GLTFFORUE4_API FglTFBufferFiles : public FglTFBufferDatas
+{
+    typedef FglTFBufferDatas Super;
+
+public:
+    explicit FglTFBufferFiles(const FString& InFileFolderPath, const std::vector<std::shared_ptr<libgltf::SBuffer>>& InBuffers);
+    virtual ~FglTFBufferFiles();
+
+public:
+    const TArray<uint8>& operator[](const FString& InKey) const;
+    virtual const TArray<uint8>& operator[](int32 InIndex) const;
+
 private:
     TMap<int32, FString> IndexToUri;
-    TMap<FString, TArray<uint8>> BufferFiles;
     const TArray<uint8> EmptyBufferFile;
+};
+
+class GLTFFORUE4_API FglTFBufferBinaries : public FglTFBufferDatas
+{
+    typedef FglTFBufferDatas Super;
+
+public:
+    FglTFBufferBinaries();
+    FglTFBufferBinaries(const TSharedPtr<FglTFBufferBinaries> InAnother);
+    virtual ~FglTFBufferBinaries();
+
+public:
+    virtual const TArray<uint8>& operator[](int32 InIndex) const;
+
+    void Add(const TArray<uint8>& InBufferBinaries);
+
+private:
+    const TArray<uint8> EmptyBufferBinary;
+};
+
+class GLTFFORUE4_API FglTFBuffers
+{
+public:
+    FglTFBuffers();
+
+public:
+    TSharedPtr<FglTFBufferBinaries> Binaries;
+    TSharedPtr<FglTFBufferFiles> Files;
 };
 
 class GLTFFORUE4_API FglTFImporter
@@ -89,7 +133,7 @@ public:
 
 public:
     virtual FglTFImporter& Set(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
-    virtual class UObject* Create(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF) const;
+    virtual UObject* Create(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers) const;
 
 protected:
     UClass* InputClass;
@@ -99,9 +143,9 @@ protected:
     class FFeedbackContext* FeedbackContext;
 
 public:
-    static bool GetTriangleIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<uint32>& OutTriangleIndices);
-    static bool GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector>& OutVertexPositions);
-    static bool GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector>& OutVertexNormals);
-    static bool GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector4>& OutVertexTangents);
-    static bool GetVertexTexcoords(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBufferFiles& InBufferFiles, int32 InAccessorIndex, TArray<FVector2D>& OutVertexTexcoords);
+    static bool GetTriangleIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBufferFiles, int32 InAccessorIndex, TArray<uint32>& OutTriangleIndices);
+    static bool GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBufferFiles, int32 InAccessorIndex, TArray<FVector>& OutVertexPositions);
+    static bool GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBufferFiles, int32 InAccessorIndex, TArray<FVector>& OutVertexNormals);
+    static bool GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBufferFiles, int32 InAccessorIndex, TArray<FVector4>& OutVertexTangents);
+    static bool GetVertexTexcoords(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBufferFiles, int32 InAccessorIndex, TArray<FVector2D>& OutVertexTexcoords);
 };
