@@ -67,134 +67,134 @@ namespace glTFForUE4
     }
 }
 
-FglTFBufferDatas::FglTFBufferDatas()
-    : BufferBinaries()
-    , BufferFiles()
+FglTFBufferData::FglTFBufferData(const TArray<uint8>& InData)
+    : Data(InData)
+    , FilePath(TEXT(""))
 {
     //
 }
 
-FglTFBufferDatas::~FglTFBufferDatas()
+FglTFBufferData::FglTFBufferData(const FString& InFileFolderRoot, const FString& InUri)
+    : Data()
+    , FilePath(TEXT(""))
+    , StreamType(TEXT(""))
+    , StreamEncoding(TEXT(""))
 {
-    //
-}
-
-FglTFBufferFiles::FglTFBufferFiles(const FString& InFileFolderPath, const std::vector<std::shared_ptr<libgltf::SBuffer>>& InBuffers)
-    : Super()
-    , IndexToUri()
-    , EmptyBufferFile()
-{
-    for (int32 i = 0; i < static_cast<int32>(InBuffers.size()); ++i)
+    static const FString UriStreamHead(TEXT("data:"));
+    int32 StreamDataStartIndex = INDEX_NONE;
+    if (InUri.StartsWith(UriStreamHead, ESearchCase::IgnoreCase))
     {
-        const std::shared_ptr<libgltf::SBuffer>& Buffer = InBuffers[i];
-        if (!Buffer) continue;
-        const FString BufferUri = Buffer->uri.c_str();
-
-        FString BufferFileName = BufferUri;
-        FString BufferStream = BufferUri;
-
-        if (BufferStream.RemoveFromStart(TEXT("data:application/octet-stream;")))
+        int32 StreamTypeStartIndex = UriStreamHead.Len();
+        int32 StreamTypeEndIndex = InUri.Find(TEXT(";"), ESearchCase::IgnoreCase, ESearchDir::FromStart, StreamTypeStartIndex);
+        if (StreamTypeEndIndex != INDEX_NONE)
         {
-            BufferFileName = FMD5::HashAnsiString(*BufferStream);
-            if (BufferFiles.Find(BufferFileName) != nullptr) continue;
-
-            FString StreamType;
-            int32 FirstCommaIndex = 0;
-            if (BufferStream.FindChar(TEXT(','), FirstCommaIndex))
-            {
-                StreamType = BufferStream.Left(FirstCommaIndex);
-                BufferStream = BufferStream.Right(BufferStream.Len() - (FirstCommaIndex + 1));
-            }
-
-            TArray<uint8> BufferData;
-            if (StreamType.Equals(TEXT("base64"), ESearchCase::IgnoreCase))
-            {
-                if (!FBase64::Decode(BufferStream, BufferData))
-                {
-                    UE_LOG(LogglTFForUE4, Error, TEXT("Failed to decode the base64 data!"));
-                }
-                if (BufferData.Num() != Buffer->byteLength)
-                {
-                    BufferData.Empty();
-                    UE_LOG(LogglTFForUE4, Error, TEXT("The size of data is not same as buffer"));
-                }
-            }
-            else
-            {
-                UE_LOG(LogglTFForUE4, Error, TEXT("Can't decode the type(%s) of the string"), *StreamType);
-            }
-
-            IndexToUri.Add(i, BufferFileName);
-            BufferFiles.Add(BufferFileName, BufferData);
+            StreamType = InUri.Mid(StreamTypeStartIndex, StreamTypeEndIndex - StreamTypeStartIndex);
         }
-        else
+        int32 StreamEncodingStartIndex = StreamTypeEndIndex + 1;
+        int32 StreamEncodingEndIndex = InUri.Find(TEXT(","), ESearchCase::IgnoreCase, ESearchDir::FromStart, StreamEncodingStartIndex);
+        if (StreamEncodingEndIndex != INDEX_NONE)
         {
-            if (BufferFiles.Find(BufferFileName) != nullptr) continue;
-            const FString BufferFilePath = InFileFolderPath / BufferFileName;
-            TArray<uint8> BufferData;
-            if (!FFileHelper::LoadFileToArray(BufferData, *BufferFilePath)) continue;
-            IndexToUri.Add(i, BufferFileName);
-            BufferFiles.Add(BufferFileName, BufferData);
+            StreamEncoding = InUri.Mid(StreamEncodingStartIndex, StreamEncodingEndIndex - StreamEncodingStartIndex);
+
+            StreamDataStartIndex = StreamEncodingEndIndex + 1;
+        }
+    }
+
+    if (StreamDataStartIndex != INDEX_NONE)
+    {
+        if (!FBase64::Decode(InUri.RightChop(StreamDataStartIndex), Data))
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Failed to decode the base64 data!"));
+        }
+    }
+    else
+    {
+        if (FFileHelper::LoadFileToArray(Data, *(InFileFolderRoot / InUri)))
+        {
+            FilePath = InFileFolderRoot / InUri;
         }
     }
 }
 
-FglTFBufferFiles::~FglTFBufferFiles()
+FglTFBufferData::~FglTFBufferData()
 {
     //
 }
 
-const TArray<uint8>& FglTFBufferFiles::operator[](const FString& InKey) const
+FglTFBufferData::operator bool() const
 {
-    const TArray<uint8>* FoundBufferFile = BufferFiles.Find(InKey);
-    if (!FoundBufferFile) return EmptyBufferFile;
-    return *FoundBufferFile;
+    return (Data.Num() > 0);
 }
 
-const TArray<uint8>& FglTFBufferFiles::operator[](int32 InIndex) const
+const TArray<uint8>& FglTFBufferData::GetData() const
 {
-    const FString* UriPtr = IndexToUri.Find(InIndex);
-    if (!UriPtr) return EmptyBufferFile;
-    return (*this)[*UriPtr];
+    return Data;
 }
 
-FglTFBufferBinaries::FglTFBufferBinaries()
-    : Super()
-    , EmptyBufferBinary()
+bool FglTFBufferData::IsFromFile() const
+{
+    return !FilePath.IsEmpty();
+}
+
+const FString& FglTFBufferData::GetFilePath() const
+{
+    return FilePath;
+}
+
+FglTFBuffers::FglTFBuffers(bool InConstructByBinary /*= false*/)
+    : bConstructByBinary(InConstructByBinary)
+    , Datas()
+    , DataEmpty()
 {
     //
 }
 
-FglTFBufferBinaries::FglTFBufferBinaries(const TSharedPtr<FglTFBufferBinaries> InAnother)
-    : FglTFBufferBinaries()
+FglTFBuffers::~FglTFBuffers()
 {
-    if (InAnother.IsValid())
+    //
+}
+
+bool FglTFBuffers::CacheBinary(uint32 InIndex, const TArray<uint8>& InData)
+{
+    IndexToIndex[EglTFBufferSource::Binaries].Add(InIndex, Datas.Num());
+    Datas.Add(MakeShareable(new FglTFBufferData(InData)));
+    return true;
+}
+
+bool FglTFBuffers::CacheImages(uint32 InIndex, const FString& InFileFolderRoot, const std::shared_ptr<libgltf::SImage>& InImage)
+{
+    if (!InImage) return false;
+    IndexToIndex[EglTFBufferSource::Images].Add(InIndex, Datas.Num());
+    Datas.Add(MakeShareable(new FglTFBufferData(InFileFolderRoot, InImage->uri.c_str())));
+    return true;
+}
+
+bool FglTFBuffers::CacheBuffers(uint32 InIndex, const FString& InFileFolderRoot, const std::shared_ptr<libgltf::SBuffer>& InBuffer)
+{
+    if (!InBuffer) return false;
+    IndexToIndex[EglTFBufferSource::Buffers].Add(InIndex, Datas.Num());
+    Datas.Add(MakeShareable(new FglTFBufferData(InFileFolderRoot, InBuffer->uri.c_str())));
+    return true;
+}
+
+bool FglTFBuffers::Cache(const FString& InFileFolderRoot, const std::shared_ptr<libgltf::SGlTF>& InglTF)
+{
+    if (!InglTF) return false;
     {
-        BufferBinaries = InAnother->BufferBinaries;
+        uint32 Index = 0;
+        for (const std::shared_ptr<libgltf::SImage>& Image : InglTF->images)
+        {
+            CacheImages(Index++, InFileFolderRoot, Image);
+        }
     }
-}
-
-FglTFBufferBinaries::~FglTFBufferBinaries()
-{
-    //
-}
-
-const TArray<uint8>& FglTFBufferBinaries::operator[](int32 InIndex) const
-{
-    if (InIndex >= BufferBinaries.Num()) return EmptyBufferBinary;
-    return BufferBinaries[InIndex];
-}
-
-void FglTFBufferBinaries::Add(const TArray<uint8>& InBufferBinaries)
-{
-    BufferBinaries.Add(BufferBinaries.Num(), InBufferBinaries);
-}
-
-FglTFBuffers::FglTFBuffers()
-    : Binaries(nullptr)
-    , Files(nullptr)
-{
-    //
+    {
+        uint32 Index = 0;
+        for (const std::shared_ptr<libgltf::SBuffer>& Buffer : InglTF->buffers)
+        {
+            CacheBuffers(Index++, InFileFolderRoot, Buffer);
+        }
+    }
+    return true;
 }
 
 TSharedPtr<FglTFImporter> FglTFImporter::Get(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
@@ -246,7 +246,8 @@ UObject* FglTFImporter::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportO
     TSharedPtr<FglTFImportOptions> glTFImportOptions = InglTFImportOptions.Pin();
 
     const FString FolderPathInOS = FPaths::GetPath(glTFImportOptions->FilePathInOS);
-    FglTFBufferFiles BufferFiles(FolderPathInOS, InGlTF->buffers);
+    FglTFBuffers glTFBuffers;
+    glTFBuffers.Cache(FolderPathInOS, InGlTF);
 
     //TODO: generate the procedural mesh
 
@@ -378,31 +379,17 @@ struct TAccessorTypeVec4
 template<typename TAccessorDataType, typename TEngineDataType>
 bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBuffers, const std::shared_ptr<libgltf::SAccessor>& InAccessor, TArray<TEngineDataType>& OutDataArray)
 {
-    if (!InBuffers.Files.IsValid()) return false;
-    if (!InAccessor) return false;
+    if (!InAccessor || !InAccessor->bufferView) return false;
 
-    const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[(int32)(*InAccessor->bufferView)];
-    if (!BufferView) return false;
+    int32 BufferViewIndex = (*InAccessor->bufferView);
 
     OutDataArray.Empty();
 
-    const FglTFBufferDatas* glTFBufferDatas = InBuffers.Files.Get();
-
-    const std::shared_ptr<libgltf::SBuffer>& Buffer = InGlTF->buffers[(int32)(*BufferView->buffer)];
-    if (Buffer->uri.empty())
-    {
-        glTFBufferDatas = InBuffers.Binaries.Get();
-    }
-
-    if (!glTFBufferDatas)
-    {
-        return false;
-    }
-
+    FString FilePath;
     if (InAccessor->type == TEXT("SCALAR"))
     {
         TArray<TAccessorTypeScale<TAccessorDataType>> AccessorDataArray;
-        if (glTFBufferDatas->Get((int32)(*BufferView->buffer), BufferView->byteOffset + InAccessor->byteOffset, InAccessor->count, BufferView->byteStride, AccessorDataArray))
+        if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, InAccessor->byteOffset, InAccessor->count, AccessorDataArray, FilePath))
         {
             for (const TAccessorTypeScale<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
             {
@@ -418,7 +405,7 @@ bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFB
     else if (InAccessor->type == TEXT("VEC2"))
     {
         TArray<TAccessorTypeVec2<TAccessorDataType>> AccessorDataArray;
-        if (glTFBufferDatas->Get((int32)(*BufferView->buffer), BufferView->byteOffset + InAccessor->byteOffset, InAccessor->count, BufferView->byteStride, AccessorDataArray))
+        if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, InAccessor->byteOffset, InAccessor->count, AccessorDataArray, FilePath))
         {
             for (const TAccessorTypeVec2<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
             {
@@ -434,7 +421,7 @@ bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFB
     else if (InAccessor->type == TEXT("VEC3"))
     {
         TArray<TAccessorTypeVec3<TAccessorDataType>> AccessorDataArray;
-        if (glTFBufferDatas->Get((int32)(*BufferView->buffer), BufferView->byteOffset + InAccessor->byteOffset, InAccessor->count, BufferView->byteStride, AccessorDataArray))
+        if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, InAccessor->byteOffset, InAccessor->count, AccessorDataArray, FilePath))
         {
             for (const TAccessorTypeVec3<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
             {
@@ -450,7 +437,7 @@ bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFB
     else if (InAccessor->type == TEXT("VEC4"))
     {
         TArray<TAccessorTypeVec4<TAccessorDataType>> AccessorDataArray;
-        if (glTFBufferDatas->Get((int32)(*BufferView->buffer), BufferView->byteOffset + InAccessor->byteOffset, InAccessor->count, BufferView->byteStride, AccessorDataArray))
+        if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, InAccessor->byteOffset, InAccessor->count, AccessorDataArray, FilePath))
         {
             for (const TAccessorTypeVec4<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
             {

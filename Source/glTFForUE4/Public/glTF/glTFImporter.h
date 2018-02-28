@@ -17,6 +17,8 @@ namespace libgltf
     struct SBuffer;
     struct STextureInfo;
     struct STexture;
+    struct SImage;
+    struct SBuffer;
 }
 
 namespace glTFForUE4
@@ -38,23 +40,72 @@ namespace glTFForUE4
     };
 }
 
-class GLTFFORUE4_API FglTFBufferDatas
+class GLTFFORUE4_API FglTFBufferData
 {
 public:
-    FglTFBufferDatas();
-    virtual ~FglTFBufferDatas();
+    FglTFBufferData(const TArray<uint8>& InData);
+    FglTFBufferData(const FString& InFileFolderRoot, const FString& InUri);
+    virtual ~FglTFBufferData();
 
 public:
-    virtual const TArray<uint8>& operator[](int32 InIndex) const = 0;
+    operator bool() const;
+    const TArray<uint8>& GetData() const;
+    bool IsFromFile() const;
+    const FString& GetFilePath() const;
 
-    template<typename TElem>
-    bool Get(int32 InIndex, int32 InStart, int32 InCount, int32 InStride, TArray<TElem>& OutBufferSegment) const
+private:
+    TArray<uint8> Data;
+    FString FilePath;
+    FString StreamType;
+    FString StreamEncoding;
+};
+
+namespace EglTFBufferSource
+{
+    enum Type
+    {
+        Binaries,
+        Images,
+        Buffers,
+        Max,
+    };
+}
+
+class GLTFFORUE4_API FglTFBuffers
+{
+public:
+    FglTFBuffers(bool InConstructByBinary = false);
+    virtual ~FglTFBuffers();
+
+public:
+    bool CacheBinary(uint32 InIndex, const TArray<uint8>& InData);
+    bool CacheImages(uint32 InIndex, const FString& InFileFolderRoot, const std::shared_ptr<libgltf::SImage>& InImage);
+    bool CacheBuffers(uint32 InIndex, const FString& InFileFolderRoot, const std::shared_ptr<libgltf::SBuffer>& InBuffer);
+    bool Cache(const FString& InFileFolderRoot, const std::shared_ptr<libgltf::SGlTF>& InglTF);
+
+public:
+    template<EglTFBufferSource::Type SourceType>
+    const TArray<uint8>& GetData(int32 InIndex, FString& OutFilePath) const
+    {
+        if (!IndexToIndex[SourceType].Contains(InIndex)) return DataEmpty;
+        uint32 DataIndex = IndexToIndex[SourceType][InIndex];
+        if (DataIndex >= static_cast<uint32>(Datas.Num())) return DataEmpty;
+        const TSharedPtr<FglTFBufferData>& Data = Datas[DataIndex];
+        if (!Data.IsValid()) return DataEmpty;
+        OutFilePath = Data->GetFilePath();
+        return Data->GetData();
+    }
+
+    template<typename TElem, EglTFBufferSource::Type SourceType>
+    bool Get(int32 InIndex, int32 InStart, int32 InCount, int32 InStride, TArray<TElem>& OutBufferSegment, FString& OutFilePath) const
     {
         if (InStride == 0) InStride = sizeof(TElem);
         checkfSlow(sizeof(TElem) > InStride, TEXT("Stride is too smaller!"));
         if (sizeof(TElem) > InStride) return false;
-        if (InStart < 0 || InCount <= 0) return false;
-        const TArray<uint8>& BufferSegment = (*this)[InIndex];
+        if (InStart < 0) return false;
+        const TArray<uint8>& BufferSegment = GetData<SourceType>(InIndex, OutFilePath);
+        if (BufferSegment.Num() <= 0) return false;
+        if (InCount <= 0) InCount = BufferSegment.Num();
         if (BufferSegment.Num() < (InStart + InCount * InStride)) return false;
 
         OutBufferSegment.SetNumUninitialized(InCount);
@@ -72,54 +123,45 @@ public:
         return true;
     }
 
-protected:
-    TMap<int32, TArray<uint8>> BufferBinaries;
-    TMap<FString, TArray<uint8>> BufferFiles;
-};
+    template<typename TElem>
+    bool GetImageData(const std::shared_ptr<libgltf::SGlTF>& InglTF, int32 InImageIndex, TArray<TElem>& OutBufferSegment, FString& OutFilePath) const
+    {
+        if (!InglTF) return false;
+        if (InImageIndex < 0 || InImageIndex >= InglTF->images.size()) return false;
+        const std::shared_ptr<libgltf::SImage>& Image = InglTF->images[InImageIndex];
+        if (!Image) return false;
+        if (Image->uri.empty())
+        {
+            if (!!(Image->bufferView))
+            {
+                return GetBufferViewData<TElem>(InglTF, (int32)(*Image->bufferView), 0, 0, OutBufferSegment, OutFilePath);
+            }
+        }
+        else
+        {
+            return Get<TElem, EglTFBufferSource::Images>(InImageIndex, 0, 0, 0, OutBufferSegment, OutFilePath);
+        }
+        return false;
+    }
 
-class GLTFFORUE4_API FglTFBufferFiles : public FglTFBufferDatas
-{
-    typedef FglTFBufferDatas Super;
-
-public:
-    explicit FglTFBufferFiles(const FString& InFileFolderPath, const std::vector<std::shared_ptr<libgltf::SBuffer>>& InBuffers);
-    virtual ~FglTFBufferFiles();
-
-public:
-    const TArray<uint8>& operator[](const FString& InKey) const;
-    virtual const TArray<uint8>& operator[](int32 InIndex) const;
-
-private:
-    TMap<int32, FString> IndexToUri;
-    const TArray<uint8> EmptyBufferFile;
-};
-
-class GLTFFORUE4_API FglTFBufferBinaries : public FglTFBufferDatas
-{
-    typedef FglTFBufferDatas Super;
-
-public:
-    FglTFBufferBinaries();
-    FglTFBufferBinaries(const TSharedPtr<FglTFBufferBinaries> InAnother);
-    virtual ~FglTFBufferBinaries();
-
-public:
-    virtual const TArray<uint8>& operator[](int32 InIndex) const;
-
-    void Add(const TArray<uint8>& InBufferBinaries);
+    template<typename TElem>
+    bool GetBufferViewData(const std::shared_ptr<libgltf::SGlTF>& InglTF, int32 InBufferViewIndex, int32 InOffset, int32 InCount, TArray<TElem>& OutBufferSegment, FString& OutFilePath) const
+    {
+        if (!InglTF) return false;
+        if (InBufferViewIndex < 0 || InBufferViewIndex >= InglTF->bufferViews.size()) return false;
+        const std::shared_ptr<libgltf::SBufferView>& BufferView = InglTF->bufferViews[InBufferViewIndex];
+        if (!BufferView || !BufferView->buffer) return false;
+        int32 BufferIndex = (int32)(*BufferView->buffer);
+        return (bConstructByBinary
+            ? Get<TElem, EglTFBufferSource::Binaries>(BufferIndex, BufferView->byteOffset + InOffset, InCount, BufferView->byteStride, OutBufferSegment, OutFilePath)
+            : Get<TElem, EglTFBufferSource::Buffers>(BufferIndex, BufferView->byteOffset + InOffset, InCount, BufferView->byteStride, OutBufferSegment, OutFilePath));
+    }
 
 private:
-    const TArray<uint8> EmptyBufferBinary;
-};
-
-class GLTFFORUE4_API FglTFBuffers
-{
-public:
-    FglTFBuffers();
-
-public:
-    TSharedPtr<FglTFBufferBinaries> Binaries;
-    TSharedPtr<FglTFBufferFiles> Files;
+    bool bConstructByBinary;
+    TMap<uint32, uint32> IndexToIndex[EglTFBufferSource::Max];
+    TArray<TSharedPtr<FglTFBufferData>> Datas;
+    const TArray<uint8> DataEmpty;
 };
 
 class GLTFFORUE4_API FglTFImporter

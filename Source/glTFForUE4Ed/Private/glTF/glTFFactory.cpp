@@ -52,7 +52,7 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
     return FactoryCreate(InClass, InParent, InName, InFlags, InContext, InType, InWarn, glTFJson);
 }
 
-UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, UObject* InContext, const TCHAR* InType, FFeedbackContext* InWarn, const FString& InglTFJson, const TSharedPtr<FglTFBufferBinaries>& InglTFBufferBinaries /*= nullptr*/)
+UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, UObject* InContext, const TCHAR* InType, FFeedbackContext* InWarn, const FString& InglTFJson, TSharedPtr<FglTFBuffers> InglTFBuffers /*= nullptr*/)
 {
     const FString& FilePathInOS = UFactory::GetCurrentFilename();
     if (!FPaths::GetBaseFilename(FilePathInOS).Equals(InName.ToString()))
@@ -84,12 +84,14 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
         return nullptr;
     }
 
+    if (!InglTFBuffers.IsValid())
+    {
+        InglTFBuffers = MakeShareable(new FglTFBuffers);
+    }
     const FString FolderPathInOS = FPaths::GetPath(glTFImportOptions->FilePathInOS);
-    FglTFBuffers glTFBuffers;
-    glTFBuffers.Binaries = MakeShareable(new FglTFBufferBinaries(InglTFBufferBinaries));
-    glTFBuffers.Files = MakeShareable(new FglTFBufferFiles(FolderPathInOS, GlTF->buffers));
+    InglTFBuffers->Cache(FolderPathInOS, GlTF);
 
-    return FglTFImporterEd::Get(this, InClass, InParent, InName, InFlags, InWarn)->Create(glTFImportOptions, GlTF, glTFBuffers);
+    return FglTFImporterEd::Get(this, InClass, InParent, InName, InFlags, InWarn)->Create(glTFImportOptions, GlTF, *InglTFBuffers);
 }
 
 #undef LOCTEXT_NAMESPACE

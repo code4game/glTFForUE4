@@ -73,7 +73,8 @@ UObject* UglTFBinaryFactory::FactoryCreateBinary(UClass* InClass, UObject* InPar
     };
 
     FString glTFJson;
-    TSharedPtr<FglTFBufferBinaries> glTFBufferBinaries = MakeShareable(new FglTFBufferBinaries);
+    TSharedPtr<FglTFBuffers> glTFBuffers = MakeShareable(new FglTFBuffers(true));
+    uint32 BinaryIndex = 0;
     while (Offset < BuffSize)
     {
         FglTFChunkHeader glTFChunkHeader;
@@ -108,11 +109,11 @@ UObject* UglTFBinaryFactory::FactoryCreateBinary(UClass* InClass, UObject* InPar
             TArray<uint8> ChunkData;
             ChunkData.SetNumZeroed(glTFChunkHeader.Length);
             FMemory::Memcpy(ChunkData.GetData(), InBuffer + Offset, glTFChunkHeader.Length);
-            glTFBufferBinaries->Add(ChunkData);
+            glTFBuffers->CacheBinary(BinaryIndex++, ChunkData);
         }
 
         Offset += glTFChunkHeader.Length;
     }
 
-    return FactoryCreate(InClass, InParent, InName, InFlags, InContext, InType, InWarn, glTFJson, glTFBufferBinaries);
+    return FactoryCreate(InClass, InParent, InName, InFlags, InContext, InType, InWarn, glTFJson, glTFBuffers);
 }
