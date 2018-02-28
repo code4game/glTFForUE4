@@ -5,8 +5,6 @@
 
 #include "glTF/glTFImportOptions.h"
 
-#include "libgltf/libgltf.h"
-
 #include "Misc/Base64.h"
 #include "Misc/SecureHash.h"
 

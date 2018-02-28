@@ -6,20 +6,7 @@
 #include <map>
 #include <memory>
 
-namespace libgltf
-{
-    struct SGlTF;
-    struct SGlTFId;
-    struct SScene;
-    struct SNode;
-    struct SMesh;
-    struct SMeshPrimitive;
-    struct SBuffer;
-    struct STextureInfo;
-    struct STexture;
-    struct SImage;
-    struct SBuffer;
-}
+#include <libgltf/libgltf.h>
 
 namespace glTFForUE4
 {
@@ -127,7 +114,7 @@ public:
     bool GetImageData(const std::shared_ptr<libgltf::SGlTF>& InglTF, int32 InImageIndex, TArray<TElem>& OutBufferSegment, FString& OutFilePath) const
     {
         if (!InglTF) return false;
-        if (InImageIndex < 0 || InImageIndex >= InglTF->images.size()) return false;
+        if (InImageIndex < 0 || static_cast<uint32>(InImageIndex) >= InglTF->images.size()) return false;
         const std::shared_ptr<libgltf::SImage>& Image = InglTF->images[InImageIndex];
         if (!Image) return false;
         if (Image->uri.empty())
@@ -148,7 +135,7 @@ public:
     bool GetBufferViewData(const std::shared_ptr<libgltf::SGlTF>& InglTF, int32 InBufferViewIndex, int32 InOffset, int32 InCount, TArray<TElem>& OutBufferSegment, FString& OutFilePath) const
     {
         if (!InglTF) return false;
-        if (InBufferViewIndex < 0 || InBufferViewIndex >= InglTF->bufferViews.size()) return false;
+        if (InBufferViewIndex < 0 || static_cast<uint32>(InBufferViewIndex) >= InglTF->bufferViews.size()) return false;
         const std::shared_ptr<libgltf::SBufferView>& BufferView = InglTF->bufferViews[InBufferViewIndex];
         if (!BufferView || !BufferView->buffer) return false;
         int32 BufferIndex = (int32)(*BufferView->buffer);
