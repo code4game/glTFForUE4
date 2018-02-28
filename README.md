@@ -6,6 +6,7 @@
 [![Join gitter at https://gitter.im/code4game/glTFForUE4](https://badges.gitter.im/code4game/glTFForUE4.svg)](https://gitter.im/code4game/glTFForUE4?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Join discord](https://img.shields.io/badge/chat-on%20discord-blue.svg?style=flat)](https://discord.gg/tyEjtQB)
 
+[![Say Thanks](https://img.shields.io/badge/support-say%20thanks-ff69b4.svg?style=flat)](https://saythanks.io/to/code4game)
 [![Become a patreon](https://img.shields.io/badge/donation-become%20a%20patreon-ff69b4.svg?style=flat)](https://www.patreon.com/bePatron?u=7553208)
 [![Patreon invite](https://img.shields.io/badge/donation-patreon%20invite-ff69b4.svg?style=flat)](https://patreon.com/invite/zpdxnv)
 

@@ -883,39 +883,12 @@ bool FglTFImporterEd::ConstructSampleParameter(const TWeakPtr<FglTFImportOptions
 UTexture* FglTFImporterEd::CreateTexture(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STexture>& InglTFTexture, const FglTFBuffers& InBuffers, const FString& InTextureName, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
 {
     if (!InglTF || !InglTFTexture || !(InglTFTexture->source)) return nullptr;
-    int32 glTFImageId = (int32)(*(InglTFTexture->source));
-    if (glTFImageId < 0 || glTFImageId >= InglTF->images.size()) return nullptr;
-    const std::shared_ptr<libgltf::SImage>& glTFImage = InglTF->images[glTFImageId];
-    if (!glTFImage) return nullptr;
-
-    TArray<uint8> ImageFileData;
+    int32 ImageIndex = (int32)(*(InglTFTexture->source));
     FString ImageFilePath;
-    if (!glTFImage->uri.empty())
+    TArray<uint8> ImageFileData;
+    if (!InBuffers.GetImageData(InglTF, ImageIndex, ImageFileData, ImageFilePath)
+        || ImageFileData.Num() <= 0)
     {
-        const TSharedPtr<FglTFImportOptions> glTFImportOptions = InglTFImportOptions.Pin();
-        ImageFilePath = FPaths::GetPath(glTFImportOptions->FilePathInOS) / glTFImage->uri.c_str();
-
-        IFileManager& FileManager = IFileManager::Get();
-        if (!FileManager.FileExists(*ImageFilePath)) return nullptr;
-
-        if (!FFileHelper::LoadFileToArray(ImageFileData, *ImageFilePath)) return nullptr;
-    }
-    else if (!!glTFImage->bufferView)
-    {
-        int32 BufferViewIndex = (int32)(*glTFImage->bufferView);
-        if (BufferViewIndex < 0 || BufferViewIndex >= InglTF->bufferViews.size()) return nullptr;
-        const std::shared_ptr<libgltf::SBufferView>& BufferView = InglTF->bufferViews[BufferViewIndex];
-        if (!BufferView || !BufferView->buffer) return nullptr;
-        int32 BufferIndex = (int32)(*BufferView->buffer);
-        if (!InBuffers.Binaries->Get((int32)(*BufferView->buffer), BufferView->byteOffset, BufferView->byteLength, BufferView->byteStride, ImageFileData))
-        {
-            return nullptr;
-        }
-    }
-
-    if (ImageFileData.Num() <= 0)
-    {
-        //TODO:
         return nullptr;
     }
 
@@ -1039,7 +1012,10 @@ UTexture* FglTFImporterEd::CreateTexture(const TWeakPtr<FglTFImportOptions>& Ing
     if (NewTexture)
     {
         NewTexture->UpdateResource();
-        NewTexture->AssetImportData->Update(*ImageFilePath);
+        if (!ImageFilePath.IsEmpty())
+        {
+            NewTexture->AssetImportData->Update(*ImageFilePath);
+        }
 
         NewTexture->PostEditChange();
         NewTexture->MarkPackageDirty();
