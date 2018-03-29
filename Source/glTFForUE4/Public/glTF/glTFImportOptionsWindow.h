@@ -16,12 +16,10 @@ public:
 
 public:
     SLATE_BEGIN_ARGS(SglTFImportOptionsWindow)
-        : _GlTF(nullptr)
-        , _glTFImportOptions(nullptr)
+        : _glTFImportOptions(nullptr)
         , _WidgetWindow(nullptr)
         {}
 
-        SLATE_ARGUMENT(TSharedPtr<libgltf::SGlTF>, GlTF)
         SLATE_ARGUMENT(TSharedPtr<struct FglTFImportOptions>, glTFImportOptions)
         SLATE_ARGUMENT(TSharedPtr<SWindow>, WidgetWindow)
     SLATE_END_ARGS()
@@ -53,7 +51,6 @@ protected:
     void HandleMeshRecomputeTangents(ECheckBoxState InCheckBoxState);
 
 protected:
-    TWeakPtr<libgltf::SGlTF> GlTF;
     TWeakPtr<struct FglTFImportOptions> glTFImportOptions;
     TWeakPtr<SWindow> WidgetWindow;
 };

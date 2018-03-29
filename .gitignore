@@ -1,6 +1,7 @@
-/.vs
-/.vscode
-/Binaries
-/Intermediate
+/.vs/
+/.vscode/
+/Binaries/
+/Intermediate/
 
 /**/.DS_Store
+/**/Debug/

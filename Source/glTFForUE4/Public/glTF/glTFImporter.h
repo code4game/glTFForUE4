@@ -8,6 +8,8 @@
 
 #include <libgltf/libgltf.h>
 
+#include "Engine/Texture.h"
+
 namespace glTFForUE4
 {
     class GLTFFORUE4_API FFeedbackTaskWrapper
@@ -84,7 +86,7 @@ public:
     }
 
     template<typename TElem, EglTFBufferSource::Type SourceType>
-    bool Get(int32 InIndex, int32 InStart, int32 InCount, int32 InStride, TArray<TElem>& OutBufferSegment, FString& OutFilePath) const
+    bool Get(int32 InIndex, TArray<TElem>& OutBufferSegment, FString& OutFilePath, int32 InStart = 0, int32 InCount = 0, int32 InStride = 0) const
     {
         if (InStride == 0) InStride = sizeof(TElem);
         checkfSlow(sizeof(TElem) > InStride, TEXT("Stride is too smaller!"));
@@ -121,18 +123,18 @@ public:
         {
             if (!!(Image->bufferView))
             {
-                return GetBufferViewData<TElem>(InglTF, (int32)(*Image->bufferView), 0, 0, OutBufferSegment, OutFilePath);
+                return GetBufferViewData<TElem>(InglTF, (int32)(*Image->bufferView), OutBufferSegment, OutFilePath);
             }
         }
         else
         {
-            return Get<TElem, EglTFBufferSource::Images>(InImageIndex, 0, 0, 0, OutBufferSegment, OutFilePath);
+            return Get<TElem, EglTFBufferSource::Images>(InImageIndex, OutBufferSegment, OutFilePath);
         }
         return false;
     }
 
     template<typename TElem>
-    bool GetBufferViewData(const std::shared_ptr<libgltf::SGlTF>& InglTF, int32 InBufferViewIndex, int32 InOffset, int32 InCount, TArray<TElem>& OutBufferSegment, FString& OutFilePath) const
+    bool GetBufferViewData(const std::shared_ptr<libgltf::SGlTF>& InglTF, int32 InBufferViewIndex, TArray<TElem>& OutBufferSegment, FString& OutFilePath, int32 InOffset = 0, int32 InCount = 0) const
     {
         if (!InglTF) return false;
         if (InBufferViewIndex < 0 || static_cast<uint32>(InBufferViewIndex) >= InglTF->bufferViews.size()) return false;
@@ -140,8 +142,8 @@ public:
         if (!BufferView || !BufferView->buffer) return false;
         int32 BufferIndex = (int32)(*BufferView->buffer);
         return (bConstructByBinary
-            ? Get<TElem, EglTFBufferSource::Binaries>(BufferIndex, BufferView->byteOffset + InOffset, InCount, BufferView->byteStride, OutBufferSegment, OutFilePath)
-            : Get<TElem, EglTFBufferSource::Buffers>(BufferIndex, BufferView->byteOffset + InOffset, InCount, BufferView->byteStride, OutBufferSegment, OutFilePath));
+            ? Get<TElem, EglTFBufferSource::Binaries>(BufferIndex, OutBufferSegment, OutFilePath, BufferView->byteOffset + InOffset, InCount != 0 ? InCount : BufferView->byteLength, BufferView->byteStride)
+            : Get<TElem, EglTFBufferSource::Buffers>(BufferIndex, OutBufferSegment, OutFilePath, BufferView->byteOffset + InOffset, InCount != 0 ? InCount : BufferView->byteLength, BufferView->byteStride));
     }
 
 private:
@@ -172,9 +174,22 @@ protected:
     class FFeedbackContext* FeedbackContext;
 
 public:
-    static bool GetTriangleIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBufferFiles, int32 InAccessorIndex, TArray<uint32>& OutTriangleIndices);
-    static bool GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBufferFiles, int32 InAccessorIndex, TArray<FVector>& OutVertexPositions);
-    static bool GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBufferFiles, int32 InAccessorIndex, TArray<FVector>& OutVertexNormals);
-    static bool GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBufferFiles, int32 InAccessorIndex, TArray<FVector4>& OutVertexTangents);
-    static bool GetVertexTexcoords(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBufferFiles, int32 InAccessorIndex, TArray<FVector2D>& OutVertexTexcoords);
+    static bool GetMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_STATIC_TEXCOORDS]);
+
+protected:
+    static bool GetTriangleIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices);
+    static bool GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector>& OutVertexPositions);
+    static bool GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector>& OutVertexNormals);
+    static bool GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector4>& OutVertexTangents);
+    static bool GetVertexTexcoords(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector2D> OutVertexTexcoords[MAX_STATIC_TEXCOORDS]);
+
+public:
+    static void SwapYZ(FVector& InOutValue);
+    static void SwapYZ(TArray<FVector>& InOutValues);
+    static FString SanitizeObjectName(const FString& InObjectName);
+
+    static TextureFilter MagFilterToTextureFilter(int32 InValue);
+    static TextureFilter MinFilterToTextureFilter(int32 InValue);
+    static TextureAddress WrapSToTextureAddress(int32 InValue);
+    static TextureAddress WrapTToTextureAddress(int32 InValue);
 };

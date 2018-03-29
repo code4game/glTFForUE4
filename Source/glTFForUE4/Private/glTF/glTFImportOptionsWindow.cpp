@@ -13,9 +13,6 @@
 
 TSharedPtr<FglTFImportOptions> SglTFImportOptionsWindow::Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool& OutCancel)
 {
-    TSharedPtr<libgltf::SGlTF> GlTF = MakeShareable(new libgltf::SGlTF());
-    (*GlTF) = InGlTF;
-
     TSharedPtr<FglTFImportOptions> glTFImportOptions = MakeShareable(new FglTFImportOptions());
     (*glTFImportOptions) = FglTFImportOptions::Current;
 
@@ -34,7 +31,6 @@ TSharedPtr<FglTFImportOptions> SglTFImportOptionsWindow::Open(const FString& InF
     Window->SetContent
     (
         SAssignNew(glTFImportWindow, SglTFImportOptionsWindow)
-            .GlTF(GlTF)
             .glTFImportOptions(glTFImportOptions)
             .WidgetWindow(Window)
     );
@@ -62,7 +58,6 @@ SglTFImportOptionsWindow::SglTFImportOptionsWindow()
 
 void SglTFImportOptionsWindow::Construct(const FArguments& InArgs)
 {
-    GlTF = InArgs._GlTF;
     WidgetWindow = InArgs._WidgetWindow;
     glTFImportOptions = InArgs._glTFImportOptions;
     checkf(glTFImportOptions.IsValid(), TEXT("Why the argument - glTFImportOptions is null?"));

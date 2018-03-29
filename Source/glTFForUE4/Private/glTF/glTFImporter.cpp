@@ -8,6 +8,18 @@
 #include "Misc/Base64.h"
 #include "Misc/SecureHash.h"
 
+#if defined(ERROR)
+#define DRACO_MACRO_TEMP_ERROR      ERROR
+#undef ERROR
+#endif
+
+#include "draco/compression/decode.h"
+
+#if defined(DRACO_MACRO_TEMP_ERROR)
+#define ERROR           DRACO_MACRO_TEMP_ERROR
+#undef DRACO_MACRO_TEMP_ERROR
+#endif
+
 namespace glTFForUE4
 {
     FFeedbackTaskWrapper::FFeedbackTaskWrapper(FFeedbackContext* InFeedbackContext, const FText& InTask, bool InShowProgressDialog)
@@ -194,6 +206,103 @@ bool FglTFBuffers::Cache(const FString& InFileFolderRoot, const std::shared_ptr<
     }
     return true;
 }
+
+class FglTFBufferDecoder
+{
+    struct FDracoMeshPointIndeies
+    {
+        FDracoMeshPointIndeies()
+            : Vertex(0)
+            , Normal(0)
+            , TexCoord(0)
+            , NewVertex(0)
+        {
+            //
+        }
+
+        uint32 Vertex;
+        uint32 Normal;
+        uint32 TexCoord;
+        uint32 NewVertex;
+
+        bool operator==(const FDracoMeshPointIndeies& InOther) const
+        {
+            return InOther.Vertex == Vertex && InOther.Normal == Vertex && InOther.TexCoord == TexCoord;
+        }
+    };
+
+public:
+    static bool Decode(const FglTFBuffers& InBuffers, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const libgltf::SKHR_draco_mesh_compressionextension* const InExtensionDraco, const TArray<uint8>& InEncodedBuffer, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_STATIC_TEXCOORDS])
+    {
+        if (!InMeshPrimitive || !InExtensionDraco) return false;
+
+        draco::DecoderBuffer DracoDecoderBuffer;
+        DracoDecoderBuffer.Init((const char*)InEncodedBuffer.GetData(), InEncodedBuffer.GetAllocatedSize());
+        auto StatusOrGeometryType = draco::Decoder::GetEncodedGeometryType(&DracoDecoderBuffer);
+        if (!StatusOrGeometryType.ok()) return false;
+        if (StatusOrGeometryType.value() != draco::TRIANGULAR_MESH) return false;
+        draco::Decoder DracoDecoder;
+        auto DracoStatusOrMesh = DracoDecoder.DecodeMeshFromBuffer(&DracoDecoderBuffer);
+        if (!DracoStatusOrMesh.ok()) return false;
+        std::unique_ptr<draco::Mesh> DracoMesh = std::move(DracoStatusOrMesh).value();
+
+        const draco::PointAttribute* const DracoPointAttributePosition = DracoMesh->GetNamedAttribute(draco::GeometryAttribute::POSITION);
+        if (!DracoPointAttributePosition) return false;
+
+        uint32 VertexNumber = DracoPointAttributePosition->size();
+
+        const draco::PointAttribute* const DracoPointAttributeNormal = DracoMesh->GetNamedAttribute(draco::GeometryAttribute::NORMAL);
+        const draco::PointAttribute* const DracoPointAttributeTexCoord = DracoMesh->GetNamedAttribute(draco::GeometryAttribute::TEX_COORD);
+
+        TArray<uint32> PositionIndeies;
+        OutTriangleIndices.SetNumUninitialized(DracoMesh->num_faces() * 3);
+        for (draco::FaceIndex i(0); i < DracoMesh->num_faces(); ++i)
+        {
+            const draco::Mesh::Face& DracoFace = DracoMesh->face(i);
+
+            for (uint32 j = 0; j < 3; ++j)
+            {
+                const uint32 DracoPointAttributePositionIndex = DracoFace[j].value();
+                OutTriangleIndices[i.value() * 3 + j] = DracoPointAttributePositionIndex;
+                PositionIndeies.AddUnique(DracoPointAttributePositionIndex);
+            }
+        }
+
+        {
+            float Position[3] = { 0.0f, 0.0f, 0.0f };
+            OutVertexPositions.SetNumUninitialized(DracoPointAttributePosition->indices_map_size());
+            for (draco::PointIndex i(0); i < DracoPointAttributePosition->indices_map_size(); ++i)
+            {
+                DracoPointAttributePosition->GetMappedValue(i, Position);
+                OutVertexPositions[i.value()] = FVector(Position[0], Position[1], Position[2]);
+            }
+        }
+
+        if (DracoPointAttributeNormal)
+        {
+            float Normal[3] = { 0.0f, 0.0f, 0.0f };
+            OutVertexNormals.SetNumUninitialized(DracoPointAttributeNormal->indices_map_size());
+            for (draco::PointIndex i(0); i < DracoPointAttributeNormal->indices_map_size(); ++i)
+            {
+                DracoPointAttributeNormal->GetMappedValue(i, Normal);
+                OutVertexNormals[i.value()] = FVector(Normal[0], Normal[1], Normal[2]);
+            }
+        }
+
+        if (DracoPointAttributeTexCoord)
+        {
+            float TexCoord[2] = { 0.0f, 0.0f };
+            OutVertexTexcoords[0].SetNumUninitialized(DracoPointAttributeTexCoord->indices_map_size());
+            for (draco::PointIndex i(0); i < DracoPointAttributeTexCoord->indices_map_size(); ++i)
+            {
+                DracoPointAttributeTexCoord->GetMappedValue(i, TexCoord);
+                OutVertexTexcoords[0][i.value()] = FVector2D(TexCoord[0], TexCoord[1]);
+            }
+        }
+
+        return true;
+    }
+};
 
 TSharedPtr<FglTFImporter> FglTFImporter::Get(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
 {
@@ -387,7 +496,7 @@ bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFB
     if (InAccessor->type == TEXT("SCALAR"))
     {
         TArray<TAccessorTypeScale<TAccessorDataType>> AccessorDataArray;
-        if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, InAccessor->byteOffset, InAccessor->count, AccessorDataArray, FilePath))
+        if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
         {
             for (const TAccessorTypeScale<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
             {
@@ -403,7 +512,7 @@ bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFB
     else if (InAccessor->type == TEXT("VEC2"))
     {
         TArray<TAccessorTypeVec2<TAccessorDataType>> AccessorDataArray;
-        if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, InAccessor->byteOffset, InAccessor->count, AccessorDataArray, FilePath))
+        if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
         {
             for (const TAccessorTypeVec2<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
             {
@@ -419,7 +528,7 @@ bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFB
     else if (InAccessor->type == TEXT("VEC3"))
     {
         TArray<TAccessorTypeVec3<TAccessorDataType>> AccessorDataArray;
-        if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, InAccessor->byteOffset, InAccessor->count, AccessorDataArray, FilePath))
+        if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
         {
             for (const TAccessorTypeVec3<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
             {
@@ -435,7 +544,7 @@ bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFB
     else if (InAccessor->type == TEXT("VEC4"))
     {
         TArray<TAccessorTypeVec4<TAccessorDataType>> AccessorDataArray;
-        if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, InAccessor->byteOffset, InAccessor->count, AccessorDataArray, FilePath))
+        if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
         {
             for (const TAccessorTypeVec4<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
             {
@@ -488,42 +597,221 @@ bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFB
     return false;
 }
 
-bool FglTFImporter::GetTriangleIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBuffers, int32 InAccessorIndex, TArray<uint32>& OutTriangleIndices)
+bool FglTFImporter::GetMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_STATIC_TEXCOORDS])
 {
-    if (!InGlTF) return false;
+    OutTriangleIndices.Empty();
+    OutVertexPositions.Empty();
+    OutVertexNormals.Empty();
+    OutVertexTangents.Empty();
+    for (uint32 i = 0; i < MAX_STATIC_TEXCOORDS; ++i)
+    {
+        OutVertexTexcoords[i].Empty();
+    }
 
-    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[InAccessorIndex];
-    return GetAccessorData(InGlTF, InBuffers, Accessor, OutTriangleIndices);
+    if (!InGlTF || !InMeshPrimitive) return false;
+
+    const libgltf::SKHR_draco_mesh_compressionextension* ExtensionDraco = nullptr;
+    {
+        const std::shared_ptr<libgltf::SExtension>& Extensions = InMeshPrimitive->extensions;
+        if (!!Extensions && (Extensions->properties.find(TEXT("KHR_draco_mesh_compression")) != Extensions->properties.end()))
+        {
+            ExtensionDraco = (const libgltf::SKHR_draco_mesh_compressionextension*)Extensions->properties[TEXT("KHR_draco_mesh_compression")].get();
+        }
+    }
+    if (ExtensionDraco)
+    {
+        int32 BufferViewIndex = *(ExtensionDraco->bufferView);
+        const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[BufferViewIndex];
+        TArray<uint8> EncodeBuffer;
+        FString BufferFilePath;
+        return InBufferFiles.GetBufferViewData(InGlTF, BufferViewIndex, EncodeBuffer, BufferFilePath)
+            && FglTFBufferDecoder::Decode(InBufferFiles, InMeshPrimitive, ExtensionDraco, EncodeBuffer, OutTriangleIndices, OutVertexPositions, OutVertexNormals, OutVertexTangents, OutVertexTexcoords);
+    }
+    else
+    {
+        if (!GetTriangleIndices(InGlTF, InMeshPrimitive, InBufferFiles, OutTriangleIndices))
+        {
+            return false;
+        }
+        if (!GetVertexPositions(InGlTF, InMeshPrimitive, InBufferFiles, OutVertexPositions))
+        {
+            return false;
+        }
+        if (!GetVertexNormals(InGlTF, InMeshPrimitive, InBufferFiles, OutVertexNormals))
+        {
+            return false;
+        }
+        if (!GetVertexTangents(InGlTF, InMeshPrimitive, InBufferFiles, OutVertexTangents))
+        {
+            return false;
+        }
+        if (!GetVertexTexcoords(InGlTF, InMeshPrimitive, InBufferFiles, OutVertexTexcoords))
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
-bool FglTFImporter::GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBuffers, int32 InAccessorIndex, TArray<FVector>& OutVertexPositions)
+bool FglTFImporter::GetTriangleIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices)
 {
-    if (!InGlTF) return false;
+    if (!InGlTF || !InMeshPrimitive) return false;
 
-    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[InAccessorIndex];
-    return GetAccessorData(InGlTF, InBuffers, Accessor, OutVertexPositions);
+    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->indices)];
+    return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutTriangleIndices);
 }
 
-bool FglTFImporter::GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBuffers, int32 InAccessorIndex, TArray<FVector>& OutVertexNormals)
+bool FglTFImporter::GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector>& OutVertexPositions)
 {
-    if (!InGlTF) return false;
+    if (!InGlTF || !InMeshPrimitive) return false;
+    if (InMeshPrimitive->attributes.find(TEXT("POSITION")) == InMeshPrimitive->attributes.cend()) return true;
 
-    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[InAccessorIndex];
-    return GetAccessorData(InGlTF, InBuffers, Accessor, OutVertexNormals);
+    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[TEXT("POSITION")])];
+    return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutVertexPositions);
 }
 
-bool FglTFImporter::GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBuffers, int32 InAccessorIndex, TArray<FVector4>& OutVertexTangents)
+bool FglTFImporter::GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector>& OutVertexNormals)
 {
-    if (!InGlTF) return false;
+    if (!InGlTF || !InMeshPrimitive) return false;
+    if (InMeshPrimitive->attributes.find(TEXT("NORMAL")) == InMeshPrimitive->attributes.cend()) return true;
 
-    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[InAccessorIndex];
-    return GetAccessorData(InGlTF, InBuffers, Accessor, OutVertexTangents);
+    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[TEXT("NORMAL")])];
+    return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutVertexNormals);
 }
 
-bool FglTFImporter::GetVertexTexcoords(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBuffers, int32 InAccessorIndex, TArray<FVector2D>& OutVertexTexcoords)
+bool FglTFImporter::GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector4>& OutVertexTangents)
 {
-    if (!InGlTF) return false;
+    if (!InGlTF || !InMeshPrimitive) return false;
+    if (InMeshPrimitive->attributes.find(TEXT("TANGENT")) == InMeshPrimitive->attributes.cend()) return true;
 
-    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[InAccessorIndex];
-    return GetAccessorData(InGlTF, InBuffers, Accessor, OutVertexTexcoords);
+    const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[TEXT("TANGENT")])];
+    return GetAccessorData(InGlTF, InBufferFiles, Accessor, OutVertexTangents);
 }
+
+bool FglTFImporter::GetVertexTexcoords(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector2D> OutVertexTexcoords[MAX_STATIC_TEXCOORDS])
+{
+    if (!InGlTF || !InMeshPrimitive) return false;
+
+    wchar_t texcoord_str[NAME_SIZE];
+    for (int32 i = 0; i < MAX_STATIC_TEXCOORDS; ++i)
+    {
+        OutVertexTexcoords[i].Empty();
+
+        std::swprintf(texcoord_str, NAME_SIZE, TEXT("TEXCOORD_%d\0"), i);
+        if (InMeshPrimitive->attributes.find(texcoord_str) == InMeshPrimitive->attributes.cend())
+        {
+            /// the texcoords should be start from 0 and be sequence
+            break;
+        }
+
+        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[texcoord_str])];
+        if (GetAccessorData(InGlTF, InBufferFiles, Accessor, OutVertexTexcoords[i]))
+        {
+            /// the texcoords should be start from 0 and be sequence
+            break;
+        }
+        return false;
+    }
+    return true;
+}
+
+void FglTFImporter::SwapYZ(FVector& InOutValue)
+{
+    float Temp = InOutValue.Y;
+    InOutValue.Y = InOutValue.Z;
+    InOutValue.Z = Temp;
+}
+
+void FglTFImporter::SwapYZ(TArray<FVector>& InOutValues)
+{
+    for (FVector& Value : InOutValues)
+    {
+        SwapYZ(Value);
+    }
+}
+
+FString FglTFImporter::SanitizeObjectName(const FString& InObjectName)
+{
+    FString SanitizedName;
+    FString InvalidChars = INVALID_OBJECTNAME_CHARACTERS;
+
+    // See if the name contains invalid characters.
+    FString Char;
+    for (int32 CharIdx = 0; CharIdx < InObjectName.Len(); ++CharIdx)
+    {
+        Char = InObjectName.Mid(CharIdx, 1);
+
+        if (InvalidChars.Contains(*Char))
+        {
+            SanitizedName += TEXT("_");
+        }
+        else
+        {
+            SanitizedName += Char;
+        }
+    }
+
+    return SanitizedName;
+}
+
+TextureFilter FglTFImporter::MagFilterToTextureFilter(int32 InValue)
+{
+    switch (InValue)
+    {
+    case 9728:
+        return TF_Nearest;
+
+    default:
+        break;
+    }
+    return TF_Default;
+}
+
+TextureFilter FglTFImporter::MinFilterToTextureFilter(int32 InValue)
+{
+    switch (InValue)
+    {
+    case 9728:
+        return TF_Nearest;
+
+    case 9729:
+        return TF_Default;
+
+    case 9984:
+    case 9985:
+        return TF_Bilinear;
+
+    case 9986:
+    case 9987:
+        return TF_Trilinear;
+
+    default:
+        break;
+    }
+    return TF_Default;
+}
+
+TextureAddress FglTFImporter::WrapSToTextureAddress(int32 InValue)
+{
+    switch (InValue)
+    {
+    case 33071:
+        return TA_Clamp;
+
+    case 33648:
+        return TA_Mirror;
+
+    case 10497:
+        return TA_Wrap;
+
+    default:
+        break;
+    }
+    return TA_Wrap;
+}
+
+TextureAddress FglTFImporter::WrapTToTextureAddress(int32 InValue)
+{
+    return WrapSToTextureAddress(InValue);
+}
+
