@@ -8,9 +8,9 @@
 
 #define LIBGLTF_MAJOR_VERSION    0
 #define LIBGLTF_MINOR_VERSION    1
-#define LIBGLTF_PATCH_VERSION    0
+#define LIBGLTF_PATCH_VERSION    1
 
-#if defined(LIBGLTF_USE_WCHAR)
+#if defined(UNICODE)
 typedef std::wstring                                        GLTFString;
 #else
 typedef std::string                                         GLTFString;
