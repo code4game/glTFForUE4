@@ -11,13 +11,14 @@
 
 #include "Misc/Paths.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/SkeletalMesh.h"
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
 
 UglTFFactory::UglTFFactory(const FObjectInitializer& InObjectInitializer)
     : Super(InObjectInitializer)
+    , ImportClass(nullptr)
 {
-    SupportedClass = UStaticMesh::StaticClass();
     if (Formats.Num() > 0) Formats.Empty();
     Formats.Add(TEXT("gltf;glTF 2.0"));
 
@@ -28,8 +29,14 @@ UglTFFactory::UglTFFactory(const FObjectInitializer& InObjectInitializer)
 
 bool UglTFFactory::DoesSupportClass(UClass* InClass)
 {
-    //TODO: support more mesh classes
-    return (InClass == UStaticMesh::StaticClass());
+    return (InClass == UStaticMesh::StaticClass()
+        || InClass == USkeletalMesh::StaticClass());
+}
+
+UClass* UglTFFactory::ResolveSupportedClass()
+{
+    if (ImportClass == nullptr) ImportClass = UStaticMesh::StaticClass();
+    return ImportClass;
 }
 
 bool UglTFFactory::FactoryCanImport(const FString& InFilePathInOS)
@@ -73,6 +80,17 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
     /// Open import window, allow to configure some options
     bool bCancel = false;
     TSharedPtr<FglTFImportOptions> glTFImportOptions = SglTFImportOptionsWindowEd::Open(FilePathInOS, InParent->GetPathName(), *GlTF, bCancel);
+    if (glTFImportOptions.IsValid())
+    {
+        if (!glTFImportOptions->bImportAsSkeleton)
+        {
+            ImportClass = UStaticMesh::StaticClass();
+        }
+        else
+        {
+            ImportClass = USkeletalMesh::StaticClass();
+        }
+    }
     if (bCancel)
     {
         UE_LOG(LogglTFForUE4Ed, Display, TEXT("Cancel to import the file - %s"), *FilePathInOS);
@@ -91,7 +109,7 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
     const FString FolderPathInOS = FPaths::GetPath(glTFImportOptions->FilePathInOS);
     InglTFBuffers->Cache(FolderPathInOS, GlTF);
 
-    return FglTFImporterEd::Get(this, InClass, InParent, InName, InFlags, InWarn)->Create(glTFImportOptions, GlTF, *InglTFBuffers);
+    return FglTFImporterEd::Get(this, ImportClass, InParent, InName, InFlags, InWarn)->Create(glTFImportOptions, GlTF, *InglTFBuffers);
 }
 
 #undef LOCTEXT_NAMESPACE

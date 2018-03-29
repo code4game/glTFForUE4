@@ -6,87 +6,120 @@ public class glTFForUE4 : ModuleRules
 {
     public glTFForUE4(TargetInfo Target)
     {
-        PublicIncludePaths.AddRange(
-            new string[] {
+        PublicIncludePaths.AddRange(new [] {
                 "glTFForUE4/Public"
-            }
-            );
+            });
 
 
-        PrivateIncludePaths.AddRange(
-            new string[] {
+        PrivateIncludePaths.AddRange(new [] {
                 "glTFForUE4/Private",
-            }
-            );
+            });
 
 
-        PublicDependencyModuleNames.AddRange(
-            new string[]
-            {
+        PublicDependencyModuleNames.AddRange(new [] {
                 "Core",
-            }
-            );
+            });
 
 
-        PrivateDependencyModuleNames.AddRange(
-            new string[]
-            {
+        PrivateDependencyModuleNames.AddRange(new [] {
                 "CoreUObject",
                 "Engine",
                 "Slate",
                 "SlateCore",
                 "InputCore",
-            }
-            );
+            });
 
         // libgltf
-        string LibName = "libgltf";
-        string LibExtension = "";
-        string LibPathRoot = System.IO.Path.Combine(ModuleDirectory, "..", "..", "Extras", LibName);
+        {
+            string glTFPath = System.IO.Path.Combine(ExtraPathRoot, "libgltf_ue4", "libgltf-0.1.0");
+            string IncludePath = System.IO.Path.Combine(glTFPath, "include");
+            string LibPath = "";
 
-        string LibPathInclude = System.IO.Path.Combine(LibPathRoot, "include");
-        PublicIncludePaths.Add(LibPathInclude);
+            if ((Target.Platform == UnrealTargetPlatform.Win32) || (Target.Platform == UnrealTargetPlatform.Win64))
+            {
+                string PlatformName = "";
+                switch (Target.Platform)
+                {
+                case UnrealTargetPlatform.Win32:
+                    PlatformName = "win32";
+                    break;
+                case UnrealTargetPlatform.Win64:
+                    PlatformName = "win64";
+                    break;
+                }
 
-        Definitions.Add("LIBGLTF_USE_WCHAR");
+                string VSName = "vs" + WindowsPlatform.GetVisualStudioCompilerVersionName();
 
-        string LibPathLibrary = System.IO.Path.Combine(LibPathRoot, "lib");
-        if (Target.Platform == UnrealTargetPlatform.Win64)
-        {
-            LibPathLibrary = System.IO.Path.Combine(LibPathLibrary, "win64");
-            LibExtension = "lib";
-        }
-        else if (Target.Platform == UnrealTargetPlatform.Win32)
-        {
-            LibPathLibrary = System.IO.Path.Combine(LibPathLibrary, "win32");
-            LibExtension = "lib";
-        }
-        else if (Target.Platform == UnrealTargetPlatform.Mac)
-        {
-            LibPathLibrary = System.IO.Path.Combine(LibPathLibrary, "macos");
-            LibExtension = "a";
-        }
-        else if (Target.Platform == UnrealTargetPlatform.Linux)
-        {
-            LibPathLibrary = System.IO.Path.Combine(LibPathLibrary, "linux");
-            LibExtension = "a";
-        }
-        else if (Target.Platform == UnrealTargetPlatform.Android)
-        {
-            LibPathLibrary = System.IO.Path.Combine(LibPathLibrary, "android");
-            LibExtension = "a";
-        }
-        else if (Target.Platform == UnrealTargetPlatform.IOS)
-        {
-            LibPathLibrary = System.IO.Path.Combine(LibPathLibrary, "ios");
-            LibExtension = "a";
-        }
-        if (System.IO.Directory.Exists(System.IO.Path.Combine(LibPathLibrary, "Release")))
-        {
-            LibPathLibrary = System.IO.Path.Combine(LibPathLibrary, "Release");
-        }
-        LibName = LibPathLibrary + "/" + LibName + "." + LibExtension;
+                LibPath = System.IO.Path.Combine(glTFPath, "lib", PlatformName, VSName);
 
-        PublicLibraryPaths.Add(LibPathLibrary);
-        PublicAdditionalLibraries.Add(LibName);
+                PublicAdditionalLibraries.Add("libgltf.lib");
+            }
+            else if (Target.Platform == UnrealTargetPlatform.Linux)
+            {
+                LibPath = System.IO.Path.Combine(glTFPath, "lib", "linux");
+
+                PublicAdditionalLibraries.Add("libgltf.a");
+            }
+            else if (Target.Platform == UnrealTargetPlatform.Mac)
+            {
+                LibPath = System.IO.Path.Combine(glTFPath, "lib", "macos");
+
+                PublicAdditionalLibraries.Add("libgltf.a");
+            }
+            else if (Target.Platform == UnrealTargetPlatform.IOS)
+            {
+                LibPath = System.IO.Path.Combine(glTFPath, "lib", "ios");
+
+                PublicAdditionalLibraries.Add("libgltf.a");
+            }
+
+            PublicIncludePaths.Add(IncludePath);
+            PublicLibraryPaths.Add(LibPath);
+        }
+
+        // libdraco
+        {
+            string DracoPath = System.IO.Path.Combine(ExtraPathRoot, "libdraco_ue4", "libdraco-1.2.5");
+            string IncludePath = System.IO.Path.Combine(DracoPath, "include");
+            string LibPath = "";
+
+            if ((Target.Platform == UnrealTargetPlatform.Win32) || (Target.Platform == UnrealTargetPlatform.Win64))
+            {
+                string PlatformName = "";
+                switch (Target.Platform)
+                {
+                case UnrealTargetPlatform.Win32:
+                    PlatformName = "win32";
+                    break;
+                case UnrealTargetPlatform.Win64:
+                    PlatformName = "win64";
+                    break;
+                }
+
+                string VSName = "vs" + WindowsPlatform.GetVisualStudioCompilerVersionName();
+
+                LibPath = System.IO.Path.Combine(DracoPath, "lib", PlatformName, VSName);
+
+                PublicAdditionalLibraries.Add("dracodec.lib");
+                PublicAdditionalLibraries.Add("dracoenc.lib");
+            }
+            else if (Target.Platform == UnrealTargetPlatform.Linux)
+            {
+                LibPath = System.IO.Path.Combine(DracoPath, "lib", "linux");
+
+                PublicAdditionalLibraries.Add("libdracodec.a");
+                PublicAdditionalLibraries.Add("libdracoenc.a");
+            }
+            else if (Target.Platform == UnrealTargetPlatform.Mac)
+            {
+                LibPath = System.IO.Path.Combine(DracoPath, "lib", "macos");
+
+                PublicAdditionalLibraries.Add("libdracodec.a");
+                PublicAdditionalLibraries.Add("libdracoenc.a");
+            }
+
+            PublicIncludePaths.Add(IncludePath);
+            PublicLibraryPaths.Add(LibPath);
+        }
     }
 }

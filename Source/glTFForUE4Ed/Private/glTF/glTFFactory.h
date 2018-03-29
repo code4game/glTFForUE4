@@ -13,6 +13,7 @@ class UglTFFactory : public UFactory
 public:
     // Begin UFactory Interface
     virtual bool DoesSupportClass(UClass* InClass) override;
+    virtual UClass* ResolveSupportedClass() override;
     virtual bool FactoryCanImport(const FString& InSystemFilePath) override;
     // End UFactory Interface
 
@@ -21,4 +22,7 @@ public:
 
 protected:
     virtual UObject* FactoryCreate(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, UObject* InContext, const TCHAR* InType, FFeedbackContext* InWarn, const FString& InglTFJson, TSharedPtr<class FglTFBuffers> InglTFBuffers = nullptr);
+
+private:
+    UClass* ImportClass;
 };
