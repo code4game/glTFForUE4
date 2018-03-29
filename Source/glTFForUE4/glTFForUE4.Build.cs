@@ -10,7 +10,6 @@ public class glTFForUE4 : ModuleRules
                 "glTFForUE4/Public"
             });
 
-
         PrivateIncludePaths.AddRange(new [] {
                 "glTFForUE4/Private",
             });

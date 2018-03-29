@@ -37,6 +37,8 @@ public class glTFForUE4Ed : ModuleRules
                 "glTFForUE4",
             });
 
+        string ExtraPathRoot = System.IO.Path.Combine(ModuleDirectory, "..", "..", "Extras");
+
         // libgltf
         {
             string glTFPath = System.IO.Path.Combine(ExtraPathRoot, "libgltf_ue4", "libgltf-0.1.1");

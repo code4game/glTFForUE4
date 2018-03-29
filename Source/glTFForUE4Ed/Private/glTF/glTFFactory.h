@@ -11,6 +11,9 @@ class UglTFFactory : public UFactory
     GENERATED_UCLASS_BODY()
 
 public:
+    UglTFFactory();
+
+public:
     // Begin UFactory Interface
     virtual bool DoesSupportClass(UClass* InClass) override;
     virtual UClass* ResolveSupportedClass() override;

@@ -12,16 +12,13 @@ public class glTFForUE4 : ModuleRules
                 "glTFForUE4/Public"
             });
 
-
         PrivateIncludePaths.AddRange(new [] {
                 "glTFForUE4/Private",
             });
 
-
         PublicDependencyModuleNames.AddRange(new [] {
                 "Core",
             });
-
 
         PrivateDependencyModuleNames.AddRange(new [] {
                 "CoreUObject",
@@ -30,6 +27,8 @@ public class glTFForUE4 : ModuleRules
                 "SlateCore",
                 "InputCore",
             });
+
+        string ExtraPathRoot = System.IO.Path.Combine(ModuleDirectory, "..", "..", "Extras");
 
         // libgltf
         {
@@ -77,6 +76,7 @@ public class glTFForUE4 : ModuleRules
 
             PublicIncludePaths.Add(IncludePath);
             PublicLibraryPaths.Add(LibPath);
+            Definitions.Add("LIBGLTF_USE_WCHAR=1");
         }
 
         // libdraco
