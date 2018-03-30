@@ -82,7 +82,7 @@ class EntryValue {
 struct EntryValueHasher {
   size_t operator()(const EntryValue &ev) const {
     size_t hash = ev.data_.size();
-    for (int i = 0; i < ev.data_.size(); ++i) {
+    for (int i = 0; i < static_cast<int>(ev.data_.size()); ++i) {
       hash = HashCombine(ev.data_[i], hash);
     }
     return hash;
