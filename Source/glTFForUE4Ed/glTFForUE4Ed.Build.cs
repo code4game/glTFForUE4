@@ -21,10 +21,11 @@ public class glTFForUE4Ed : ModuleRules
         PrivateDependencyModuleNames.AddRange(new [] {
                 "CoreUObject",
                 "Engine",
-                "Slate",
-                "SlateCore",
+                "RHI",
                 "InputCore",
                 "RenderCore",
+                "SlateCore",
+                "Slate",
                 "ImageWrapper",
                 "UnrealEd",
                 "MainFrame",
