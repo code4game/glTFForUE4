@@ -24,10 +24,12 @@ USkeletalMesh* FglTFImporterEd::CreateSkeletalMesh(const TWeakPtr<FglTFImportOpt
     checkSlow(SkeletalMesh);
     if (!SkeletalMesh) return nullptr;
 
+#if ENGINE_MINOR_VERSION < 19
     FSkeletalMeshResource* ImportedResource = SkeletalMesh->GetImportedResource();
     check(ImportedResource->LODModels.Num() == 0);
     ImportedResource->LODModels.Empty();
     new(ImportedResource->LODModels)FStaticLODModel();
+#endif
 
     FSkeletalMeshImportData TempData;
     //TODO:s

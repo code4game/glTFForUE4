@@ -4,8 +4,10 @@ using UnrealBuildTool;
 
 public class glTFForUE4Ed : ModuleRules
 {
-    public glTFForUE4Ed(TargetInfo Target)
+    public glTFForUE4Ed(ReadOnlyTargetRules Target) : base(Target)
     {
+        PCHUsage = PCHUsageMode.UseSharedPCHs;
+
         PublicIncludePaths.AddRange(new [] {
                 "glTFForUE4Ed/Public"
             });
@@ -58,7 +60,7 @@ public class glTFForUE4Ed : ModuleRules
                     break;
                 }
 
-                string VSName = "vs" + WindowsPlatform.GetVisualStudioCompilerVersionName();
+                string VSName = "vs" + Target.WindowsPlatform.GetVisualStudioCompilerVersionName();
 
                 LibPath = System.IO.Path.Combine(glTFPath, "lib", PlatformName, VSName);
 
@@ -109,7 +111,7 @@ public class glTFForUE4Ed : ModuleRules
                     break;
                 }
 
-                string VSName = "vs" + WindowsPlatform.GetVisualStudioCompilerVersionName();
+                string VSName = "vs" + Target.WindowsPlatform.GetVisualStudioCompilerVersionName();
 
                 LibPath = System.IO.Path.Combine(DracoPath, "lib", PlatformName, VSName);
 

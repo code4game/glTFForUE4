@@ -2,16 +2,18 @@
 
 using UnrealBuildTool;
 
-public class glTFForUE4Ed : ModuleRules
+public class glTFForUE4 : ModuleRules
 {
-    public glTFForUE4Ed(TargetInfo Target)
+    public glTFForUE4(ReadOnlyTargetRules Target) : base(Target)
     {
+        PCHUsage = PCHUsageMode.UseSharedPCHs;
+
         PublicIncludePaths.AddRange(new [] {
-                "glTFForUE4Ed/Public"
+                "glTFForUE4/Public"
             });
 
         PrivateIncludePaths.AddRange(new [] {
-                "glTFForUE4Ed/Private",
+                "glTFForUE4/Private",
             });
 
         PublicDependencyModuleNames.AddRange(new [] {
@@ -21,19 +23,9 @@ public class glTFForUE4Ed : ModuleRules
         PrivateDependencyModuleNames.AddRange(new [] {
                 "CoreUObject",
                 "Engine",
-                "RHI",
-                "InputCore",
-                "RenderCore",
-                "SlateCore",
                 "Slate",
-                "ImageWrapper",
-                "UnrealEd",
-                "MainFrame",
-                "Documentation",
-                "PropertyEditor",
-                "EditorStyle",
-                "RawMesh",
-                "glTFForUE4",
+                "SlateCore",
+                "InputCore",
             });
 
         string ExtraPathRoot = System.IO.Path.Combine(ModuleDirectory, "..", "..", "Extras");
@@ -58,7 +50,7 @@ public class glTFForUE4Ed : ModuleRules
                     break;
                 }
 
-                string VSName = "vs" + WindowsPlatform.GetVisualStudioCompilerVersionName();
+                string VSName = "vs" + Target.WindowsPlatform.GetVisualStudioCompilerVersionName();
 
                 LibPath = System.IO.Path.Combine(glTFPath, "lib", PlatformName, VSName);
 
@@ -109,7 +101,7 @@ public class glTFForUE4Ed : ModuleRules
                     break;
                 }
 
-                string VSName = "vs" + WindowsPlatform.GetVisualStudioCompilerVersionName();
+                string VSName = "vs" + Target.WindowsPlatform.GetVisualStudioCompilerVersionName();
 
                 LibPath = System.IO.Path.Combine(DracoPath, "lib", PlatformName, VSName);
 

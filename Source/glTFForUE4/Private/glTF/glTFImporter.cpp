@@ -621,7 +621,6 @@ bool FglTFImporter::GetMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, c
     if (ExtensionDraco)
     {
         int32 BufferViewIndex = *(ExtensionDraco->bufferView);
-        const std::shared_ptr<libgltf::SBufferView>& BufferView = InGlTF->bufferViews[BufferViewIndex];
         TArray<uint8> EncodeBuffer;
         FString BufferFilePath;
         return InBufferFiles.GetBufferViewData(InGlTF, BufferViewIndex, EncodeBuffer, BufferFilePath)

@@ -15,6 +15,13 @@
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
 
+UglTFFactory::UglTFFactory()
+    : Super()
+    , ImportClass(nullptr)
+{
+    //
+}
+
 UglTFFactory::UglTFFactory(const FObjectInitializer& InObjectInitializer)
     : Super(InObjectInitializer)
     , ImportClass(nullptr)
