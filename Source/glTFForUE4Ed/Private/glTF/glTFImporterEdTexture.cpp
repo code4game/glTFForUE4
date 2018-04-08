@@ -64,12 +64,6 @@ UTexture* FglTFImporterEd::CreateTexture(const TWeakPtr<FglTFImportOptions>& Ing
         int32 Width = ImageWrapper->GetWidth();
         int32 Height = ImageWrapper->GetHeight();
 
-        // TODO: Do create a texture with bad dimensions.
-        if ((Width & (Width - 1)) || (Height & (Height - 1)))
-        {
-            break;
-        }
-
         int32 BitDepth = ImageWrapper->GetBitDepth();
 #if (ENGINE_MINOR_VERSION < 18)
         ERGBFormat::Type ImageFormat = ImageWrapper->GetFormat();
@@ -118,7 +112,16 @@ UTexture* FglTFImporterEd::CreateTexture(const TWeakPtr<FglTFImportOptions>& Ing
         NewTexture = NewObject<UTexture2D>(TexturePackage, UTexture2D::StaticClass(), *InTextureName, InputFlags);
         checkSlow(NewTexture);
         if (!NewTexture) break;
-        NewTexture->Source.Init2DWithMipChain(Width, Height, TextureFormat);
+
+        if (FMath::IsPowerOfTwo(Width) && FMath::IsPowerOfTwo(Height))
+        {
+            NewTexture->Source.Init2DWithMipChain(Width, Height, TextureFormat);
+        }
+        else
+        {
+            NewTexture->Source.Init(Width, Height, 1, 1, TextureFormat);
+            NewTexture->MipGenSettings = TMGS_NoMipmaps;
+        }
         NewTexture->SRGB = !InIsNormalmap;
         NewTexture->CompressionSettings = !InIsNormalmap ? TC_Default : TC_Normalmap;
         const TArray<uint8>* RawData = nullptr;
