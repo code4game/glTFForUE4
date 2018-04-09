@@ -222,7 +222,7 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(SCheckBox)
-                                //.IsEnabled(false)
+                                .IsEnabled(false)
                                 .IsChecked(glTFImportOptions.Pin()->bImportAsSkeleton ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
                                 .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleImportSkeleton)
                         ]
