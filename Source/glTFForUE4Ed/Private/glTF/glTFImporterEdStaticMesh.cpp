@@ -113,8 +113,12 @@ UStaticMesh* FglTFImporterEd::CreateStaticMesh(const TWeakPtr<FglTFImportOptions
             Position = Position * glTFImportOptions->MeshScaleRatio;
         }
 
-        SourceModel.BuildSettings.bRecomputeNormals = (glTFImportOptions->bRecomputeNormals || NewRawMesh.WedgeTangentZ.Num() != NewRawMesh.VertexPositions.Num());
-        SourceModel.BuildSettings.bRecomputeTangents = (glTFImportOptions->bRecomputeTangents || NewRawMesh.WedgeTangentX.Num() != NewRawMesh.VertexPositions.Num() || NewRawMesh.WedgeTangentY.Num() != NewRawMesh.VertexPositions.Num());
+        SourceModel.BuildSettings.bRecomputeNormals = (glTFImportOptions->bRecomputeNormals || NewRawMesh.WedgeTangentZ.Num() != NewRawMesh.WedgeIndices.Num());
+        SourceModel.BuildSettings.bRecomputeTangents = (glTFImportOptions->bRecomputeTangents || NewRawMesh.WedgeTangentX.Num() != NewRawMesh.WedgeIndices.Num() || NewRawMesh.WedgeTangentY.Num() != NewRawMesh.WedgeIndices.Num());
+        SourceModel.BuildSettings.bRemoveDegenerates = false;
+        SourceModel.BuildSettings.bBuildAdjacencyBuffer = false;
+        SourceModel.BuildSettings.bUseFullPrecisionUVs = false;
+        SourceModel.BuildSettings.bGenerateLightmapUVs = false;
         SourceModel.RawMeshBulkData->SaveRawMesh(NewRawMesh);
 
         /// Build the static mesh
@@ -320,29 +324,46 @@ bool FglTFImporterEd::GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InG
     }
     OutRawMesh.VertexPositions.Append(Points);
 
-    for (FVector& Normal : Normals)
+    if (Normals.Num() == Points.Num())
     {
-        Normal = Transform.TransformVectorNoScale(Normal);
+        for (FVector& Normal : Normals)
+        {
+            Normal = Transform.GetRotation().RotateVector(Normal);
+        }
     }
-    OutRawMesh.WedgeTangentZ.Append(Normals);
+    else
+    {
+        Normals.Init(FVector(1.0f, 0.0f, 0.0f), Points.Num());
+    }
 
-    if (Tangents.Num() == Normals.Num())
+    TArray<FVector> WedgeTangentXs;
+    TArray<FVector> WedgeTangentYs;
+    if (Tangents.Num() == Points.Num())
     {
         for (int32 i = 0; i < Tangents.Num(); ++i)
         {
             const FVector4& Tangent = Tangents[i];
 
             FVector WedgeTangentX(Tangent.X, Tangent.Y, Tangent.Z);
-            WedgeTangentX = Transform.TransformVectorNoScale(WedgeTangentX);
-            OutRawMesh.WedgeTangentX.Add(WedgeTangentX);
+            WedgeTangentX = Transform.GetRotation().RotateVector(WedgeTangentX);
+            WedgeTangentXs.Add(WedgeTangentX);
 
             const FVector& Normal = Normals[i];
-            OutRawMesh.WedgeTangentY.Add(FVector::CrossProduct(Normal, WedgeTangentX * Tangent.W));
+            WedgeTangentYs.Add(FVector::CrossProduct(Normal, WedgeTangentX * Tangent.W));
         }
     }
-    else if (Tangents.Num() > 0)
+    else
     {
-        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Why is the number of tangent not equal with the number of normal?"));
+        UE_LOG(LogglTFForUE4Ed, Warning, TEXT("Why is the number of tangent not equal with the number of normal?"));
+        WedgeTangentXs.Init(FVector(0.0f, 0.0f, 1.0f), Normals.Num());
+        WedgeTangentYs.Init(FVector(0.0f, 1.0f, 0.0f), Normals.Num());
+    }
+
+    for (int32 i = 0; i < TriangleIndices.Num(); ++i)
+    {
+        OutRawMesh.WedgeTangentX.Add(WedgeTangentXs[TriangleIndices[i]]);
+        OutRawMesh.WedgeTangentY.Add(WedgeTangentYs[TriangleIndices[i]]);
+        OutRawMesh.WedgeTangentZ.Add(Normals[TriangleIndices[i]]);
     }
 
     int32 WedgeIndicesCount = OutRawMesh.WedgeIndices.Num();
