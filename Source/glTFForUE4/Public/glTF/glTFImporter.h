@@ -10,6 +10,9 @@
 
 #include "Engine/Texture.h"
 
+#define GLTF_TRIANGLE_POINTS_NUM            3
+#define GLTF_JOINT_LAYERS_NUM_MAX           3
+
 namespace glTFForUE4
 {
     class GLTFFORUE4_API FFeedbackTaskWrapper
@@ -153,6 +156,42 @@ private:
     const TArray<uint8> DataEmpty;
 };
 
+struct GLTFFORUE4_API FglTFAnimationSequenceKeyData
+{
+    FglTFAnimationSequenceKeyData();
+
+    float Time;
+    FTransform Transform;
+    ERichCurveInterpMode TranslationInterpolation;
+    ERichCurveInterpMode RotationInterpolation;
+    ERichCurveInterpMode ScaleInterpolation;
+};
+
+struct GLTFFORUE4_API FglTFAnimationSequenceData
+{
+    FglTFAnimationSequenceData();
+
+    int32 NodeIndex;
+    TArray<FglTFAnimationSequenceKeyData> KeyDatas;
+
+    FglTFAnimationSequenceKeyData* FindOrAddSequenceKeyData(float InTime);
+    void FindOrAddSequenceKeyDataAndSetTranslation(float InTime, const FVector& InValue, ERichCurveInterpMode InInterpolation);
+    void FindOrAddSequenceKeyDataAndSetRotation(float InTime, const FQuat& InValue, ERichCurveInterpMode InInterpolation);
+    void FindOrAddSequenceKeyDataAndSetScale(float InTime, const FVector& InValue, ERichCurveInterpMode InInterpolation);
+};
+
+struct GLTFFORUE4_API FglTFAnimationSequenceDatas
+{
+    FglTFAnimationSequenceDatas();
+
+    TArray<FglTFAnimationSequenceData> Datas;
+
+    FglTFAnimationSequenceData* FindOrAddSequenceData(int32 InNodeIndex);
+    void FindOrAddSequenceDataAndSetTranslation(int32 InNodeIndex, float InTime, const FVector& InValue, ERichCurveInterpMode InInterpolation);
+    void FindOrAddSequenceDataAndSetRotation(int32 InNodeIndex, float InTime, const FQuat& InValue, ERichCurveInterpMode InInterpolation);
+    void FindOrAddSequenceDataAndSetScale(int32 InNodeIndex, float InTime, const FVector& InValue, ERichCurveInterpMode InInterpolation);
+};
+
 class GLTFFORUE4_API FglTFImporter
 {
 public:
@@ -174,22 +213,23 @@ protected:
     class FFeedbackContext* FeedbackContext;
 
 public:
-    static bool GetMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_STATIC_TEXCOORDS]);
-
-protected:
-    static bool GetTriangleIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices);
-    static bool GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector>& OutVertexPositions);
-    static bool GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector>& OutVertexNormals);
-    static bool GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector4>& OutVertexTangents);
-    static bool GetVertexTexcoords(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector2D> OutVertexTexcoords[MAX_STATIC_TEXCOORDS]);
+    static bool GetStaticMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_STATIC_TEXCOORDS], bool bSwapYZ = true);
+    static bool GetSkeletalMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const std::shared_ptr<libgltf::SSkin>& InSkin, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_TEXCOORDS], TArray<FMatrix>& OutInverseBindMatrices, TArray<FVector4> OutJointIndeies[GLTF_JOINT_LAYERS_NUM_MAX], TArray<FVector4> OutJointWeights[GLTF_JOINT_LAYERS_NUM_MAX], bool bSwapYZ = true);
+    static bool GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SAnimation>& InglTFAnimation, const FglTFBuffers& InBufferFiles, FglTFAnimationSequenceDatas& OutAnimationSequenceDatas, bool bSwapYZ = true);
+    static bool GetNodeParentIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<int32>& OutParentIndices);
+    static bool GetNodeRelativeTransforms(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<FTransform>& OutRelativeTransforms, bool bSwapYZ = true);
+    static bool GetNodeParentIndicesAndTransforms(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<int32>& OutParentIndices, TArray<FTransform>& OutRelativeTransforms, TArray<FTransform>& OutAbsoluteTransforms, bool bSwapYZ = true);
 
 public:
-    static void SwapYZ(FVector& InOutValue);
-    static void SwapYZ(TArray<FVector>& InOutValues);
     static FString SanitizeObjectName(const FString& InObjectName);
 
+public:
+    static const FMatrix& GetglTFSpaceToUnrealSpace(bool bSwapYZ = true, bool bInverseX = false);
+    static FMatrix& ConvertToUnrealSpace(FMatrix& InOutValue, bool bSwapYZ = true, bool bInverseX = false);
+    static FTransform& ConvertToUnrealSpace(FTransform& InOutValue, bool bSwapYZ = true, bool bInverseX = false);
     static TextureFilter MagFilterToTextureFilter(int32 InValue);
     static TextureFilter MinFilterToTextureFilter(int32 InValue);
     static TextureAddress WrapSToTextureAddress(int32 InValue);
     static TextureAddress WrapTToTextureAddress(int32 InValue);
+    static ERichCurveInterpMode StringToRichCurveInterpMode(const FString& InInterpolation);
 };

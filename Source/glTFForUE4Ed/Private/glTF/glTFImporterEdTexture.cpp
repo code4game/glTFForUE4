@@ -1,7 +1,7 @@
 // Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4EdPrivatePCH.h"
-#include "glTF/glTFImporterEd.h"
+#include "glTF/glTFImporterEdTexture.h"
 
 #include "glTF/glTFImportOptions.h"
 
@@ -13,10 +13,29 @@
 #include "IImageWrapper.h"
 #include "IImageWrapperModule.h"
 #endif
+#include "AssetRegistryModule.h"
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
 
-UTexture* FglTFImporterEd::CreateTexture(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STexture>& InglTFTexture, const FglTFBuffers& InBuffers, const FString& InTextureName, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
+TSharedPtr<FglTFImporterEdTexture> FglTFImporterEdTexture::Get(UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
+{
+    TSharedPtr<FglTFImporterEdTexture> glTFImporterEdTexture = MakeShareable(new FglTFImporterEdTexture);
+    glTFImporterEdTexture->Set(InClass, InParent, InName, InFlags, InFeedbackContext);
+    glTFImporterEdTexture->InputFactory = InFactory;
+    return glTFImporterEdTexture;
+}
+
+FglTFImporterEdTexture::FglTFImporterEdTexture()
+{
+    //
+}
+
+FglTFImporterEdTexture::~FglTFImporterEdTexture()
+{
+    //
+}
+
+UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STexture>& InglTFTexture, const FglTFBuffers& InBuffers, const FString& InTextureName, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
 {
     if (!InglTF || !InglTFTexture || !(InglTFTexture->source)) return nullptr;
     int32 ImageIndex = (int32)(*(InglTFTexture->source));
@@ -112,6 +131,9 @@ UTexture* FglTFImporterEd::CreateTexture(const TWeakPtr<FglTFImportOptions>& Ing
         NewTexture = NewObject<UTexture2D>(TexturePackage, UTexture2D::StaticClass(), *InTextureName, InputFlags);
         checkSlow(NewTexture);
         if (!NewTexture) break;
+        FAssetRegistryModule::AssetCreated(NewTexture);
+
+        NewTexture->PreEditChange(nullptr);
 
         if (FMath::IsPowerOfTwo(Width) && FMath::IsPowerOfTwo(Height))
         {

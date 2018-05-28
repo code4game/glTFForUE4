@@ -10,10 +10,15 @@
  *
  * \brief The settings of the `glTFForUE4`
  */
-UCLASS(config = glTFForUE4Settings, defaultconfig)
+UCLASS(config = glTFForUE4Settings, defaultconfig, Category = glTFForUE4)
 class GLTFFORUE4_API UglTFForUE4Settings : public UObject
 {
     GENERATED_UCLASS_BODY()
 
 public:
+    //UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, config, Category = Prefix)
+    //FString PrefixStaticMesh;
+
+    //UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, config, Category = Prefix)
+    //FString PrefixSkeletalMesh;
 };

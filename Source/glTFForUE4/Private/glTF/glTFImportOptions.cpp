@@ -6,14 +6,16 @@
 FglTFImportOptions::FglTFImportOptions()
     : FilePathInOS(TEXT(""))
     , FilePathInEngine(TEXT(""))
-    , bImportAsScene(false)
-    , bImportAsSkeleton(false)
-    , bImportMaterial(true)
-    , MeshScaleRatio(100.0f)
+    , ImportType(EglTFImportType::StaticMesh)
+    , MeshScaleRatio(1.0f)
     , bInvertNormal(false)
     , bUseMikkTSpace(true)
     , bRecomputeNormals(false)
     , bRecomputeTangents(false)
+    , bIntegrateAllMeshsForStaticMesh(true)
+    , bImportAnimationForSkeletalMesh(false)
+    , bImportMaterial(true)
+    , bImportTexture(true)
 {
     //
 }

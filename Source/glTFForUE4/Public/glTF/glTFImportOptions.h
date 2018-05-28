@@ -2,6 +2,16 @@
 
 #include "glTFImportOptions.generated.h"
 
+UENUM()
+enum class EglTFImportType : uint8
+{
+    None,
+    StaticMesh,
+    SkeletalMesh,
+    Actor,
+    Level,
+};
+
 USTRUCT()
 struct GLTFFORUE4_API FglTFImportOptions
 {
@@ -17,13 +27,7 @@ struct GLTFFORUE4_API FglTFImportOptions
 
     /// Import options
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bImportAsScene;
-
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bImportAsSkeleton;
-
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bImportMaterial;
+    EglTFImportType ImportType;
 
     /// Mesh options
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
@@ -41,7 +45,20 @@ struct GLTFFORUE4_API FglTFImportOptions
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bRecomputeTangents;
 
+    /// Static Mesh options
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    bool bIntegrateAllMeshsForStaticMesh;
+
+    /// Skeletal Mesh options
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    bool bImportAnimationForSkeletalMesh;
+
     /// Material options
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    bool bImportMaterial;
+
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    bool bImportTexture;
 
     static const FglTFImportOptions Default;
     static FglTFImportOptions Current;

@@ -9,7 +9,7 @@
 
 #include "Styling/CoreStyle.h"
 
-#define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
+#define LOCTEXT_NAMESPACE "FglTFForUE4"
 
 TSharedPtr<FglTFImportOptions> SglTFImportOptionsWindow::Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool& OutCancel)
 {
@@ -19,7 +19,7 @@ TSharedPtr<FglTFImportOptions> SglTFImportOptionsWindow::Open(const FString& InF
     glTFImportOptions->FilePathInOS = InFilePathInOS;
     glTFImportOptions->FilePathInEngine = InFilePathInEngine;
 
-    TSharedPtr<SWindow> ParentWindow;
+    /*TSharedPtr<SWindow> ParentWindow;
 
     //TODO: get the parent window
 
@@ -44,7 +44,7 @@ TSharedPtr<FglTFImportOptions> SglTFImportOptionsWindow::Open(const FString& InF
     if (!OutCancel)
     {
         FglTFImportOptions::Current = (*glTFImportOptions);
-    }
+    }*/
     return glTFImportOptions;
 }
 
@@ -58,9 +58,9 @@ SglTFImportOptionsWindow::SglTFImportOptionsWindow()
 
 void SglTFImportOptionsWindow::Construct(const FArguments& InArgs)
 {
-    WidgetWindow = InArgs._WidgetWindow;
     glTFImportOptions = InArgs._glTFImportOptions;
     checkf(glTFImportOptions.IsValid(), TEXT("Why the argument - glTFImportOptions is null?"));
+    WidgetWindow = InArgs._WidgetWindow;
 
     //TODO:
 }
@@ -110,19 +110,49 @@ FReply SglTFImportOptionsWindow::OnCancel()
     return FReply::Handled();
 }
 
-void SglTFImportOptionsWindow::HandleImportScene(ECheckBoxState InCheckBoxState)
+void SglTFImportOptionsWindow::HandleImportType(const TSharedPtr<EglTFImportType> InImportType, ESelectInfo::Type InSelectInfo)
 {
-    glTFImportOptions.Pin()->bImportAsScene = (InCheckBoxState == ECheckBoxState::Checked);
+    if (!InImportType.IsValid()) return;
+    glTFImportOptions.Pin()->ImportType = *InImportType;
 }
 
-void SglTFImportOptionsWindow::HandleImportSkeleton(ECheckBoxState InCheckBoxState)
+TSharedRef<SWidget> SglTFImportOptionsWindow::GenerateImportType(TSharedPtr<EglTFImportType> InImportType) const
 {
-    glTFImportOptions.Pin()->bImportAsSkeleton = (InCheckBoxState == ECheckBoxState::Checked);
+    FText ImportTypeText = GetImportTypeText(InImportType.IsValid() ? *InImportType : EglTFImportType::None);
+    return SNew(STextBlock)
+        .Text(ImportTypeText);
 }
 
-void SglTFImportOptionsWindow::HandleImportMaterial(ECheckBoxState InCheckBoxState)
+FText SglTFImportOptionsWindow::GetImportTypeText() const
 {
-    glTFImportOptions.Pin()->bImportMaterial = (InCheckBoxState == ECheckBoxState::Checked);
+    return GetImportTypeText(glTFImportOptions.Pin()->ImportType);
+}
+
+FText SglTFImportOptionsWindow::GetImportTypeText(EglTFImportType InImportType) const
+{
+    FText ImportTypeText(LOCTEXT("None", "None"));
+    switch (InImportType)
+    {
+    case EglTFImportType::StaticMesh:
+        ImportTypeText = LOCTEXT("EglTFImportType::StaticMesh", "StaticMesh");
+        break;
+
+    case EglTFImportType::SkeletalMesh:
+        ImportTypeText = LOCTEXT("EglTFImportType::SkeletalMesh", "SkeletalMesh");
+        break;
+
+    case EglTFImportType::Actor:
+        ImportTypeText = LOCTEXT("EglTFImportType::Actor", "Actor");
+        break;
+
+    case EglTFImportType::Level:
+        ImportTypeText = LOCTEXT("EglTFImportType::Level", "Level");
+        break;
+
+    default:
+        break;
+    }
+    return ImportTypeText;
 }
 
 void SglTFImportOptionsWindow::HandleMeshScaleRatio(float InNewValue)
@@ -148,6 +178,54 @@ void SglTFImportOptionsWindow::HandleMeshRecomputeNormals(ECheckBoxState InCheck
 void SglTFImportOptionsWindow::HandleMeshRecomputeTangents(ECheckBoxState InCheckBoxState)
 {
     glTFImportOptions.Pin()->bRecomputeTangents = (InCheckBoxState == ECheckBoxState::Checked);
+}
+
+bool SglTFImportOptionsWindow::CanHandleIntegrateAllMeshsForStaticMesh() const
+{
+    //TSharedPtr<FglTFImportOptions> glTFImportOptionsPtr = glTFImportOptions.Pin();
+    //return glTFImportOptionsPtr->ImportType == EglTFImportType::StaticMesh;
+    return false;
+}
+
+ECheckBoxState SglTFImportOptionsWindow::CheckHandleIntegrateAllMeshsForStaticMesh() const
+{
+    return (glTFImportOptions.Pin()->bIntegrateAllMeshsForStaticMesh ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
+}
+
+void SglTFImportOptionsWindow::HandleIntegrateAllMeshsForStaticMesh(ECheckBoxState InCheckBoxState)
+{
+    glTFImportOptions.Pin()->bIntegrateAllMeshsForStaticMesh = (InCheckBoxState == ECheckBoxState::Checked);
+}
+
+bool SglTFImportOptionsWindow::CanHandleImportAnimationForSkeletalMesh() const
+{
+    TSharedPtr<FglTFImportOptions> glTFImportOptionsPtr = glTFImportOptions.Pin();
+    return (bHasAnimation && glTFImportOptionsPtr->ImportType == EglTFImportType::SkeletalMesh);
+}
+
+ECheckBoxState SglTFImportOptionsWindow::CheckHandleImportAnimationForSkeleton() const
+{
+    return (glTFImportOptions.Pin()->bImportAnimationForSkeletalMesh ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
+}
+
+void SglTFImportOptionsWindow::HandleImportAnimationForSkeletalMesh(ECheckBoxState InCheckBoxState)
+{
+    glTFImportOptions.Pin()->bImportAnimationForSkeletalMesh = (InCheckBoxState == ECheckBoxState::Checked);
+}
+
+void SglTFImportOptionsWindow::HandleImportMaterial(ECheckBoxState InCheckBoxState)
+{
+    glTFImportOptions.Pin()->bImportMaterial = (InCheckBoxState == ECheckBoxState::Checked);
+}
+
+void SglTFImportOptionsWindow::HandleImportTexture(ECheckBoxState InCheckBoxState)
+{
+    glTFImportOptions.Pin()->bImportTexture = (InCheckBoxState == ECheckBoxState::Checked);
+}
+
+bool SglTFImportOptionsWindow::HasAnimation() const
+{
+    return bHasAnimation;
 }
 
 #undef LOCTEXT_NAMESPACE

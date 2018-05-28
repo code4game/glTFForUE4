@@ -27,12 +27,14 @@ public class glTFForUE4Ed : ModuleRules
                 "SlateCore",
                 "Slate",
                 "ImageWrapper",
+                "AssetRegistry",
                 "UnrealEd",
                 "MainFrame",
                 "Documentation",
                 "PropertyEditor",
                 "EditorStyle",
                 "RawMesh",
+                "MeshUtilities",
                 "glTFForUE4",
             });
 
