@@ -13,6 +13,8 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/SkeletalMesh.h"
 
+#include "ObjectTools.h"
+
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
 
 UglTFFactory::UglTFFactory()
@@ -69,7 +71,7 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
 UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, UObject* InContext, const TCHAR* InType, FFeedbackContext* InWarn, const FString& InglTFJson, TSharedPtr<FglTFBuffers> InglTFBuffers /*= nullptr*/)
 {
     const FString& FilePathInOS = UFactory::GetCurrentFilename();
-    if (!FPaths::GetBaseFilename(FilePathInOS).Equals(InName.ToString()))
+    if (!ObjectTools::SanitizeObjectName(FPaths::GetBaseFilename(FilePathInOS)).Equals(InName.ToString()))
     {
         UE_LOG(LogglTFForUE4Ed, Error, TEXT("It is different between current filename(%s) and name(%s)!!"), *FilePathInOS, *InName.ToString());
         return nullptr;
@@ -89,13 +91,26 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
     TSharedPtr<FglTFImportOptions> glTFImportOptions = SglTFImportOptionsWindowEd::Open(FilePathInOS, InParent->GetPathName(), *GlTF, bCancel);
     if (glTFImportOptions.IsValid())
     {
-        if (!glTFImportOptions->bImportAsSkeleton)
+        if (glTFImportOptions->ImportType == EglTFImportType::StaticMesh)
         {
             ImportClass = UStaticMesh::StaticClass();
         }
-        else
+        else if (glTFImportOptions->ImportType == EglTFImportType::SkeletalMesh)
         {
             ImportClass = USkeletalMesh::StaticClass();
+        }
+        else if (glTFImportOptions->ImportType == EglTFImportType::Actor)
+        {
+            ImportClass = AActor::StaticClass();
+        }
+        else if (glTFImportOptions->ImportType == EglTFImportType::StaticMesh)
+        {
+            ImportClass = ULevel::StaticClass();
+        }
+        else
+        {
+            //TODO:
+            ImportClass = UStaticMesh::StaticClass();
         }
     }
     if (bCancel)

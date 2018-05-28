@@ -35,12 +35,27 @@ TSharedPtr<FglTFImportOptions> SglTFImportOptionsWindowEd::Open(const FString& I
         .Title(LOCTEXT("glTFImportWindowTitle", "Import glTF"))
         .SizingRule(ESizingRule::Autosized);
 
+    TArray<TSharedPtr<EglTFImportType>> ImportTypes;
+    ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::StaticMesh)));
+    if (InGlTF.skins.size() > 0)
+    {
+        ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::SkeletalMesh)));
+    }
+    else if (glTFImportOptions->ImportType == EglTFImportType::SkeletalMesh)
+    {
+        glTFImportOptions->ImportType = EglTFImportType::StaticMesh;
+    }
+    //ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::Actor)));
+    //ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::Level)));
+
     TSharedPtr<SglTFImportOptionsWindowEd> glTFImportWindow;
     Window->SetContent
     (
         SAssignNew(glTFImportWindow, SglTFImportOptionsWindowEd)
             .glTFImportOptions(glTFImportOptions)
             .WidgetWindow(Window)
+            .ImportTypes(ImportTypes)
+            .bHasAnimation(InGlTF.animations.size() > 0)
     );
 
     /// Show the import options window.
@@ -64,9 +79,16 @@ SglTFImportOptionsWindowEd::SglTFImportOptionsWindowEd()
 
 void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
 {
-    WidgetWindow = InArgs._WidgetWindow;
     glTFImportOptions = InArgs._glTFImportOptions;
     checkf(glTFImportOptions.IsValid(), TEXT("Why the argument - glTFImportOptions is null?"));
+    WidgetWindow = InArgs._WidgetWindow;
+    ImportTypes = InArgs._ImportTypes;
+    bHasAnimation = InArgs._bHasAnimation;
+
+    if (ImportTypes.Num() <= 0)
+    {
+        ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::None)));
+    }
 
     TSharedPtr<SBox> InspectorBox;
     ChildSlot
@@ -188,63 +210,26 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(STextBlock)
-                                .IsEnabled(false)
-                                .ToolTipText(LOCTEXT("ImportOptionsWindow_ImportAsScene_ToolTip", "Import as scenes!"))
+                                .ToolTipText(LOCTEXT("ImportOptionsWindow_ImportType_ToolTip", "Import Type!"))
                                 .MinDesiredWidth(200)
                                 .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                                .Text(LOCTEXT("ImportOptionsWindow_ImportAsScene_Title", "Import As Scene"))
+                                .Text(LOCTEXT("ImportOptionsWindow_ImportType_Title", "Import Type"))
                         ]
                         + SGridPanel::Slot(1, 0)
                             .Padding(2)
                             .HAlign(HAlign_Left)
                             .VAlign(VAlign_Center)
                         [
-                            SNew(SCheckBox)
-                                .IsEnabled(false)
-                                .IsChecked(glTFImportOptions.Pin()->bImportAsScene ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleImportScene)
-                        ]
-                        + SGridPanel::Slot(0, 1)
-                            .Padding(2)
-                            .HAlign(HAlign_Left)
-                            .VAlign(VAlign_Center)
-                        [
-                            SNew(STextBlock)
-                                .IsEnabled(false)
-                                .ToolTipText(LOCTEXT("ImportOptionsWindow_ImportAsSkeleton_ToolTip", "Import as skeleton!"))
-                                .MinDesiredWidth(200)
-                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                                .Text(LOCTEXT("ImportOptionsWindow_ImportAsSkeleton_Title", "Import As Skeleton"))
-                        ]
-                        + SGridPanel::Slot(1, 1)
-                            .Padding(2)
-                            .HAlign(HAlign_Left)
-                            .VAlign(VAlign_Center)
-                        [
-                            SNew(SCheckBox)
-                                .IsEnabled(false)
-                                .IsChecked(glTFImportOptions.Pin()->bImportAsSkeleton ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleImportSkeleton)
-                        ]
-                        + SGridPanel::Slot(0, 2)
-                            .Padding(2)
-                            .HAlign(HAlign_Left)
-                            .VAlign(VAlign_Center)
-                        [
-                            SNew(STextBlock)
-                                .ToolTipText(LOCTEXT("ImportOptionsWindow_ImportMaterial_ToolTip", "Import material!"))
-                                .MinDesiredWidth(200)
-                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                                .Text(LOCTEXT("ImportOptionsWindow_ImportMaterial_Title", "Import Material: "))
-                        ]
-                        + SGridPanel::Slot(1, 2)
-                            .Padding(2)
-                            .HAlign(HAlign_Left)
-                            .VAlign(VAlign_Center)
-                        [
-                            SNew(SCheckBox)
-                                .IsChecked(glTFImportOptions.Pin()->bImportMaterial ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleImportMaterial)
+                            SNew(SComboBox<TSharedPtr<EglTFImportType>>)
+                                .InitiallySelectedItem(ImportTypes[0])
+                                .OptionsSource(&ImportTypes)
+                                .OnSelectionChanged(this, &SglTFImportOptionsWindowEd::HandleImportType)
+                                .OnGenerateWidget(this, &SglTFImportOptionsWindowEd::GenerateImportType)
+                                .Content()
+                                [
+                                    SNew(STextBlock)
+                                        .Text(this, &SglTFImportOptionsWindowEd::GetImportTypeText)
+                                ]
                         ]
                     ]
                 ]
@@ -392,6 +377,108 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                 [
                     SNew(STextBlock)
                         .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                        .Text(LOCTEXT("ImportOptionsWindow_StaticMesh_Title", "Static Mesh"))
+                ]
+                + SVerticalBox::Slot()
+                    .AutoHeight()
+                    .Padding(2)
+                [
+                    SNew(SBorder)
+                        .BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
+                    [
+                        SNew(SGridPanel)
+                            .IsEnabled(this, &SglTFImportOptionsWindowEd::CanHandleIntegrateAllMeshsForStaticMesh)
+                        + SGridPanel::Slot(0, 0)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(STextBlock)
+                                .ToolTipText(LOCTEXT("ImportOptionsWindow_IntegrateAllMeshsForStaticMesh_ToolTip", "Integrate All Meshs!"))
+                                .MinDesiredWidth(200)
+                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                                .Text(LOCTEXT("ImportOptionsWindow_IntegrateAllMeshsForStaticMesh_Title", "Integrate All Meshs: "))
+                        ]
+                        + SGridPanel::Slot(1, 0)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(SCheckBox)
+                                .IsChecked(this, &SglTFImportOptionsWindowEd::CheckHandleIntegrateAllMeshsForStaticMesh)
+                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleIntegrateAllMeshsForStaticMesh)
+                        ]
+                    ]
+                ]
+            ]
+        ]
+        + SVerticalBox::Slot()
+            .AutoHeight()
+            .Padding(2)
+        [
+            SNew(SBorder)
+                .BorderImage(FEditorStyle::GetBrush("ToolPanel.DarkGroupBorder"))
+            [
+                SNew(SVerticalBox)
+                + SVerticalBox::Slot()
+                    .AutoHeight()
+                    .Padding(2)
+                    .HAlign(HAlign_Left)
+                    .VAlign(VAlign_Center)
+                [
+                    SNew(STextBlock)
+                        .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                        .Text(LOCTEXT("ImportOptionsWindow_SkeletonMesh_Title", "Skeleton Mesh"))
+                ]
+                + SVerticalBox::Slot()
+                    .AutoHeight()
+                    .Padding(2)
+                [
+                    SNew(SBorder)
+                        .BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
+                    [
+                        SNew(SGridPanel)
+                            .IsEnabled(this, &SglTFImportOptionsWindowEd::CanHandleImportAnimationForSkeletalMesh)
+                        + SGridPanel::Slot(0, 0)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(STextBlock)
+                                .ToolTipText(LOCTEXT("ImportOptionsWindow_ImportAnimationForSkeletonMesh_ToolTip", "Import Animation!"))
+                                .MinDesiredWidth(200)
+                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                                .Text(LOCTEXT("ImportOptionsWindow_ImportAnimationForSkeletonMesh_Title", "Import Animation: "))
+                        ]
+                        + SGridPanel::Slot(1, 0)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(SCheckBox)
+                                .IsChecked(this, &SglTFImportOptionsWindowEd::CheckHandleImportAnimationForSkeleton)
+                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleImportAnimationForSkeletalMesh)
+                        ]
+                    ]
+                ]
+            ]
+        ]
+        + SVerticalBox::Slot()
+            .AutoHeight()
+            .Padding(2)
+        [
+            SNew(SBorder)
+                .BorderImage(FEditorStyle::GetBrush("ToolPanel.DarkGroupBorder"))
+            [
+                SNew(SVerticalBox)
+                + SVerticalBox::Slot()
+                    .AutoHeight()
+                    .Padding(2)
+                    .HAlign(HAlign_Left)
+                    .VAlign(VAlign_Center)
+                [
+                    SNew(STextBlock)
+                        .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
                         .Text(LOCTEXT("ImportOptionsWindow_Material_Title", "Material"))
                 ]
                 + SVerticalBox::Slot()
@@ -402,6 +489,46 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                         .BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
                     [
                         SNew(SGridPanel)
+                        + SGridPanel::Slot(0, 0)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(STextBlock)
+                                .ToolTipText(LOCTEXT("ImportOptionsWindow_ImportMaterial_ToolTip", "Import Material!"))
+                                .MinDesiredWidth(200)
+                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                                .Text(LOCTEXT("ImportOptionsWindow_ImportMaterial_Title", "Import Material: "))
+                        ]
+                        + SGridPanel::Slot(1, 0)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(SCheckBox)
+                                .IsChecked(glTFImportOptions.Pin()->bImportMaterial ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleImportMaterial)
+                        ]
+                        + SGridPanel::Slot(0, 1)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(STextBlock)
+                                .ToolTipText(LOCTEXT("ImportOptionsWindow_ImportTexture_ToolTip", "Import Texture!"))
+                                .MinDesiredWidth(200)
+                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                                .Text(LOCTEXT("ImportOptionsWindow_ImportTexture_Title", "Import Texture"))
+                        ]
+                        + SGridPanel::Slot(1, 1)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(SCheckBox)
+                                .IsChecked(glTFImportOptions.Pin()->bImportTexture ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleImportTexture)
+                        ]
                     ]
                 ]
             ]

@@ -4,10 +4,19 @@
 #include "glTF/glTFImporterEd.h"
 
 #include "glTF/glTFImportOptions.h"
+#include "glTF/glTFImporterEdStaticMesh.h"
+#include "glTF/glTFImporterEdSkeletalMesh.h"
 
 #include "libgltf/libgltf.h"
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
+
+FglTFImporterEd::FglTFMaterialInfo::FglTFMaterialInfo(int32 InId, FString InPrimitiveName)
+    : Id(InId)
+    , PrimitiveName(InPrimitiveName)
+{
+    //
+}
 
 TSharedPtr<FglTFImporterEd> FglTFImporterEd::Get(UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext)
 {
@@ -60,9 +69,20 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImportOptions>& InglTFImpor
         }
     }
 
-    return !(glTFImportOptions->bImportAsSkeleton)
-        ? Cast<UObject>(CreateStaticMesh(InglTFImportOptions, InGlTF, Scenes, InglTFBuffers))
-        : Cast<UObject>(CreateSkeletalMesh(InglTFImportOptions, InGlTF, Scenes, InglTFBuffers));
+    switch (glTFImportOptions->ImportType)
+    {
+    case EglTFImportType::StaticMesh:
+        return FglTFImporterEdStaticMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateStaticMesh(InglTFImportOptions, InGlTF, Scenes, InglTFBuffers);
+
+    case EglTFImportType::SkeletalMesh:
+        return FglTFImporterEdSkeletalMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateSkeletalMesh(InglTFImportOptions, InGlTF, Scenes, InglTFBuffers);
+
+    case EglTFImportType::Actor:
+    case EglTFImportType::Level:
+    default:
+        break;
+    }
+    return nullptr;
 }
 
 #undef LOCTEXT_NAMESPACE

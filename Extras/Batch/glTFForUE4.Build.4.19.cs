@@ -26,6 +26,7 @@ public class glTFForUE4 : ModuleRules
                 "Slate",
                 "SlateCore",
                 "InputCore",
+                "AssetRegistry",
             });
 
         string ExtraPathRoot = System.IO.Path.Combine(ModuleDirectory, "..", "..", "Extras");

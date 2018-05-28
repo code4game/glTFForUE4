@@ -1,15 +1,17 @@
 // Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4EdPrivatePCH.h"
-#include "glTF/glTFImporterEd.h"
+#include "glTF/glTFImporterEdMaterial.h"
 
 #include "glTF/glTFImportOptions.h"
+#include "glTF/glTFImporterEdTexture.h"
 
 #include "libgltf/libgltf.h"
 
 #include "Materials/MaterialExpressionScalarParameter.h"
 #include "Materials/MaterialExpressionVectorParameter.h"
 #include "Materials/MaterialExpressionTextureSampleParameter.h"
+#include "AssetRegistryModule.h"
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
 
@@ -34,14 +36,25 @@ namespace glTFForUE4Ed
     }
 }
 
-FglTFImporterEd::FglTFMaterialInfo::FglTFMaterialInfo(int32 InId, FString InPrimitiveName)
-    : Id(InId)
-    , PrimitiveName(InPrimitiveName)
+TSharedPtr<FglTFImporterEdMaterial> FglTFImporterEdMaterial::Get(UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
+{
+    TSharedPtr<FglTFImporterEdMaterial> glTFImporterEdMaterial = MakeShareable(new FglTFImporterEdMaterial);
+    glTFImporterEdMaterial->Set(InClass, InParent, InName, InFlags, InFeedbackContext);
+    glTFImporterEdMaterial->InputFactory = InFactory;
+    return glTFImporterEdMaterial;
+}
+
+FglTFImporterEdMaterial::FglTFImporterEdMaterial()
 {
     //
 }
 
-UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const FglTFBuffers& InBuffers, const FglTFMaterialInfo& InglTFMaterialInfo, TMap<FString, UTexture*>& InOutTextureLibrary, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
+FglTFImporterEdMaterial::~FglTFImporterEdMaterial()
+{
+    //
+}
+
+UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const FglTFBuffers& InBuffers, const FglTFMaterialInfo& InglTFMaterialInfo, TMap<FString, UTexture*>& InOutTextureLibrary, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
 {
     if (!InputParent) return nullptr;
     if (!InglTF || InglTFMaterialInfo.Id < 0 || InglTFMaterialInfo.Id >= InglTF->materials.size()) return nullptr;
@@ -94,6 +107,9 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
     UMaterial* NewMaterial = Cast<UMaterial>(StaticDuplicateObject(glTFMaterialOrigin, MaterialPackage, *MaterialName, InputFlags, glTFMaterialOrigin->GetClass()));
     checkSlow(NewMaterial);
     if (!NewMaterial) return nullptr;
+    FAssetRegistryModule::AssetCreated(NewMaterial);
+
+    NewMaterial->PreEditChange(nullptr);
 
     TMap<FName, FGuid> ScalarParameterNameToGuid;
     {
@@ -344,7 +360,7 @@ UMaterial* FglTFImporterEd::CreateMaterial(const TWeakPtr<FglTFImportOptions>& I
     return NewMaterial;
 }
 
-bool FglTFImporterEd::ConstructSampleParameter(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STextureInfo>& InglTFTextureInfo, const FglTFBuffers& InBuffers, const FString& InParameterName, TMap<FString, UTexture*>& InOutTextureLibrary, class UMaterialExpressionTextureSampleParameter* InSampleParameter, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
+bool FglTFImporterEdMaterial::ConstructSampleParameter(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STextureInfo>& InglTFTextureInfo, const FglTFBuffers& InBuffers, const FString& InParameterName, TMap<FString, UTexture*>& InOutTextureLibrary, class UMaterialExpressionTextureSampleParameter* InSampleParameter, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
 {
     if (!InglTF || !InglTFTextureInfo || !InSampleParameter) return false;
     if (!(InglTFTextureInfo->index)) return false;
@@ -353,6 +369,8 @@ bool FglTFImporterEd::ConstructSampleParameter(const TWeakPtr<FglTFImportOptions
     const std::shared_ptr<libgltf::STexture>& glTFTexture = InglTF->textures[glTFTextureId];
     if (!glTFTexture) return false;
 
+    const TSharedPtr<FglTFImportOptions> glTFImportOptions = InglTFImportOptions.Pin();
+
     FString TextureName = FString::Printf(TEXT("T_%s_%d_%s"), *InputName.ToString(), glTFTextureId, *InParameterName);
     TextureName = FglTFImporter::SanitizeObjectName(TextureName);
     UTexture* Texture = nullptr;
@@ -360,10 +378,11 @@ bool FglTFImporterEd::ConstructSampleParameter(const TWeakPtr<FglTFImportOptions
     {
         Texture = InOutTextureLibrary[TextureName];
     }
-    else
+    else if (glTFImportOptions->bImportTexture)
     {
-        //
-        Texture = CreateTexture(InglTFImportOptions, InglTF, glTFTexture, InBuffers, TextureName, InIsNormalmap, InFeedbackTaskWrapper);
+        //TODO: optimize the number of the texture
+        TSharedPtr<FglTFImporterEdTexture> glTFImporterEdTexture = FglTFImporterEdTexture::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext);
+        Texture = glTFImporterEdTexture->CreateTexture(InglTFImportOptions, InglTF, glTFTexture, InBuffers, TextureName, InIsNormalmap, InFeedbackTaskWrapper);
         if (Texture)
         {
             InOutTextureLibrary.Add(TextureName, Texture);

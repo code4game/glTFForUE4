@@ -1,6 +1,7 @@
 # glTF for UE4
 
 [![glTF status](https://img.shields.io/badge/glTF-2%2E0-green.svg?style=flat)](https://github.com/KhronosGroup/glTF)
+[![Manual](https://img.shields.io/badge/read-manual-green.svg?style=flat)](https://gltf-for-ue4.readthedocs.io/)
 
 [![Follow in twitter](https://img.shields.io/twitter/url/http/shields.io.svg?style=flat)](https://twitter.com/C4gIo)
 [![Join gitter at https://gitter.im/code4game/glTFForUE4](https://badges.gitter.im/code4game/glTFForUE4.svg)](https://gitter.im/code4game/glTFForUE4?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
@@ -9,6 +10,8 @@
 [![Say Thanks](https://img.shields.io/badge/support-say%20thanks-ff69b4.svg?style=flat)](https://saythanks.io/to/code4game)
 [![Become a patreon](https://img.shields.io/badge/donation-become%20a%20patreon-ff69b4.svg?style=flat)](https://www.patreon.com/bePatron?u=7553208)
 [![Patreon invite](https://img.shields.io/badge/donation-patreon%20invite-ff69b4.svg?style=flat)](https://patreon.com/invite/zpdxnv)
+
+> If you are interesting, you can fork or commit an issue.
 
 ## Roadmap
 
