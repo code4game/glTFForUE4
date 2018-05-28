@@ -1314,6 +1314,1036 @@ namespace glTFImporter
         if (ExtensionDraco)
         {
             int32 BufferViewIndex = *(ExtensionDraco->bufferView);
+            TArray<uint8> EncodeBuffer;
+            FString BufferFilePath;
+            if (!InBufferFiles.GetBufferViewData(InGlTF, BufferViewIndex, EncodeBuffer, BufferFilePath)
+                || !FglTFBufferDecoder::Decode<TexCoordNumber, JointNumber, bSwapYZ, bInverseX>(InBufferFiles, ExtensionDraco, EncodeBuffer, OutTriangleIndices, OutVertexPositions, OutVertexNormals, OutVertexTangents, OutVertexTexcoords, OutInverseBindMatrices, OutJointIndeies, OutJointWeights))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            if (!GetTriangleIndices<bSwapYZ>(InGlTF, InMeshPrimitive, InBufferFiles, OutTriangleIndices))
+            {
+                return false;
+            }
+
+            if (!GetVertexPositions<bSwapYZ, bInverseX>(InGlTF, InMeshPrimitive, InBufferFiles, OutVertexPositions))
+            {
+                return false;
+            }
+
+            if (!GetVertexNormals<bSwapYZ, bInverseX>(InGlTF, InMeshPrimitive, InBufferFiles, OutVertexNormals))
+            {
+                return false;
+            }
+
+            if (!GetVertexTangents<bSwapYZ, bInverseX>(InGlTF, InMeshPrimitive, InBufferFiles, OutVertexTangents))
+            {
+                return false;
+            }
+
+            if (!GetVertexTexcoords<TexCoordNumber>(InGlTF, InMeshPrimitive, InBufferFiles, OutVertexTexcoords))
+            {
+                return false;
+            }
+
+            for (int32 i = 0; i < JointNumber; ++i)
+            {
+                GetJointIndeies(InGlTF, InMeshPrimitive, i, InBufferFiles, OutJointIndeies[i]);
+            }
+
+            for (int32 i = 0; i < JointNumber; ++i)
+            {
+                GetJointWeights(InGlTF, InMeshPrimitive, i, InBufferFiles, OutJointWeights[i]);
+            }
+        }
+
+        GetInverseBindMatrices<bSwapYZ, bInverseX>(InGlTF, InSkin, InBufferFiles, OutInverseBindMatrices);
+        return true;
+    }
+}
+
+bool FglTFImporter::GetStaticMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_STATIC_TEXCOORDS], bool bSwapYZ /*= true*/)
+{
+    std::shared_ptr<libgltf::SSkin> Skin = nullptr;
+    TArray<FMatrix> InverseBindMatrices;
+    TArray<FVector4> JointIndeies[1];
+    TArray<FVector4> JointWeights[1];
+    return bSwapYZ
+        ? glTFImporter::GetMeshData<MAX_TEXCOORDS, 0, true, false>(InGlTF, InMeshPrimitive, Skin, InBufferFiles, OutTriangleIndices, OutVertexPositions, OutVertexNormals, OutVertexTangents, OutVertexTexcoords, InverseBindMatrices, JointIndeies, JointWeights)
+        : glTFImporter::GetMeshData<MAX_TEXCOORDS, 0, false, true>(InGlTF, InMeshPrimitive, Skin, InBufferFiles, OutTriangleIndices, OutVertexPositions, OutVertexNormals, OutVertexTangents, OutVertexTexcoords, InverseBindMatrices, JointIndeies, JointWeights);
+}
+
+bool FglTFImporter::GetSkeletalMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const std::shared_ptr<libgltf::SSkin>& InSkin, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_TEXCOORDS], TArray<FMatrix>& OutInverseBindMatrices, TArray<FVector4> OutJointIndeies[GLTF_JOINT_LAYERS_NUM_MAX], TArray<FVector4> OutJointWeights[GLTF_JOINT_LAYERS_NUM_MAX], bool bSwapYZ /*= true*/)
+{
+    return bSwapYZ
+        ? glTFImporter::GetMeshData<MAX_TEXCOORDS, GLTF_JOINT_LAYERS_NUM_MAX, true, false>(InGlTF, InMeshPrimitive, InSkin, InBufferFiles, OutTriangleIndices, OutVertexPositions, OutVertexNormals, OutVertexTangents, OutVertexTexcoords, OutInverseBindMatrices, OutJointIndeies, OutJointWeights)
+        : glTFImporter::GetMeshData<MAX_TEXCOORDS, GLTF_JOINT_LAYERS_NUM_MAX, false, true>(InGlTF, InMeshPrimitive, InSkin, InBufferFiles, OutTriangleIndices, OutVertexPositions, OutVertexNormals, OutVertexTangents, OutVertexTexcoords, OutInverseBindMatrices, OutJointIndeies, OutJointWeights);
+}
+
+bool FglTFImporter::GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SAnimation>& InglTFAnimation
+    , const FglTFBuffers& InBufferFiles
+    , FglTFAnimationSequenceDatas& OutAnimationSequenceDatas, bool bSwapYZ /*= true*/)
+{
+    if (!InGlTF || !InglTFAnimation) return false;
+
+    OutAnimationSequenceDatas.Datas.Empty();
+
+    for (const std::shared_ptr<libgltf::SAnimationChannel>& glTFAnimationChannelPtr : InglTFAnimation->channels)
+    {
+        if (!glTFAnimationChannelPtr) continue;
+
+        const std::shared_ptr<libgltf::SGlTFId>& glTFAnimationChannelSamplerIndexPtr = glTFAnimationChannelPtr->sampler;
+        if (!glTFAnimationChannelSamplerIndexPtr) continue;
+        int32 SamplerIndex = *glTFAnimationChannelSamplerIndexPtr;
+        if (SamplerIndex < 0 || SamplerIndex >= InglTFAnimation->samplers.size()) continue;
+
+        const std::shared_ptr<libgltf::SAnimationSampler>& glTFAnimationSamplerPtr = InglTFAnimation->samplers[SamplerIndex];
+        if (!glTFAnimationSamplerPtr) continue;
+
+        const std::shared_ptr<libgltf::SAnimationChannelTarget>& glTFAnimationChannelTargetPtr = glTFAnimationChannelPtr->target;
+        if (!glTFAnimationChannelTargetPtr) continue;
+
+        const std::shared_ptr<libgltf::SGlTFId>& glTFAnimationChannelTargetNodeIndexPtr = glTFAnimationChannelTargetPtr->node;
+        if (!glTFAnimationChannelTargetNodeIndexPtr) continue;
+        int32 NodeIndex = *glTFAnimationChannelTargetNodeIndexPtr;
+
+        const std::shared_ptr<libgltf::SGlTFId>& glTFAnimationSamplerInputAccessorIndexPtr = glTFAnimationSamplerPtr->input;
+        if (!glTFAnimationSamplerInputAccessorIndexPtr) continue;
+        int32 InputAccessorIndex = *glTFAnimationSamplerInputAccessorIndexPtr;
+        if (InputAccessorIndex < 0 || InputAccessorIndex >= InGlTF->accessors.size()) continue;
+        const std::shared_ptr<libgltf::SAccessor>& glTFInputAccessorPtr = InGlTF->accessors[InputAccessorIndex];
+        if (!glTFInputAccessorPtr) continue;
+
+        const std::shared_ptr<libgltf::SGlTFId>& glTFAnimationSamplerOutputAccessorIndexPtr = glTFAnimationSamplerPtr->output;
+        if (!glTFAnimationSamplerOutputAccessorIndexPtr) continue;
+        int32 OutputAccessorIndex = *glTFAnimationSamplerOutputAccessorIndexPtr;
+        if (OutputAccessorIndex < 0 || OutputAccessorIndex >= InGlTF->accessors.size()) continue;
+        const std::shared_ptr<libgltf::SAccessor>& glTFOutputAccessorPtr = InGlTF->accessors[OutputAccessorIndex];
+        if (!glTFOutputAccessorPtr) continue;
+
+        TArray<float> Times;
+        if (!glTFImporter::GetAccessorData<float, false, false>(InGlTF, InBufferFiles, glTFInputAccessorPtr, Times)) continue;
+
+        ERichCurveInterpMode Interpolation = StringToRichCurveInterpMode(FString(glTFAnimationSamplerPtr->interpolation.c_str()));
+
+        TArray<FVector> Translations;
+        TArray<FQuat> Rotations;
+        TArray<FVector> Scales;
+        FString glTFAnimationChannelTargetPath(glTFAnimationChannelTargetPtr->path.c_str());
+        if (glTFAnimationChannelTargetPath.Equals(TEXT("translation"), ESearchCase::IgnoreCase))
+        {
+            if (bSwapYZ)
+            {
+                if (!glTFImporter::GetAccessorData<FVector, true, false>(InGlTF, InBufferFiles, glTFOutputAccessorPtr, Translations)) continue;
+            }
+            else
+            {
+                if (!glTFImporter::GetAccessorData<FVector, false, false>(InGlTF, InBufferFiles, glTFOutputAccessorPtr, Translations)) continue;
+            }
+        }
+        else if (glTFAnimationChannelTargetPath.Equals(TEXT("rotation"), ESearchCase::IgnoreCase))
+        {
+            //TArray<FVector4> RotationV4s;
+            if (bSwapYZ)
+            {
+                if (!glTFImporter::GetAccessorData<FQuat, true, false>(InGlTF, InBufferFiles, glTFOutputAccessorPtr, Rotations)) continue;
+                /*for (FVector4& RotationV4 : RotationV4s)
+                {
+                    RotationV4.W *= -1.0f;
+                }*/
+            }
+            else
+            {
+                if (!glTFImporter::GetAccessorData<FQuat, false, false>(InGlTF, InBufferFiles, glTFOutputAccessorPtr, Rotations)) continue;
+            }
+            /*for (const FVector4& RotationV4 : RotationV4s)
+            {
+                Rotations.Add(FQuat(RotationV4.X, RotationV4.Y, RotationV4.Z, RotationV4.W));
+            }*/
+        }
+        else if (glTFAnimationChannelTargetPath.Equals(TEXT("scale"), ESearchCase::IgnoreCase))
+        {
+            if (bSwapYZ)
+            {
+                if (!glTFImporter::GetAccessorData<FVector, true, false>(InGlTF, InBufferFiles, glTFOutputAccessorPtr, Scales)) continue;
+            }
+            else
+            {
+                if (!glTFImporter::GetAccessorData<FVector, false, false>(InGlTF, InBufferFiles, glTFOutputAccessorPtr, Scales)) continue;
+            }
+        }
+
+        if (Translations.Num() == Times.Num())
+        {
+            for (int32 i = 0; i < Translations.Num(); ++i)
+            {
+                OutAnimationSequenceDatas.FindOrAddSequenceDataAndSetTranslation(NodeIndex, Times[i], Translations[i], Interpolation);
+            }
+        }
+        else if (Rotations.Num() == Times.Num())
+        {
+            for (int32 i = 0; i < Rotations.Num(); ++i)
+            {
+                OutAnimationSequenceDatas.FindOrAddSequenceDataAndSetRotation(NodeIndex, Times[i], Rotations[i], Interpolation);
+            }
+        }
+        else if (Scales.Num() == Times.Num())
+        {
+            for (int32 i = 0; i < Scales.Num(); ++i)
+            {
+                OutAnimationSequenceDatas.FindOrAddSequenceDataAndSetScale(NodeIndex, Times[i], Scales[i], Interpolation);
+            }
+        }
+    }
+
+    return (OutAnimationSequenceDatas.Datas.Num() > 0);
+}
+
+bool FglTFImporter::GetNodeParentIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<int32>& OutParentIndices)
+{
+    if (InGlTF->nodes.empty()) return false;
+    OutParentIndices.SetNumUninitialized(static_cast<int32>(InGlTF->nodes.size()));
+
+    for (int32& ParentIndex : OutParentIndices)
+    {
+        ParentIndex = INDEX_NONE;
+    }
+
+    for (int32 i = 0; i < static_cast<int32>(InGlTF->nodes.size()); ++i)
+    {
+        const std::shared_ptr<libgltf::SNode>& NodePtr = InGlTF->nodes[i];
+        if (!NodePtr) return false;
+
+        for (const std::shared_ptr<libgltf::SGlTFId>& ChildNodeIdPtr : NodePtr->children)
+        {
+            if (!ChildNodeIdPtr) return false;
+            int32 ChildNodeId = *ChildNodeIdPtr;
+            checkSlow(ChildNodeId >= 0 && ChildNodeId < OutParentIndices.Num());
+            if (ChildNodeId < 0 || ChildNodeId >= OutParentIndices.Num()) return false;
+            OutParentIndices[ChildNodeId] = i;
+        }
+    }
+    return true;
+}
+
+bool FglTFImporter::GetNodeRelativeTransforms(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<FTransform>& OutRelativeTransforms, bool bSwapYZ /*= true*/)
+{
+    if (InGlTF->nodes.empty()) return false;
+
+    OutRelativeTransforms.SetNumUninitialized(static_cast<int32>(InGlTF->nodes.size()));
+
+    FMatrix Matrix;
+    for (int32 i = 0; i < static_cast<int32>(InGlTF->nodes.size()); ++i)
+    {
+        const std::shared_ptr<libgltf::SNode>& NodePtr = InGlTF->nodes[i];
+        if (!NodePtr) return false;
+
+        FTransform& Transform = OutRelativeTransforms[i];
+        Transform.SetIdentity();
+
+        if (NodePtr->matrix.size() == 16)
+        {
+            Matrix.SetIdentity();
+
+            for (uint32 j = 0; j < 4; ++j)
+            {
+                for (uint32 k = 0; k < 4; ++k)
+                {
+                    uint8 Index = k + j * 4;
+                    Matrix.M[j][k] = NodePtr->matrix[Index];
+                }
+            }
+
+            FglTFImporter::ConvertToUnrealSpace(Matrix, bSwapYZ, !bSwapYZ);
+            Transform.SetFromMatrix(Matrix);
+        }
+
+        /// check the TRS
+        FVector Translation(FVector::ZeroVector);
+        if (NodePtr->translation.size() == 3)
+        {
+            Translation.X = NodePtr->translation[0];
+            Translation.Y = NodePtr->translation[1];
+            Translation.Z = NodePtr->translation[2];
+        }
+
+        FQuat Rotation(FQuat::Identity);
+        if (NodePtr->rotation.size() == 4)
+        {
+            Rotation.X = NodePtr->rotation[0];
+            Rotation.Y = NodePtr->rotation[1];
+            Rotation.Z = NodePtr->rotation[2];
+            Rotation.W = NodePtr->rotation[3];
+        }
+
+        FVector Scale(1.0f);
+        if (NodePtr->scale.size() == 3)
+        {
+            Scale.X = NodePtr->scale[0];
+            Scale.Y = NodePtr->scale[1];
+            Scale.Z = NodePtr->scale[2];
+        }
+
+        if (Translation != FVector::ZeroVector || Rotation != FQuat::Identity || Scale != FVector(1.0f))
+        {
+            /// use TRS
+            Transform = FTransform(Rotation, Translation, Scale);
+            FglTFImporter::ConvertToUnrealSpace(Transform, bSwapYZ, !bSwapYZ);
+        }
+    }
+
+    return true;
+}
+
+bool FglTFImporter::GetNodeParentIndicesAndTransforms(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<int32>& OutParentIndices, TArray<FTransform>& OutRelativeTransforms, TArray<FTransform>& OutAbsoluteTransforms, bool bSwapYZ /*= true*/)
+{
+    if (!GetNodeParentIndices(InGlTF, OutParentIndices)) return false;
+    if (!GetNodeRelativeTransforms(InGlTF, OutRelativeTransforms, bSwapYZ)) return false;
+    if (OutParentIndices.Num() != OutRelativeTransforms.Num()) return false;
+
+    OutAbsoluteTransforms = OutRelativeTransforms;
+
+    TArray<int32> VisitedIndices;
+    TArray<int32> ParentIndices;
+    do
+    {
+        TArray<int32> ChildIndices;
+
+        for (int32 i = 0; i < OutParentIndices.Num(); ++i)
+        {
+            int32 ParentIndex = OutParentIndices[i];
+            if (ParentIndices.Num() <= 0)
+            {
+                if (ParentIndex == INDEX_NONE)
+                {
+                    ChildIndices.Add(i);
+                }
+            }
+            else if (ParentIndices.Contains(ParentIndex))
+            {
+                ChildIndices.Add(i);
+            }
+        }
+
+        for (int32 NextTargetIndex : ChildIndices)
+        {
+            check(NextTargetIndex != INDEX_NONE);
+            if (OutParentIndices[NextTargetIndex] == INDEX_NONE) continue;
+            OutAbsoluteTransforms[NextTargetIndex] = OutRelativeTransforms[NextTargetIndex] * OutAbsoluteTransforms[OutParentIndices[NextTargetIndex]];
+        }
+
+        VisitedIndices.Append(ChildIndices);
+
+        ParentIndices = ChildIndices;
+
+    } while (ParentIndices.Num() > 0 && VisitedIndices.Num() < OutParentIndices.Num());
+    return true;
+}
+
+FString FglTFImporter::SanitizeObjectName(const FString& InObjectName)
+{
+    FString SanitizedName;
+    FString InvalidChars = INVALID_OBJECTNAME_CHARACTERS;
+
+    // See if the name contains invalid characters.
+    FString Char;
+    for (int32 CharIdx = 0; CharIdx < InObjectName.Len(); ++CharIdx)
+    {
+        Char = InObjectName.Mid(CharIdx, 1);
+
+        if (InvalidChars.Contains(*Char))
+        {
+            SanitizedName += TEXT("_");
+        }
+        else
+        {
+            SanitizedName += Char;
+        }
+    }
+
+    return SanitizedName;
+}
+
+const FMatrix& FglTFImporter::GetglTFSpaceToUnrealSpace(bool bSwapYZ /*= true*/, bool bInverseX /*= false*/)
+{
+    static const FMatrix GglTFSpaceToUnrealSpacePX(
+          FVector( 1.0f,  0.0f,  0.0f)
+        , FVector( 0.0f,  1.0f,  0.0f)
+        , FVector( 0.0f,  0.0f,  1.0f)
+        , FVector( 0.0f,  0.0f,  0.0f)
+    );
+    static const FMatrix GglTFSpaceToUnrealSpaceNX(
+          FVector(-1.0f,  0.0f,  0.0f)
+        , FVector( 0.0f,  1.0f,  0.0f)
+        , FVector( 0.0f,  0.0f,  1.0f)
+        , FVector( 0.0f,  0.0f,  0.0f)
+    );
+    static const FMatrix GglTFSpaceToUnrealSpaceSwapYZAndPX(
+          FVector( 1.0f,  0.0f,  0.0f)
+        , FVector( 0.0f,  0.0f,  1.0f)
+        , FVector( 0.0f,  1.0f,  0.0f)
+        , FVector( 0.0f,  0.0f,  0.0f)
+    );
+    static const FMatrix GglTFSpaceToUnrealSpaceSwapYZAndNX(
+          FVector(-1.0f,  0.0f,  0.0f)
+        , FVector( 0.0f,  0.0f,  1.0f)
+        , FVector( 0.0f,  1.0f,  0.0f)
+        , FVector( 0.0f,  0.0f,  0.0f)
+    );
+    return (!bSwapYZ
+        ? (!bInverseX ? GglTFSpaceToUnrealSpacePX : GglTFSpaceToUnrealSpaceNX)
+        : (!bInverseX ? GglTFSpaceToUnrealSpaceSwapYZAndPX : GglTFSpaceToUnrealSpaceSwapYZAndNX)
+        );
+}
+
+FMatrix& FglTFImporter::ConvertToUnrealSpace(FMatrix& InOutValue, bool bSwapYZ /*= true*/, bool bInverseX /*= false*/)
+{
+    if (!bSwapYZ && !bInverseX) return InOutValue;
+    FMatrix Convert(FglTFImporter::GetglTFSpaceToUnrealSpace(bSwapYZ, bInverseX));
+    InOutValue = Convert * InOutValue * Convert;
+    return InOutValue;
+}
+
+FTransform& FglTFImporter::ConvertToUnrealSpace(FTransform& InOutValue, bool bSwapYZ /*= true*/, bool bInverseX /*= false*/)
+{
+    if (!bSwapYZ && !bInverseX) return InOutValue;
+    FTransform Convert(FglTFImporter::GetglTFSpaceToUnrealSpace(bSwapYZ, bInverseX));
+    if (bSwapYZ)
+    {
+        FQuat Rotation = InOutValue.GetRotation();
+        Rotation.Y *= -1.0f;
+        Rotation.Z *= -1.0f;
+        InOutValue.SetRotation(Rotation);
+    }
+    InOutValue = Convert * InOutValue * Convert;
+    return InOutValue;
+}
+
+TextureFilter FglTFImporter::MagFilterToTextureFilter(int32 InValue)
+{
+    switch (InValue)
+    {
+    case 9728:
+        return TF_Nearest;
+
+    default:
+        break;
+    }
+    return TF_Default;
+}
+
+TextureFilter FglTFImporter::MinFilterToTextureFilter(int32 InValue)
+{
+    switch (InValue)
+    {
+    case 9728:
+        return TF_Nearest;
+
+    case 9729:
+        return TF_Default;
+
+    case 9984:
+    case 9985:
+        return TF_Bilinear;
+
+    case 9986:
+    case 9987:
+        return TF_Trilinear;
+
+    default:
+        break;
+    }
+    return TF_Default;
+}
+
+TextureAddress FglTFImporter::WrapSToTextureAddress(int32 InValue)
+{
+    switch (InValue)
+    {
+    case 33071:
+        return TA_Clamp;
+
+    case 33648:
+        return TA_Mirror;
+
+    case 10497:
+        return TA_Wrap;
+
+    default:
+        break;
+    }
+    return TA_Wrap;
+}
+
+TextureAddress FglTFImporter::WrapTToTextureAddress(int32 InValue)
+{
+    return WrapSToTextureAddress(InValue);
+}
+
+ERichCurveInterpMode FglTFImporter::StringToRichCurveInterpMode(const FString& InInterpolation)
+{
+    ERichCurveInterpMode RichCurveInterpMode = RCIM_None;
+    if (InInterpolation.Equals(TEXT("LINEAR"), ESearchCase::IgnoreCase))
+    {
+        RichCurveInterpMode = RCIM_Linear;
+    }
+    else if (InInterpolation.Equals(TEXT("STEP"), ESearchCase::IgnoreCase))
+    {
+        RichCurveInterpMode = RCIM_Constant;
+    }
+    else if (InInterpolation.Equals(TEXT("CUBICSPLINE"), ESearchCase::IgnoreCase))
+    {
+        RichCurveInterpMode = RCIM_Cubic;
+    }
+    //WARN:
+    return RichCurveInterpMode;
+}
+
+FglTFImporter::FglTFImporter()
+    : InputClass(nullptr)
+    , InputParent(nullptr)
+    , InputName()
+    , InputFlags(RF_NoFlags)
+    , FeedbackContext(nullptr)
+{
+    //
+}
+
+FglTFImporter::~FglTFImporter()
+{
+    //
+}
+
+FglTFImporter& FglTFImporter::Set(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext)
+{
+    InputClass = InClass;
+    InputParent = InParent;
+    InputName = InName;
+    InputFlags = InFlags;
+    FeedbackContext = InFeedbackContext;
+    return *this;
+}
+
+UObject* FglTFImporter::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers) const
+{
+    if (!InGlTF)
+    {
+        UE_LOG(LogglTFForUE4, Error, TEXT("Invalid InGlTF!"));
+        return nullptr;
+    }
+
+    if (!InGlTF->asset || InGlTF->asset->version != TEXT("2.0"))
+    {
+        UE_LOG(LogglTFForUE4, Error, TEXT("Invalid version: %s!"), !(InGlTF->asset) ? TEXT("none") : InGlTF->asset->version.c_str());
+        return nullptr;
+    }
+
+    TSharedPtr<FglTFImportOptions> glTFImportOptions = InglTFImportOptions.Pin();
+
+    const FString FolderPathInOS = FPaths::GetPath(glTFImportOptions->FilePathInOS);
+    FglTFBuffers glTFBuffers;
+    glTFBuffers.Cache(FolderPathInOS, InGlTF);
+
+    //TODO: generate the procedural mesh
+
+    return nullptr;
+}
+
+namespace glTFImporter
+{
+    template<typename TEngineDataType>
+    struct TAccessorTypeScale
+    {
+        TEngineDataType V[1];
+
+        operator TEngineDataType() const
+        {
+            return V[0];
+        }
+
+        operator FVector2D() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            return FVector2D(V[0], 0.0f);
+        }
+
+        operator FVector() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            return FVector(V[0], 0.0f, 0.0f);
+        }
+
+        operator FVector4() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            return FVector4(V[0], 0.0f, 0.0f, 0.0f);
+        }
+
+        operator FQuat() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            return FQuat(V[0], 0.0f, 0.0f, -1.0f);
+        }
+
+        operator FMatrix() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            return FMatrix::Identity;
+        }
+    };
+
+    template<typename TEngineDataType, bool bSwapYZ, bool bInverseX>
+    struct TAccessorTypeVec2
+    {
+        TEngineDataType V[2];
+
+        operator TEngineDataType() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            if (!bSwapYZ) return V[0] * (bInverseX ? -1.0f : 1.0f);
+            return V[0];
+        }
+
+        operator FVector2D() const
+        {
+            if (!bSwapYZ) return FVector2D(V[0] * (bInverseX ? -1.0f : 1.0f), V[1]);
+            return FVector2D(V[0], V[1]);
+        }
+
+        operator FVector() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            if (!bSwapYZ) return FVector(V[0] * (bInverseX ? -1.0f : 1.0f), V[1], 0.0f);
+            return FVector(V[0], V[1], 0.0f);
+        }
+
+        operator FVector4() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            if (!bSwapYZ) return FVector4(V[0] * (bInverseX ? -1.0f : 1.0f), V[1], 0.0f, 0.0f);
+            return FVector4(V[0], V[1], 0.0f, 0.0f);
+        }
+
+        operator FQuat() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            if (!bSwapYZ) return FQuat(V[0] * (bInverseX ? -1.0f : 1.0f), V[1], 0.0f, 1.0f);
+            return FQuat(V[0], 0.0f, V[1], -1.0f);    /// swap y and z
+        }
+
+        operator FMatrix() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            return FMatrix::Identity;
+        }
+    };
+
+    template<typename TEngineDataType, bool bSwapYZ, bool bInverseX>
+    struct TAccessorTypeVec3
+    {
+        TEngineDataType V[3];
+
+        operator TEngineDataType() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            if (!bSwapYZ) return V[0] * (bInverseX ? -1.0f : 1.0f);
+            return V[0];
+        }
+
+        operator FVector2D() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            if (!bSwapYZ) return FVector2D(V[0] * (bInverseX ? -1.0f : 1.0f), V[1]);
+            return FVector2D(V[0], V[2]);               /// swap y and z
+        }
+
+        operator FVector() const
+        {
+            if (!bSwapYZ) return FVector(V[0] * (bInverseX ? -1.0f : 1.0f), V[1], V[2]);
+            return FVector(V[0], V[2], V[1]);           /// swap y and z
+        }
+
+        operator FVector4() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            if (!bSwapYZ) return FVector4(V[0] * (bInverseX ? -1.0f : 1.0f), V[1], V[2], 0.0f);
+            return FVector4(V[0], V[2], V[1], 0.0f);    /// swap y and z
+        }
+
+        operator FQuat() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            if (!bSwapYZ) return FQuat(V[0] * (bInverseX ? -1.0f : 1.0f), V[1], V[2], 1.0f);
+            return FQuat(V[0], V[2], V[1], -1.0f);    /// swap y and z
+        }
+
+        operator FMatrix() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            return FMatrix::Identity;
+        }
+    };
+
+    template<typename TEngineDataType, bool bSwapYZ, bool bInverseX>
+    struct TAccessorTypeVec4
+    {
+        TEngineDataType V[4];
+
+        operator TEngineDataType() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            if (!bSwapYZ) return V[0] * (bInverseX ? -1.0f : 1.0f);
+            return V[0];
+        }
+
+        operator FVector2D() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            if (!bSwapYZ) return FVector2D(V[0] * (bInverseX ? -1.0f : 1.0f), V[1]);
+            return FVector2D(V[0], V[2]);               /// swap y and z
+        }
+
+        operator FVector() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            if (!bSwapYZ) return FVector(V[0] * (bInverseX ? -1.0f : 1.0f), V[1], V[2]);
+            return FVector(V[0], V[2], V[1]);           /// swap y and z
+        }
+
+        operator FVector4() const
+        {
+            if (!bSwapYZ) return FVector4(V[0] * (bInverseX ? -1.0f : 1.0f), V[1], V[2], V[3]);
+            return FVector4(V[0], V[2], V[1], V[3]);    /// swap y and z
+        }
+
+        operator FQuat() const
+        {
+            if (!bSwapYZ) return FQuat(V[0] * (bInverseX ? -1.0f : 1.0f), V[1], V[2], V[3]);
+            return FQuat(V[0], V[2], V[1], V[3] * -1.0f);    /// swap y and z
+        }
+
+        operator FMatrix() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            return FMatrix::Identity;
+        }
+    };
+
+    template<typename TEngineDataType, bool bSwapYZ, bool bInverseX>
+    struct TAccessorTypeMat4x4
+    {
+        TEngineDataType V[4][4];
+
+        operator TEngineDataType() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            if (!bSwapYZ) return V[0][0] * (bInverseX ? -1.0f : 1.0f);
+            return V[0][0];
+        }
+
+        operator FVector2D() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            if (!bSwapYZ)return FVector2D(V[0][0] * (bInverseX ? -1.0f : 1.0f), V[0][1]);
+            return FVector2D(V[0][0], V[0][2]);                     /// swap y and z
+        }
+
+        operator FVector() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            if (!bSwapYZ) return FVector(V[0][0] * (bInverseX ? -1.0f : 1.0f), V[0][1], V[0][2]);
+            return FVector(V[0][0], V[0][2], V[0][1]);              /// swap y and z
+        }
+
+        operator FVector4() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            if (!bSwapYZ) return FVector4(V[0][0] * (bInverseX ? -1.0f : 1.0f), V[0][1], V[0][2], V[0][3]);
+            return FVector4(V[0][0], V[0][2], V[0][1], V[0][3]);     /// swap y and z
+        }
+
+        operator FQuat() const
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Can't convert the accessor's data to the engine's data?"));
+            if (!bSwapYZ) return FQuat(V[0][0] * (bInverseX ? -1.0f : 1.0f), V[0][1], V[0][2], V[0][3]);
+            return FQuat(V[0][0], V[0][2], V[0][1], V[0][3] * -1.0f);    /// swap y and z
+        }
+
+        operator FMatrix() const
+        {
+            /// swap y and z
+            FMatrix Matrix = FMatrix::Identity;
+            for (uint8 j = 0; j < 4; ++j)
+            {
+                for (uint8 i = 0; i < 4; ++i)
+                {
+                    Matrix.M[j][i] = static_cast<TEngineDataType>(V[j][i]);
+                }
+            }
+            FglTFImporter::ConvertToUnrealSpace(Matrix, bSwapYZ, bInverseX);
+            return Matrix;
+        }
+    };
+
+    template<typename TAccessorDataType, typename TEngineDataType, bool bSwapYZ, bool bInverseX>
+    bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBuffers, const std::shared_ptr<libgltf::SAccessor>& InAccessor, TArray<TEngineDataType>& OutDataArray)
+    {
+        if (!InAccessor || !InAccessor->bufferView) return false;
+
+        int32 BufferViewIndex = (*InAccessor->bufferView);
+
+        OutDataArray.Empty();
+
+        FString FilePath;
+        if (InAccessor->type == TEXT("SCALAR"))
+        {
+            TArray<TAccessorTypeScale<TAccessorDataType>> AccessorDataArray;
+            if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
+            {
+                for (const TAccessorTypeScale<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
+                {
+                    OutDataArray.Add(AccessorDataItem);
+                }
+            }
+            else
+            {
+                UE_LOG(LogglTFForUE4, Error, TEXT("Your glTF file has some errors?"));
+                return false;
+            }
+        }
+        else if (InAccessor->type == TEXT("VEC2"))
+        {
+            TArray<TAccessorTypeVec2<TAccessorDataType, bSwapYZ, bInverseX>> AccessorDataArray;
+            if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
+            {
+                for (const TAccessorTypeVec2<TAccessorDataType, bSwapYZ, bInverseX>& AccessorDataItem : AccessorDataArray)
+                {
+                    OutDataArray.Add(AccessorDataItem);
+                }
+            }
+            else
+            {
+                UE_LOG(LogglTFForUE4, Error, TEXT("Your glTF file has some errors?"));
+                return false;
+            }
+        }
+        else if (InAccessor->type == TEXT("VEC3"))
+        {
+            TArray<TAccessorTypeVec3<TAccessorDataType, bSwapYZ, bInverseX>> AccessorDataArray;
+            if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
+            {
+                for (const TAccessorTypeVec3<TAccessorDataType, bSwapYZ, bInverseX>& AccessorDataItem : AccessorDataArray)
+                {
+                    OutDataArray.Add(AccessorDataItem);
+                }
+            }
+            else
+            {
+                UE_LOG(LogglTFForUE4, Error, TEXT("Your glTF file has some errors?"));
+                return false;
+            }
+        }
+        else if (InAccessor->type == TEXT("VEC4"))
+        {
+            TArray<TAccessorTypeVec4<TAccessorDataType, bSwapYZ, bInverseX>> AccessorDataArray;
+            if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
+            {
+                for (const TAccessorTypeVec4<TAccessorDataType, bSwapYZ, bInverseX>& AccessorDataItem : AccessorDataArray)
+                {
+                    OutDataArray.Add(AccessorDataItem);
+                }
+            }
+            else
+            {
+                UE_LOG(LogglTFForUE4, Error, TEXT("Your glTF file has some errors?"));
+                return false;
+            }
+        }
+        else if (InAccessor->type == TEXT("MAT4"))
+        {
+            TArray<TAccessorTypeMat4x4<TAccessorDataType, bSwapYZ, bInverseX>> AccessorDataArray;
+            if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
+            {
+                for (const TAccessorTypeMat4x4<TAccessorDataType, bSwapYZ, bInverseX>& AccessorDataItem : AccessorDataArray)
+                {
+                    OutDataArray.Add(AccessorDataItem);
+                }
+            }
+            else
+            {
+                UE_LOG(LogglTFForUE4, Error, TEXT("Your glTF file has some errors?"));
+                return false;
+            }
+        }
+        else
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Not supports the accessor's type(%s)!"), InAccessor->type.c_str());
+            return false;
+        }
+        return true;
+    }
+
+    template<typename TEngineDataType, bool bSwapYZ, bool bInverseX>
+    bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBuffers, const std::shared_ptr<libgltf::SAccessor>& InAccessor, TArray<TEngineDataType>& OutDataArray)
+    {
+        if (!InAccessor) return false;
+
+        switch (InAccessor->componentType)
+        {
+        case 5120:
+            return GetAccessorData<int8, TEngineDataType, bSwapYZ, bInverseX>(InGlTF, InBuffers, InAccessor, OutDataArray);
+
+        case 5121:
+            return GetAccessorData<uint8, TEngineDataType, bSwapYZ, bInverseX>(InGlTF, InBuffers, InAccessor, OutDataArray);
+
+        case 5122:
+            return GetAccessorData<int16, TEngineDataType, bSwapYZ, bInverseX>(InGlTF, InBuffers, InAccessor, OutDataArray);
+
+        case 5123:
+            return GetAccessorData<uint16, TEngineDataType, bSwapYZ, bInverseX>(InGlTF, InBuffers, InAccessor, OutDataArray);
+
+        case 5125:
+            return GetAccessorData<int32, TEngineDataType, bSwapYZ, bInverseX>(InGlTF, InBuffers, InAccessor, OutDataArray);
+
+        case 5126:
+            return GetAccessorData<float, TEngineDataType, bSwapYZ, bInverseX>(InGlTF, InBuffers, InAccessor, OutDataArray);
+
+        default:
+            UE_LOG(LogglTFForUE4, Error, TEXT("Not support the accessor's componetType(%d)?"), InAccessor->componentType);
+            break;
+        }
+        return false;
+    }
+
+    template<bool bSwapYZ>
+    bool GetTriangleIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices)
+    {
+        if (!InGlTF || !InMeshPrimitive) return false;
+
+        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->indices)];
+        return GetAccessorData<uint32, bSwapYZ, false>(InGlTF, InBufferFiles, Accessor, OutTriangleIndices);
+    }
+
+    template<bool bSwapYZ, bool bInverseX>
+    bool GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector>& OutVertexPositions)
+    {
+        if (!InGlTF || !InMeshPrimitive) return false;
+        if (InMeshPrimitive->attributes.find(TEXT("POSITION")) == InMeshPrimitive->attributes.cend()) return true;
+
+        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[TEXT("POSITION")])];
+        return GetAccessorData<FVector, bSwapYZ, bInverseX>(InGlTF, InBufferFiles, Accessor, OutVertexPositions);
+    }
+
+    template<bool bSwapYZ, bool bInverseX>
+    bool GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector>& OutVertexNormals)
+    {
+        if (!InGlTF || !InMeshPrimitive) return false;
+        if (InMeshPrimitive->attributes.find(TEXT("NORMAL")) == InMeshPrimitive->attributes.cend()) return true;
+
+        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[TEXT("NORMAL")])];
+        return GetAccessorData<FVector, bSwapYZ, bInverseX>(InGlTF, InBufferFiles, Accessor, OutVertexNormals);
+    }
+
+    template<bool bSwapYZ, bool bInverseX>
+    bool GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector4>& OutVertexTangents)
+    {
+        if (!InGlTF || !InMeshPrimitive) return false;
+        if (InMeshPrimitive->attributes.find(TEXT("TANGENT")) == InMeshPrimitive->attributes.cend()) return true;
+
+        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[TEXT("TANGENT")])];
+        return GetAccessorData<FVector4, bSwapYZ, bInverseX>(InGlTF, InBufferFiles, Accessor, OutVertexTangents);
+    }
+
+    template<int32 TexCoordNumber>
+    bool GetVertexTexcoords(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector2D> OutVertexTexcoords[TexCoordNumber])
+    {
+        if (!InGlTF || !InMeshPrimitive) return false;
+
+        wchar_t texcoord_str[NAME_SIZE];
+        for (int32 i = 0; i < TexCoordNumber; ++i)
+        {
+            OutVertexTexcoords[i].Empty();
+
+            std::swprintf(texcoord_str, NAME_SIZE, TEXT("TEXCOORD_%d\0"), i);
+            if (InMeshPrimitive->attributes.find(texcoord_str) == InMeshPrimitive->attributes.cend())
+            {
+                continue;
+            }
+
+            const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[texcoord_str])];
+            if (GetAccessorData<FVector2D, false, false>(InGlTF, InBufferFiles, Accessor, OutVertexTexcoords[i]))
+            {
+                continue;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    template<bool bSwapYZ, bool bInverseX>
+    bool GetInverseBindMatrices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SSkin>& InSkin, const FglTFBuffers& InBuffers, TArray<FMatrix>& OutInverseBindMatrices)
+    {
+        if (!InGlTF || !InSkin || !InSkin->inverseBindMatrices) return false;
+
+        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InSkin->inverseBindMatrices)];
+        return GetAccessorData<FMatrix, bSwapYZ, bInverseX>(InGlTF, InBuffers, Accessor, OutInverseBindMatrices);
+    }
+
+    bool GetJointIndeies(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, int32 InIndex, const FglTFBuffers& InBufferFiles, TArray<FVector4>& OutJointIndeies)
+    {
+        if (!InGlTF || !InMeshPrimitive) return false;
+        FString JointName = FString::Printf(TEXT("JOINTS_%d"), InIndex);
+        if (InMeshPrimitive->attributes.find(*JointName) == InMeshPrimitive->attributes.cend()) return true;
+
+        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[*JointName])];
+        return GetAccessorData<FVector4, false, false>(InGlTF, InBufferFiles, Accessor, OutJointIndeies);
+    }
+
+    bool GetJointWeights(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, int32 InIndex, const FglTFBuffers& InBufferFiles, TArray<FVector4>& OutJointWeights)
+    {
+        if (!InGlTF || !InMeshPrimitive) return false;
+        FString JointName = FString::Printf(TEXT("WEIGHTS_%d"), InIndex);
+        if (InMeshPrimitive->attributes.find(*JointName) == InMeshPrimitive->attributes.cend()) return true;
+
+        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[*JointName])];
+        return GetAccessorData<FVector4, false, false>(InGlTF, InBufferFiles, Accessor, OutJointWeights);
+    }
+
+    template<int32 TexCoordNumber, int32 JointNumber, bool bSwapYZ, bool bInverseX>
+    bool GetMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const std::shared_ptr<libgltf::SSkin>& InSkin, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[TexCoordNumber], TArray<FMatrix>& OutInverseBindMatrices, TArray<FVector4> OutJointIndeies[JointNumber + 1], TArray<FVector4> OutJointWeights[JointNumber + 1])
+    {
+        OutTriangleIndices.Empty();
+        OutVertexPositions.Empty();
+        OutVertexNormals.Empty();
+        OutVertexTangents.Empty();
+        for (uint32 i = 0; i < TexCoordNumber; ++i)
+        {
+            OutVertexTexcoords[i].Empty();
+        }
+        OutInverseBindMatrices.Empty();
+        for (uint32 i = 0; i < JointNumber; ++i)
+        {
+            OutJointIndeies[i].Empty();
+            OutJointWeights[i].Empty();
+        }
+
+        if (!InGlTF || !InMeshPrimitive) return false;
+
+        const libgltf::SKHR_draco_mesh_compressionextension* ExtensionDraco = nullptr;
+        {
+            const std::shared_ptr<libgltf::SExtension>& Extensions = InMeshPrimitive->extensions;
+            if (!!Extensions && (Extensions->properties.find(TEXT("KHR_draco_mesh_compression")) != Extensions->properties.end()))
+            {
+                ExtensionDraco = (const libgltf::SKHR_draco_mesh_compressionextension*)Extensions->properties[TEXT("KHR_draco_mesh_compression")].get();
+            }
+        }
+
+        if (ExtensionDraco)
+        {
+            int32 BufferViewIndex = *(ExtensionDraco->bufferView);
             std::map<GLTFString, std::shared_ptr<libgltf::SGlTFId>> Attributes = ExtensionDraco->attributes;
             TArray<uint8> EncodeBuffer;
             FString BufferFilePath;

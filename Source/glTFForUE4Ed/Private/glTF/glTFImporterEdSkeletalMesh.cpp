@@ -662,13 +662,8 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
     const TArray<FVector4>& JointWeights0 = JointWeights[0];
     if (JointIndeies0.Num() == Points.Num() && JointWeights0.Num() == Points.Num())
     {
-        FMatrix SkinMatrix;
-        bool bJointMatrixAccValid = false;
-
         for (int32 i = 0; i < Points.Num(); ++i)
         {
-            FVector& Point = Points[i];
-
             const FVector4& JointIndex = JointIndeies0[i];
             const FVector4& JointWeight = JointWeights0[i];
 

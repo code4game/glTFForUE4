@@ -103,7 +103,7 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
         {
             ImportClass = AActor::StaticClass();
         }
-        else if (glTFImportOptions->ImportType == EglTFImportType::StaticMesh)
+        else if (glTFImportOptions->ImportType == EglTFImportType::Level)
         {
             ImportClass = ULevel::StaticClass();
         }
