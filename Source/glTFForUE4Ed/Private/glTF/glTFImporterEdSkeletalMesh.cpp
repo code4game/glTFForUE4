@@ -186,7 +186,11 @@ namespace glTFForUE4Ed
         {
             const VBone& BinaryBone = RefBonesBinary[b];
             const FString BoneName = FixupBoneName(BinaryBone.Name);
+#if ENGINE_MINOR_VERSION < 19
             const FMeshBoneInfo BoneInfo(FName(*BoneName, FNAME_Add, true), BinaryBone.Name, BinaryBone.ParentIndex);
+#else
+            const FMeshBoneInfo BoneInfo(FName(*BoneName), BinaryBone.Name, BinaryBone.ParentIndex);
+#endif
             const FTransform BoneTransform(BinaryBone.BonePos.Transform);
 
             if (OutReferenceSkeleton.FindBoneIndex(BoneInfo.Name) != INDEX_NONE)
