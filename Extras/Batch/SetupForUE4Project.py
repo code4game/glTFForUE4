@@ -1,3 +1,5 @@
+# Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
+
 '''setup the environment for ue4 project'''
 import sys
 import os

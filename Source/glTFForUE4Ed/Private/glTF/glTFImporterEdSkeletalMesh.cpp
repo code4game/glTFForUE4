@@ -425,12 +425,17 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     new(ImportedResource->LODModels)FSkeletalMeshLODModel();
 #endif
 
-    SkeletalMesh->LODInfo.Empty();
-    SkeletalMesh->LODInfo.AddZeroed();
-    SkeletalMesh->LODInfo[0].LODHysteresis = 0.02f;
+#if ENGINE_MINOR_VERSION < 20
+    TArray<FSkeletalMeshLODInfo>& SkeletalMeshLODInfo = SkeletalMesh->LODInfo;
+#else
+    TArray<FSkeletalMeshLODInfo>& SkeletalMeshLODInfo = SkeletalMesh->GetLODInfoArray();
+#endif
+    SkeletalMeshLODInfo.Empty();
+    SkeletalMeshLODInfo.AddZeroed();
+    SkeletalMeshLODInfo[0].LODHysteresis = 0.02f;
     FSkeletalMeshOptimizationSettings Settings;
     // set default reduction settings values
-    SkeletalMesh->LODInfo[0].ReductionSettings = Settings;
+    SkeletalMeshLODInfo[0].ReductionSettings = Settings;
 
 #if ENGINE_MINOR_VERSION < 19
     FStaticLODModel& LODModel = ImportedResource->LODModels[0];
