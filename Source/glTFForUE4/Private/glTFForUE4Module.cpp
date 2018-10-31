@@ -3,7 +3,7 @@
 #include "glTFForUE4PrivatePCH.h"
 #include "glTFForUE4Module.h"
 
-#include "ModuleManager.h"
+#include "Modules/ModuleManager.h"
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4Module"
 
