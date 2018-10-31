@@ -12,6 +12,7 @@
 
 /// From engine
 #include "ISettingsModule.h"
+#include "Modules/ModuleManager.h"
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
 
