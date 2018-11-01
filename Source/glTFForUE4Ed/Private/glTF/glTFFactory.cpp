@@ -9,6 +9,7 @@
 
 #include "libgltf/libgltf.h"
 
+#include "Misc/FeedbackContext.h"
 #include "Misc/Paths.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/SkeletalMesh.h"

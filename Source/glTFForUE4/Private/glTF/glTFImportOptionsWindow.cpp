@@ -8,6 +8,8 @@
 #include "libgltf/libgltf.h"
 
 #include "Styling/CoreStyle.h"
+#include "Widgets/SWindow.h"
+#include "Widgets/Text/STextBlock.h"
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4"
 

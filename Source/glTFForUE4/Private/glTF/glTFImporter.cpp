@@ -7,6 +7,8 @@
 
 #include "Misc/Base64.h"
 #include "Misc/SecureHash.h"
+#include "Misc/FeedbackContext.h"
+#include "Misc/FileHelper.h"
 
 #if defined(ERROR)
 #define DRACO_MACRO_TEMP_ERROR      ERROR

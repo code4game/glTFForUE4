@@ -8,7 +8,9 @@
 
 #include <libgltf/libgltf.h>
 
+#include "Components.h"
 #include "Engine/Texture.h"
+#include "Curves/RichCurve.h"
 
 #define GLTF_TRIANGLE_POINTS_NUM            3
 #define GLTF_JOINT_LAYERS_NUM_MAX           3

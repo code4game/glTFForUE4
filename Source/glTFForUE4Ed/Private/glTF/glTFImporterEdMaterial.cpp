@@ -8,6 +8,7 @@
 
 #include "libgltf/libgltf.h"
 
+#include "Materials/Material.h"
 #include "Materials/MaterialExpressionScalarParameter.h"
 #include "Materials/MaterialExpressionVectorParameter.h"
 #include "Materials/MaterialExpressionTextureSampleParameter.h"

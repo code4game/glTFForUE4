@@ -7,6 +7,7 @@
 
 #include "libgltf/libgltf.h"
 
+//#include "SlateBasics.h"
 #include "MainFrame.h"
 #include "IDocumentation.h"
 #include "PropertyEditorModule.h"

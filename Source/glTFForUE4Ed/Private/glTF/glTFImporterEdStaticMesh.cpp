@@ -11,6 +11,7 @@
 #include "RenderingThread.h"
 #include "RawMesh.h"
 #include "Engine/StaticMesh.h"
+#include "Materials/Material.h"
 #include "StaticMeshResources.h"
 #include "AssetRegistryModule.h"
 #include "EditorFramework/AssetImportData.h"

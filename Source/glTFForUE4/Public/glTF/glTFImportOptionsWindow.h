@@ -2,7 +2,9 @@
 
 #pragma once
 
-#include "SlateBasics.h"
+#include "Widgets/SCompoundWidget.h"
+#include "Widgets/DeclarativeSyntaxSupport.h"
+#include "Styling/SlateTypes.h"
 #include "glTF/glTFImportOptions.h"
 
 namespace libgltf
@@ -24,7 +26,7 @@ public:
         {}
 
         SLATE_ARGUMENT(TSharedPtr<struct FglTFImportOptions>, glTFImportOptions)
-        SLATE_ARGUMENT(TSharedPtr<SWindow>, WidgetWindow)
+        SLATE_ARGUMENT(TSharedPtr<class SWindow>, WidgetWindow)
         SLATE_ARGUMENT(TArray<TSharedPtr<EglTFImportType>>, ImportTypes)
         SLATE_ARGUMENT(bool, bHasAnimation)
     SLATE_END_ARGS()
@@ -74,7 +76,7 @@ protected:
 
 protected:
     TWeakPtr<struct FglTFImportOptions> glTFImportOptions;
-    TWeakPtr<SWindow> WidgetWindow;
+    TWeakPtr<class SWindow> WidgetWindow;
     TArray<TSharedPtr<EglTFImportType>> ImportTypes;
     bool bHasAnimation;
 };
