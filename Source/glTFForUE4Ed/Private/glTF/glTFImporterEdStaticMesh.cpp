@@ -13,6 +13,7 @@
 #include "Engine/StaticMesh.h"
 #include "StaticMeshResources.h"
 #include "AssetRegistryModule.h"
+#include "EditorFramework/AssetImportData.h"
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
 
