@@ -11,6 +11,7 @@
 
 #include "SkeletalMeshTypes.h"
 #include "Engine/SkeletalMesh.h"
+#include "Misc/Paths.h"
 
 #include "SkelImport.h"
 #include "MeshUtilities.h"

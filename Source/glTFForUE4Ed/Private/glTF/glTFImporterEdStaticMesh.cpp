@@ -10,11 +10,12 @@
 
 #include "RenderingThread.h"
 #include "RawMesh.h"
-#include "Engine/StaticMesh.h"
-#include "Materials/Material.h"
 #include "StaticMeshResources.h"
 #include "AssetRegistryModule.h"
+#include "Engine/StaticMesh.h"
+#include "Materials/Material.h"
 #include "EditorFramework/AssetImportData.h"
+#include "Misc/Paths.h"
 
 #define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
 

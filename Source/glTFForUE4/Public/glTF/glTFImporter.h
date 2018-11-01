@@ -10,7 +10,11 @@
 
 #include "Components.h"
 #include "Engine/Texture.h"
+#if ENGINE_MINOR_VERSION < 13
+#include "Curves/CurveBase.h"
+#else
 #include "Curves/RichCurve.h"
+#endif
 
 #define GLTF_TRIANGLE_POINTS_NUM            3
 #define GLTF_JOINT_LAYERS_NUM_MAX           3

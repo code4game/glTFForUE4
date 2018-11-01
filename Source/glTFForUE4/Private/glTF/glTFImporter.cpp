@@ -8,7 +8,12 @@
 #include "Misc/Base64.h"
 #include "Misc/SecureHash.h"
 #include "Misc/FeedbackContext.h"
+#if ENGINE_MINOR_VERSION < 14
+#include "Misc/CoreMisc.h"
+#else
 #include "Misc/FileHelper.h"
+#endif
+#include "Misc/Paths.h"
 
 #if defined(ERROR)
 #define DRACO_MACRO_TEMP_ERROR      ERROR

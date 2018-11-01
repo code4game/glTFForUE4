@@ -2,4 +2,5 @@
 
 #pragma once
 
+#include "glTFForUE4Settings.h"
 #include "glTFForUE4Module.h"
