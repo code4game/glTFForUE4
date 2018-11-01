@@ -2,6 +2,9 @@
 
 #pragma once
 
-#include "glTFForUE4PublicPCH.h"
+#include "Core.h"
+#include "CoreUObject.h"
+#include "Engine.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogglTFForUE4, Log, All);
