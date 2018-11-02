@@ -19,17 +19,6 @@
 #define GLTF_TRIANGLE_POINTS_NUM            3
 #define GLTF_JOINT_LAYERS_NUM_MAX           3
 
-namespace libgltf
-{
-    struct SGlTF;
-    struct SImage;
-    struct SBuffer;
-    struct SBufferView;
-    struct SMeshPrimitive;
-    struct SAnimation;
-    struct SSkin;
-}
-
 namespace glTFForUE4
 {
     class GLTFFORUE4_API FFeedbackTaskWrapper
