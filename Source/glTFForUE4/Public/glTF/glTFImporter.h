@@ -6,13 +6,7 @@
 #include <map>
 #include <memory>
 
-#if PLATFORM_IOS && defined(UNICODE)
-#undef UNICODE
 #include <libgltf/libgltf.h>
-#define UNICODE
-#else
-#include <libgltf/libgltf.h>
-#endif
 
 #include "Components.h"
 #include "Engine/Texture.h"
