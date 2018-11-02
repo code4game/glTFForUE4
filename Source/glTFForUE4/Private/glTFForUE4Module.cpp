@@ -5,7 +5,7 @@
 
 #include "Modules/ModuleManager.h"
 
-#define LOCTEXT_NAMESPACE "FglTFForUE4Module"
+#define LOCTEXT_NAMESPACE "glTFForUE4Module"
 
 class FglTFForUE4Module : public IglTFForUE4Module
 {

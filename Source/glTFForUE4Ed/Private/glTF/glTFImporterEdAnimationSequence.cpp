@@ -13,7 +13,7 @@
 #include "Animation/AnimSequence.h"
 #endif
 
-#define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
+#define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
 TSharedPtr<FglTFImporterEdAnimationSequence> FglTFImporterEdAnimationSequence::Get(UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
 {

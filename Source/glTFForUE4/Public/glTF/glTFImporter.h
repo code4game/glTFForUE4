@@ -6,7 +6,13 @@
 #include <map>
 #include <memory>
 
+#if PLATFORM_IOS && defined(UNICODE)
+#undef UNICODE
 #include <libgltf/libgltf.h>
+#define UNICODE
+#else
+#include <libgltf/libgltf.h>
+#endif
 
 #include "Components.h"
 #include "Engine/Texture.h"
@@ -18,6 +24,17 @@
 
 #define GLTF_TRIANGLE_POINTS_NUM            3
 #define GLTF_JOINT_LAYERS_NUM_MAX           3
+
+namespace libgltf
+{
+    struct SGlTF;
+    struct SImage;
+    struct SBuffer;
+    struct SBufferView;
+    struct SMeshPrimitive;
+    struct SAnimation;
+    struct SSkin;
+}
 
 namespace glTFForUE4
 {

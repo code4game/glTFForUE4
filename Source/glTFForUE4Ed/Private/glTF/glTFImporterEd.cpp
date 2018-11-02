@@ -7,9 +7,7 @@
 #include "glTF/glTFImporterEdStaticMesh.h"
 #include "glTF/glTFImporterEdSkeletalMesh.h"
 
-#include "libgltf/libgltf.h"
-
-#define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
+#define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
 FglTFImporterEd::FglTFMaterialInfo::FglTFMaterialInfo(int32 InId, FString InPrimitiveName)
     : Id(InId)

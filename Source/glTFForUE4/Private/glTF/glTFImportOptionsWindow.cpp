@@ -5,13 +5,11 @@
 
 #include "glTF/glTFImportOptions.h"
 
-#include "libgltf/libgltf.h"
-
 #include "Styling/CoreStyle.h"
 #include "Widgets/SWindow.h"
 #include "Widgets/Text/STextBlock.h"
 
-#define LOCTEXT_NAMESPACE "FglTFForUE4"
+#define LOCTEXT_NAMESPACE "glTFForUE4"
 
 TSharedPtr<FglTFImportOptions> SglTFImportOptionsWindow::Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool& OutCancel)
 {

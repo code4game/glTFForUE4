@@ -4,6 +4,11 @@
 
 #include "glTF/glTFImporterEd.h"
 
+namespace libgltf
+{
+    struct STexture;
+}
+
 class FglTFImporterEdTexture : public FglTFImporterEd
 {
     typedef FglTFImporterEd Super;

@@ -6,15 +6,13 @@
 #include "glTF/glTFImportOptions.h"
 #include "glTF/glTFImporterEdTexture.h"
 
-#include "libgltf/libgltf.h"
-
 #include "Materials/Material.h"
 #include "Materials/MaterialExpressionScalarParameter.h"
 #include "Materials/MaterialExpressionVectorParameter.h"
 #include "Materials/MaterialExpressionTextureSampleParameter.h"
 #include "AssetRegistryModule.h"
 
-#define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
+#define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
 #define GLTF_MATERIAL_PBRMETALLICROUGHNESS_ORIGIN   TEXT("/glTFForUE4/Materials/M_PBRMetallicRoughnessOrigin.M_PBRMetallicRoughnessOrigin")
 #define GLTF_MATERIAL_PBRSPECULARGLOSSINESS_ORIGIN  TEXT("/glTFForUE4/Materials/M_PBRSpecularGlossinessOrigin.M_PBRSpecularGlossinessOrigin")

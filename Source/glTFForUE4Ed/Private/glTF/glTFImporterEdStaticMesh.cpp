@@ -6,8 +6,6 @@
 #include "glTF/glTFImportOptions.h"
 #include "glTF/glTFImporterEdMaterial.h"
 
-#include "libgltf/libgltf.h"
-
 #include "RenderingThread.h"
 #include "RawMesh.h"
 #include "StaticMeshResources.h"
@@ -17,7 +15,7 @@
 #include "EditorFramework/AssetImportData.h"
 #include "Misc/Paths.h"
 
-#define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
+#define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
 namespace glTFForUE4Ed
 {

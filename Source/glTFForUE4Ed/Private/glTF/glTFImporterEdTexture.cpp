@@ -5,8 +5,6 @@
 
 #include "glTF/glTFImportOptions.h"
 
-#include "libgltf/libgltf.h"
-
 #if (ENGINE_MINOR_VERSION < 18)
 #include "ImageWrapper.h"
 #else
@@ -15,7 +13,7 @@
 #endif
 #include "AssetRegistryModule.h"
 
-#define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
+#define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
 TSharedPtr<FglTFImporterEdTexture> FglTFImporterEdTexture::Get(UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
 {

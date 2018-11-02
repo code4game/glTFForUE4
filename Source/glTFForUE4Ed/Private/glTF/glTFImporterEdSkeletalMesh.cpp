@@ -7,8 +7,6 @@
 #include "glTF/glTFImporterEdMaterial.h"
 #include "glTF/glTFImporterEdAnimationSequence.h"
 
-#include "libgltf/libgltf.h"
-
 #include "SkeletalMeshTypes.h"
 #include "Engine/SkeletalMesh.h"
 #include "Misc/Paths.h"
@@ -23,7 +21,7 @@
 #include "Rendering/SkeletalMeshLODModel.h"
 #endif
 
-#define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
+#define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
 namespace glTFForUE4Ed
 {

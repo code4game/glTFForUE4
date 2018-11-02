@@ -4,17 +4,16 @@
 #include "glTF/glTFImportOptionsWindowEd.h"
 
 #include "glTF/glTFImportOptions.h"
-
-#include "libgltf/libgltf.h"
+#include "glTF/glTFImporterEd.h"
 
 //#include "SlateBasics.h"
-#include "MainFrame.h"
+#include "Interfaces/IMainFrameModule.h"
 #include "IDocumentation.h"
 #include "PropertyEditorModule.h"
 #include "IDetailsView.h"
 #include "EditorStyle.h"
 
-#define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
+#define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
 TSharedPtr<FglTFImportOptions> SglTFImportOptionsWindowEd::Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool& OutCancel)
 {
