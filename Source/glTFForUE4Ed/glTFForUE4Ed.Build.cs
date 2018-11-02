@@ -132,6 +132,13 @@ public class glTFForUE4Ed : ModuleRules
                 LibFilePath1 = System.IO.Path.Combine(LibPath, "libdracodec.a");
                 LibFilePath2 = System.IO.Path.Combine(LibPath, "libdracoenc.a");
             }
+            else if (Target.Platform == UnrealTargetPlatform.IOS)
+            {
+                LibPath = System.IO.Path.Combine(DracoPath, "lib", "ios");
+
+                LibFilePath1 = System.IO.Path.Combine(LibPath, "libdracodec.a");
+                LibFilePath2 = System.IO.Path.Combine(LibPath, "libdracoenc.a");
+            }
 
             PublicIncludePaths.Add(IncludePath);
             PublicLibraryPaths.Add(LibPath);
