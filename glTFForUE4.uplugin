@@ -1,40 +1,39 @@
 {
-	"FileVersion": 3,
-	"Version": 1,
-	"VersionName": "1.3",
-	"FriendlyName": "glTF for UE4",
-	"Description": "Import the glTF into UE4",
-	"Category": "Misc",
-	"CreatedBy": "Code 4 Game, Org.",
-	"CreatedByURL": "https://c4g.io/",
-	"DocsURL": "https://c4g.io/",
-	"MarketplaceURL": "",
-	"SupportURL": "https://c4g.io/",
-	"EnabledByDefault": true,
-	"CanContainContent": true,
-	"IsBetaVersion": true,
-	"Installed": false,
-	"Modules": [
-		{
-			"Name": "glTFForUE4",
-			"Type": "Runtime",
-			"LoadingPhase": "Default",
-			"WhitelistPlatforms": [
-				"Win64",
-				"Mac",
-				"Linux",
-				"Android"
-			]
-		},
-		{
-			"Name": "glTFForUE4Ed",
-			"Type": "Editor",
-			"LoadingPhase": "Default",
-			"WhitelistPlatforms": [
-				"Win64",
-				"Mac",
-				"Linux"
-			]
-		}
-	]
+    "FriendlyName": "glTF for UE4",
+    "Description": "Import the glTF into UE4",
+    "CreatedBy": "Code 4 Game",
+    "CreatedByURL": "https://c4g.io/",
+    "DocsURL": "https://doc.c4g.io/",
+    "SupportURL": "https://doc.c4g.io/",
+    "Category": "Misc",
+    "MarketplaceURL": "",
+    "FileVersion": 3,
+    "Version": 1,
+    "VersionName": "1.3",
+    "EnabledByDefault": true,
+    "CanContainContent": true,
+    "IsBetaVersion": true,
+    "Installed": false,
+    "Modules": [
+        {
+            "Name": "glTFForUE4",
+            "Type": "Runtime",
+            "LoadingPhase": "Default",
+            "WhitelistPlatforms": [
+                "Win64",
+                "Win32",
+                "Mac"
+            ]
+        },
+        {
+            "Name": "glTFForUE4Ed",
+            "Type": "Editor",
+            "LoadingPhase": "Default",
+            "WhitelistPlatforms": [
+                "Win64",
+                "Win32",
+                "Mac"
+            ]
+        }
+    ]
 }
