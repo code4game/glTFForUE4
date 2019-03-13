@@ -179,7 +179,11 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
     }
 
     AnimSequence->SequenceLength = SequenceLength;
+#if ENGINE_MINOR_VERSION < 22
     AnimSequence->NumFrames = NumFrames;
+#else
+    AnimSequence->SetRawNumberOfFrame(NumFrames);
+#endif
 
     AnimSequence->Modify(true);
     AnimSequence->BakeTrackCurvesToRawAnimation();
