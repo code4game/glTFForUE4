@@ -88,7 +88,7 @@ namespace glTFForUE4Ed
         OutImportData.bHasNormals |= InImportData.bHasNormals;
         OutImportData.bHasTangents |= InImportData.bHasTangents;
 
-#if ENGINE_MINOR_VERSION < 18
+#if ENGINE_MINOR_VERSION < 21
         for (VBone Bone : InImportData.RefBonesBinary)
 #else
         for (SkeletalMeshImportData::FBone Bone : InImportData.RefBonesBinary)
