@@ -3,9 +3,9 @@
 #include "glTFForUE4PrivatePCH.h"
 #include "glTFForUE4Module.h"
 
-#include "ModuleManager.h"
+#include "Modules/ModuleManager.h"
 
-#define LOCTEXT_NAMESPACE "FglTFForUE4Module"
+#define LOCTEXT_NAMESPACE "glTFForUE4Module"
 
 class FglTFForUE4Module : public IglTFForUE4Module
 {

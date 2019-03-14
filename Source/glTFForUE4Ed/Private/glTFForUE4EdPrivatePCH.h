@@ -2,9 +2,14 @@
 
 #pragma once
 
+#include "Runtime/Launch/Resources/Version.h"
+
+#if ENGINE_MINOR_VERSION < 15
 #include "Core.h"
 #include "CoreUObject.h"
 #include "Engine.h"
-#include "Runtime/Launch/Resources/Version.h"
+#else
+#include "CoreMinimal.h"
+#endif
 
 DECLARE_LOG_CATEGORY_EXTERN(LogglTFForUE4Ed, Log, All);

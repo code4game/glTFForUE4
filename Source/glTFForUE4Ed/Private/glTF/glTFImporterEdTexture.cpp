@@ -5,8 +5,6 @@
 
 #include "glTF/glTFImportOptions.h"
 
-#include "libgltf/libgltf.h"
-
 #if (ENGINE_MINOR_VERSION < 18)
 #include "ImageWrapper.h"
 #else
@@ -15,7 +13,7 @@
 #endif
 #include "AssetRegistryModule.h"
 
-#define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
+#define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
 TSharedPtr<FglTFImporterEdTexture> FglTFImporterEdTexture::Get(UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
 {
@@ -159,7 +157,7 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImportOption
     if (NewTexture && !!(InglTFTexture->sampler))
     {
         int32 glTFSamplerId = *(InglTFTexture->sampler);
-        if (glTFSamplerId >= 0 && glTFSamplerId < InglTF->samplers.size())
+        if (glTFSamplerId >= 0 && glTFSamplerId < static_cast<int32>(InglTF->samplers.size()))
         {
             const std::shared_ptr<libgltf::SSampler>& glTFSampler = InglTF->samplers[glTFSamplerId];
             if (glTFSampler)

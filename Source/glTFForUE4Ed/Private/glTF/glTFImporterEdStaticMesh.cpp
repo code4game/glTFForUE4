@@ -6,15 +6,16 @@
 #include "glTF/glTFImportOptions.h"
 #include "glTF/glTFImporterEdMaterial.h"
 
-#include "libgltf/libgltf.h"
-
 #include "RenderingThread.h"
 #include "RawMesh.h"
-#include "Engine/StaticMesh.h"
 #include "StaticMeshResources.h"
 #include "AssetRegistryModule.h"
+#include "Engine/StaticMesh.h"
+#include "Materials/Material.h"
+#include "EditorFramework/AssetImportData.h"
+#include "Misc/Paths.h"
 
-#define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
+#define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
 namespace glTFForUE4Ed
 {
@@ -109,7 +110,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
                 continue;
             }
             const int32 NodeId = *NodeIdPtr;
-            if (NodeId < 0 || NodeId >= InGlTF->nodes.size())
+            if (NodeId < 0 || NodeId >= static_cast<int32>(InGlTF->nodes.size()))
             {
                 checkSlow(0);
                 continue;
@@ -216,7 +217,7 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const std::shared_ptr<libgltf::S
     if (!!(InNode->mesh))
     {
         const int32_t MeshId = *(InNode->mesh);
-        if (MeshId < 0 || MeshId >= InGlTF->meshes.size()) return false;
+        if (MeshId < 0 || MeshId >= static_cast<int32>(InGlTF->meshes.size())) return false;
         const auto& Mesh = InGlTF->meshes[MeshId];
         if (!GenerateRawMesh(InGlTF, Mesh, InNodeAbsoluteTransform, InBuffers, OutRawMesh, InOutglTFMaterialInfos, InFeedbackTaskWrapper))
         {
@@ -233,7 +234,7 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const std::shared_ptr<libgltf::S
             continue;
         }
         const int32 NodeId = *NodeIdPtr;
-        if (NodeId < 0 || NodeId >= InGlTF->nodes.size())
+        if (NodeId < 0 || NodeId >= static_cast<int32>(InGlTF->nodes.size()))
         {
             checkSlow(0);
             continue;
@@ -265,7 +266,7 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const std::shared_ptr<libgltf::S
     if (!InMesh) return false;
 
     FString MeshName = InMesh->name.c_str();
-    for (int32 i = 0; i < InMesh->primitives.size(); ++i)
+    for (int32 i = 0; i < static_cast<int32>(InMesh->primitives.size()); ++i)
     {
         const auto& Primitive = InMesh->primitives[i];
         FRawMesh NewRawMesh;

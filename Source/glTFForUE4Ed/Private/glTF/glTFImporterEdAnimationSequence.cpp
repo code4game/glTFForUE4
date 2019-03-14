@@ -13,7 +13,7 @@
 #include "Animation/AnimSequence.h"
 #endif
 
-#define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
+#define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
 TSharedPtr<FglTFImporterEdAnimationSequence> FglTFImporterEdAnimationSequence::Get(UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
 {
@@ -179,7 +179,11 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
     }
 
     AnimSequence->SequenceLength = SequenceLength;
+#if ENGINE_MINOR_VERSION < 22
     AnimSequence->NumFrames = NumFrames;
+#else
+    AnimSequence->SetRawNumberOfFrame(NumFrames);
+#endif
 
     AnimSequence->Modify(true);
     AnimSequence->BakeTrackCurvesToRawAnimation();

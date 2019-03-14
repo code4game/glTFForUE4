@@ -7,10 +7,7 @@ public class glTFForUE4Ed : ModuleRules
     public glTFForUE4Ed(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = PCHUsageMode.UseSharedPCHs;
-
-        PublicIncludePaths.AddRange(new [] {
-                "glTFForUE4Ed/Public"
-            });
+        PrivatePCHHeaderFile = "Private/glTFForUE4EdPrivatePCH.h";
 
         PrivateIncludePaths.AddRange(new [] {
                 "glTFForUE4Ed/Private",
@@ -130,6 +127,13 @@ public class glTFForUE4Ed : ModuleRules
             else if (Target.Platform == UnrealTargetPlatform.Mac)
             {
                 LibPath = System.IO.Path.Combine(DracoPath, "lib", "macos");
+
+                LibFilePath1 = System.IO.Path.Combine(LibPath, "libdracodec.a");
+                LibFilePath2 = System.IO.Path.Combine(LibPath, "libdracoenc.a");
+            }
+            else if (Target.Platform == UnrealTargetPlatform.IOS)
+            {
+                LibPath = System.IO.Path.Combine(DracoPath, "lib", "ios");
 
                 LibFilePath1 = System.IO.Path.Combine(LibPath, "libdracodec.a");
                 LibFilePath2 = System.IO.Path.Combine(LibPath, "libdracoenc.a");

@@ -6,14 +6,13 @@
 #include "glTF/glTFImportOptions.h"
 #include "glTF/glTFImporterEdTexture.h"
 
-#include "libgltf/libgltf.h"
-
+#include "Materials/Material.h"
 #include "Materials/MaterialExpressionScalarParameter.h"
 #include "Materials/MaterialExpressionVectorParameter.h"
 #include "Materials/MaterialExpressionTextureSampleParameter.h"
 #include "AssetRegistryModule.h"
 
-#define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
+#define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
 #define GLTF_MATERIAL_PBRMETALLICROUGHNESS_ORIGIN   TEXT("/glTFForUE4/Materials/M_PBRMetallicRoughnessOrigin.M_PBRMetallicRoughnessOrigin")
 #define GLTF_MATERIAL_PBRSPECULARGLOSSINESS_ORIGIN  TEXT("/glTFForUE4/Materials/M_PBRSpecularGlossinessOrigin.M_PBRSpecularGlossinessOrigin")
@@ -57,7 +56,7 @@ FglTFImporterEdMaterial::~FglTFImporterEdMaterial()
 UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const FglTFBuffers& InBuffers, const FglTFMaterialInfo& InglTFMaterialInfo, TMap<FString, UTexture*>& InOutTextureLibrary, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
 {
     if (!InputParent) return nullptr;
-    if (!InglTF || InglTFMaterialInfo.Id < 0 || InglTFMaterialInfo.Id >= InglTF->materials.size()) return nullptr;
+    if (!InglTF || InglTFMaterialInfo.Id < 0 || InglTFMaterialInfo.Id >= static_cast<int32>(InglTF->materials.size())) return nullptr;
 
     const TSharedPtr<FglTFImportOptions> glTFImportOptions = InglTFImportOptions.Pin();
 
@@ -365,7 +364,7 @@ bool FglTFImporterEdMaterial::ConstructSampleParameter(const TWeakPtr<FglTFImpor
     if (!InglTF || !InglTFTextureInfo || !InSampleParameter) return false;
     if (!(InglTFTextureInfo->index)) return false;
     int32 glTFTextureId = *(InglTFTextureInfo->index);
-    if (glTFTextureId < 0 || glTFTextureId >= InglTF->textures.size()) return false;
+    if (glTFTextureId < 0 || glTFTextureId >= static_cast<int32>(InglTF->textures.size())) return false;
     const std::shared_ptr<libgltf::STexture>& glTFTexture = InglTF->textures[glTFTextureId];
     if (!glTFTexture) return false;
 

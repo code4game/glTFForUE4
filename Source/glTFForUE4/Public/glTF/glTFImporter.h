@@ -8,7 +8,13 @@
 
 #include <libgltf/libgltf.h>
 
+#include "Components.h"
 #include "Engine/Texture.h"
+#if ENGINE_MINOR_VERSION < 13
+#include "Curves/CurveBase.h"
+#else
+#include "Curves/RichCurve.h"
+#endif
 
 #define GLTF_TRIANGLE_POINTS_NUM            3
 #define GLTF_JOINT_LAYERS_NUM_MAX           3
@@ -119,7 +125,7 @@ public:
     bool GetImageData(const std::shared_ptr<libgltf::SGlTF>& InglTF, int32 InImageIndex, TArray<TElem>& OutBufferSegment, FString& OutFilePath) const
     {
         if (!InglTF) return false;
-        if (InImageIndex < 0 || static_cast<uint32>(InImageIndex) >= InglTF->images.size()) return false;
+        if (InImageIndex < 0 || InImageIndex >= static_cast<int32>(InglTF->images.size())) return false;
         const std::shared_ptr<libgltf::SImage>& Image = InglTF->images[InImageIndex];
         if (!Image) return false;
         if (Image->uri.empty())
@@ -140,7 +146,7 @@ public:
     bool GetBufferViewData(const std::shared_ptr<libgltf::SGlTF>& InglTF, int32 InBufferViewIndex, TArray<TElem>& OutBufferSegment, FString& OutFilePath, int32 InOffset = 0, int32 InCount = 0) const
     {
         if (!InglTF) return false;
-        if (InBufferViewIndex < 0 || static_cast<uint32>(InBufferViewIndex) >= InglTF->bufferViews.size()) return false;
+        if (InBufferViewIndex < 0 || InBufferViewIndex >= static_cast<int32>(InglTF->bufferViews.size())) return false;
         const std::shared_ptr<libgltf::SBufferView>& BufferView = InglTF->bufferViews[InBufferViewIndex];
         if (!BufferView || !BufferView->buffer) return false;
         int32 BufferIndex = (int32)(*BufferView->buffer);

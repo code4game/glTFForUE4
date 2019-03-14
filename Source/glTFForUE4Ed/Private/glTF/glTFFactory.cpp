@@ -7,15 +7,14 @@
 #include "glTF/glTFImportOptionsWindowEd.h"
 #include "glTF/glTFImporterEd.h"
 
-#include "libgltf/libgltf.h"
-
-#include "Misc/Paths.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/SkeletalMesh.h"
+#include "Misc/FeedbackContext.h"
+#include "Misc/Paths.h"
 
 #include "ObjectTools.h"
 
-#define LOCTEXT_NAMESPACE "FglTFForUE4EdModule"
+#define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
 UglTFFactory::UglTFFactory()
     : Super()
