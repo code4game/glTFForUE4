@@ -1403,7 +1403,7 @@ bool FglTFImporter::GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlT
         const std::shared_ptr<libgltf::SGlTFId>& glTFAnimationChannelSamplerIndexPtr = glTFAnimationChannelPtr->sampler;
         if (!glTFAnimationChannelSamplerIndexPtr) continue;
         int32 SamplerIndex = *glTFAnimationChannelSamplerIndexPtr;
-        if (SamplerIndex < 0 || SamplerIndex >= InglTFAnimation->samplers.size()) continue;
+        if (SamplerIndex < 0 || SamplerIndex >= static_cast<int32>(InglTFAnimation->samplers.size())) continue;
 
         const std::shared_ptr<libgltf::SAnimationSampler>& glTFAnimationSamplerPtr = InglTFAnimation->samplers[SamplerIndex];
         if (!glTFAnimationSamplerPtr) continue;
@@ -1418,14 +1418,14 @@ bool FglTFImporter::GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlT
         const std::shared_ptr<libgltf::SGlTFId>& glTFAnimationSamplerInputAccessorIndexPtr = glTFAnimationSamplerPtr->input;
         if (!glTFAnimationSamplerInputAccessorIndexPtr) continue;
         int32 InputAccessorIndex = *glTFAnimationSamplerInputAccessorIndexPtr;
-        if (InputAccessorIndex < 0 || InputAccessorIndex >= InGlTF->accessors.size()) continue;
+        if (InputAccessorIndex < 0 || InputAccessorIndex >= static_cast<int32>(InGlTF->accessors.size())) continue;
         const std::shared_ptr<libgltf::SAccessor>& glTFInputAccessorPtr = InGlTF->accessors[InputAccessorIndex];
         if (!glTFInputAccessorPtr) continue;
 
         const std::shared_ptr<libgltf::SGlTFId>& glTFAnimationSamplerOutputAccessorIndexPtr = glTFAnimationSamplerPtr->output;
         if (!glTFAnimationSamplerOutputAccessorIndexPtr) continue;
         int32 OutputAccessorIndex = *glTFAnimationSamplerOutputAccessorIndexPtr;
-        if (OutputAccessorIndex < 0 || OutputAccessorIndex >= InGlTF->accessors.size()) continue;
+        if (OutputAccessorIndex < 0 || OutputAccessorIndex >= static_cast<int32>(InGlTF->accessors.size())) continue;
         const std::shared_ptr<libgltf::SAccessor>& glTFOutputAccessorPtr = InGlTF->accessors[OutputAccessorIndex];
         if (!glTFOutputAccessorPtr) continue;
 

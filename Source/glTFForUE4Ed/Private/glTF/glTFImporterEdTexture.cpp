@@ -157,7 +157,7 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImportOption
     if (NewTexture && !!(InglTFTexture->sampler))
     {
         int32 glTFSamplerId = *(InglTFTexture->sampler);
-        if (glTFSamplerId >= 0 && glTFSamplerId < InglTF->samplers.size())
+        if (glTFSamplerId >= 0 && glTFSamplerId < static_cast<int32>(InglTF->samplers.size()))
         {
             const std::shared_ptr<libgltf::SSampler>& glTFSampler = InglTF->samplers[glTFSamplerId];
             if (glTFSampler)

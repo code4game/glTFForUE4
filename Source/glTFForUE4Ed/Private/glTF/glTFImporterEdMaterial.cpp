@@ -56,7 +56,7 @@ FglTFImporterEdMaterial::~FglTFImporterEdMaterial()
 UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const FglTFBuffers& InBuffers, const FglTFMaterialInfo& InglTFMaterialInfo, TMap<FString, UTexture*>& InOutTextureLibrary, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
 {
     if (!InputParent) return nullptr;
-    if (!InglTF || InglTFMaterialInfo.Id < 0 || InglTFMaterialInfo.Id >= InglTF->materials.size()) return nullptr;
+    if (!InglTF || InglTFMaterialInfo.Id < 0 || InglTFMaterialInfo.Id >= static_cast<int32>(InglTF->materials.size())) return nullptr;
 
     const TSharedPtr<FglTFImportOptions> glTFImportOptions = InglTFImportOptions.Pin();
 
@@ -364,7 +364,7 @@ bool FglTFImporterEdMaterial::ConstructSampleParameter(const TWeakPtr<FglTFImpor
     if (!InglTF || !InglTFTextureInfo || !InSampleParameter) return false;
     if (!(InglTFTextureInfo->index)) return false;
     int32 glTFTextureId = *(InglTFTextureInfo->index);
-    if (glTFTextureId < 0 || glTFTextureId >= InglTF->textures.size()) return false;
+    if (glTFTextureId < 0 || glTFTextureId >= static_cast<int32>(InglTF->textures.size())) return false;
     const std::shared_ptr<libgltf::STexture>& glTFTexture = InglTF->textures[glTFTextureId];
     if (!glTFTexture) return false;
 

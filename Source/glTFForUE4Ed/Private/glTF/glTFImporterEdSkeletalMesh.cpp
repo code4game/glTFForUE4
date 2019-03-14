@@ -313,7 +313,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
                 continue;
             }
             const int32 NodeId = *NodeIdPtr;
-            if (NodeId < 0 || NodeId >= InGlTF->nodes.size())
+            if (NodeId < 0 || NodeId >= static_cast<int32>(InGlTF->nodes.size()))
             {
                 checkSlow(0);
                 continue;
@@ -345,9 +345,9 @@ TArray<USkeletalMesh*> FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWe
     if (!!(InNode->mesh) && !!(InNode->skin))
     {
         const int32_t MeshId = *(InNode->mesh);
-        if (MeshId < 0 || MeshId >= InGlTF->meshes.size()) return SkeletalMeshs;
+        if (MeshId < 0 || MeshId >= static_cast<int32_t>(InGlTF->meshes.size())) return SkeletalMeshs;
         const int32_t SkinId = *(InNode->skin);
-        if (SkinId < 0 || SkinId >= InGlTF->skins.size()) return SkeletalMeshs;
+        if (SkinId < 0 || SkinId >= static_cast<int32_t>(InGlTF->skins.size())) return SkeletalMeshs;
         const auto& Mesh = InGlTF->meshes[MeshId];
         const auto& Skin = InGlTF->skins[SkinId];
         USkeletalMesh* NewSkeletalMeshs = CreateSkeletalMesh(InglTFImportOptions, InGlTF, MeshId, Mesh, Skin, InNodeParentIndices, InNodeRelativeTransforms, InNodeAbsoluteTransforms, InBuffers);
@@ -369,7 +369,7 @@ TArray<USkeletalMesh*> FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWe
             continue;
         }
         const int32 NodeId = *NodeIdPtr;
-        if (NodeId < 0 || NodeId >= InGlTF->nodes.size())
+        if (NodeId < 0 || NodeId >= static_cast<int32>(InGlTF->nodes.size()))
         {
             checkSlow(0);
             continue;
@@ -585,7 +585,7 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
     , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
 {
     FString MeshName = InMesh->name.c_str();
-    for (int32 i = 0; i < InMesh->primitives.size(); ++i)
+    for (int32 i = 0; i < static_cast<int32>(InMesh->primitives.size()); ++i)
     {
         const auto& Primitive = InMesh->primitives[i];
         FSkeletalMeshImportData NewSkeletalMeshImportData;
@@ -659,8 +659,8 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
     {
         const int32 JointId = JointIds[i];
 
-        checkSlow(JointId >= 0 && JointId < InGlTF->nodes.size());
-        if (JointId < 0 || JointId >= InGlTF->nodes.size()) return false;
+        checkSlow(JointId >= 0 && JointId < static_cast<int32>(InGlTF->nodes.size()));
+        if (JointId < 0 || JointId >= static_cast<int32>(InGlTF->nodes.size())) return false;
 
 #if ENGINE_MINOR_VERSION < 21
         VBone Bone;
