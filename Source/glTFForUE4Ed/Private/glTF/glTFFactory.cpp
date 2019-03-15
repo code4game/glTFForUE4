@@ -3,8 +3,8 @@
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTFFactory.h"
 
-#include "glTF/glTFImportOptions.h"
-#include "glTF/glTFImportOptionsWindowEd.h"
+#include "glTF/glTFImporterOptions.h"
+#include "glTF/glTFImporterOptionsWindowEd.h"
 #include "glTF/glTFImporterEd.h"
 
 #include "Engine/StaticMesh.h"
@@ -87,22 +87,22 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
 
     /// Open import window, allow to configure some options
     bool bCancel = false;
-    TSharedPtr<FglTFImportOptions> glTFImportOptions = SglTFImportOptionsWindowEd::Open(FilePathInOS, InParent->GetPathName(), *GlTF, bCancel);
-    if (glTFImportOptions.IsValid())
+    TSharedPtr<FglTFImporterOptions> glTFImporterOptions = SglTFImporterOptionsWindowEd::Open(FilePathInOS, InParent->GetPathName(), *GlTF, bCancel);
+    if (glTFImporterOptions.IsValid())
     {
-        if (glTFImportOptions->ImportType == EglTFImportType::StaticMesh)
+        if (glTFImporterOptions->ImportType == EglTFImportType::StaticMesh)
         {
             ImportClass = UStaticMesh::StaticClass();
         }
-        else if (glTFImportOptions->ImportType == EglTFImportType::SkeletalMesh)
+        else if (glTFImporterOptions->ImportType == EglTFImportType::SkeletalMesh)
         {
             ImportClass = USkeletalMesh::StaticClass();
         }
-        else if (glTFImportOptions->ImportType == EglTFImportType::Actor)
+        else if (glTFImporterOptions->ImportType == EglTFImportType::Actor)
         {
             ImportClass = AActor::StaticClass();
         }
-        else if (glTFImportOptions->ImportType == EglTFImportType::Level)
+        else if (glTFImporterOptions->ImportType == EglTFImportType::Level)
         {
             ImportClass = ULevel::StaticClass();
         }
@@ -117,7 +117,7 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
         UE_LOG(LogglTFForUE4Ed, Display, TEXT("Cancel to import the file - %s"), *FilePathInOS);
         return nullptr;
     }
-    if (!glTFImportOptions.IsValid())
+    if (!glTFImporterOptions.IsValid())
     {
         UE_LOG(LogglTFForUE4Ed, Error, TEXT("Failed to open import window"));
         return nullptr;
@@ -127,10 +127,10 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
     {
         InglTFBuffers = MakeShareable(new FglTFBuffers);
     }
-    const FString FolderPathInOS = FPaths::GetPath(glTFImportOptions->FilePathInOS);
+    const FString FolderPathInOS = FPaths::GetPath(glTFImporterOptions->FilePathInOS);
     InglTFBuffers->Cache(FolderPathInOS, GlTF);
 
-    return FglTFImporterEd::Get(this, ImportClass, InParent, InName, InFlags, InWarn)->Create(glTFImportOptions, GlTF, *InglTFBuffers);
+    return FglTFImporterEd::Get(this, ImportClass, InParent, InName, InFlags, InWarn)->Create(glTFImporterOptions, GlTF, *InglTFBuffers);
 }
 
 #undef LOCTEXT_NAMESPACE

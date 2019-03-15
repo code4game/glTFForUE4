@@ -19,15 +19,15 @@ public:
 
 public:
     /// Import a skeletal mesh
-    class USkeletalMesh* CreateSkeletalMesh(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions
+    class USkeletalMesh* CreateSkeletalMesh(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions
         , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::vector<std::shared_ptr<libgltf::SScene>>& InScenes
         , const class FglTFBuffers& InBuffers) const;
 
 private:
-    TArray<class USkeletalMesh*> CreateSkeletalMesh(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions
+    TArray<class USkeletalMesh*> CreateSkeletalMesh(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions
         , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SNode>& InNode
         , const TArray<int32>& InNodeParentIndices, const TArray<FTransform>& InNodeRelativeTransforms, const TArray<FTransform>& InNodeAbsoluteTransforms, const class FglTFBuffers& InBuffers) const;
-    class USkeletalMesh* CreateSkeletalMesh(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions
+    class USkeletalMesh* CreateSkeletalMesh(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions
         , const std::shared_ptr<libgltf::SGlTF>& InGlTF, int32 InMeshId, const std::shared_ptr<libgltf::SMesh>& InMesh, const std::shared_ptr<libgltf::SSkin>& InSkin
         , const TArray<int32>& InNodeParentIndices, const TArray<FTransform>& InNodeRelativeTransforms, const TArray<FTransform>& InNodeAbsoluteTransforms, const class FglTFBuffers& InBuffers) const;
 

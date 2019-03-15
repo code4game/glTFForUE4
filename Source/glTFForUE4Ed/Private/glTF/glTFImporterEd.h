@@ -25,7 +25,7 @@ public:
     virtual ~FglTFImporterEd();
 
 public:
-    virtual UObject* Create(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers) const override;
+    virtual UObject* Create(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers) const override;
 
 protected:
     class UFactory* InputFactory;

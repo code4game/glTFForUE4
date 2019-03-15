@@ -1,6 +1,6 @@
 #pragma once
 
-#include "glTFImportOptions.generated.h"
+#include "glTFImporterOptions.generated.h"
 
 UENUM()
 enum class EglTFImportType : uint8
@@ -13,11 +13,11 @@ enum class EglTFImportType : uint8
 };
 
 USTRUCT()
-struct GLTFFORUE4_API FglTFImportOptions
+struct GLTFFORUE4_API FglTFImporterOptions
 {
     GENERATED_USTRUCT_BODY()
 
-    FglTFImportOptions();
+    FglTFImporterOptions();
 
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     FString FilePathInOS;
@@ -60,6 +60,6 @@ struct GLTFFORUE4_API FglTFImportOptions
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bImportTexture;
 
-    static const FglTFImportOptions Default;
-    static FglTFImportOptions Current;
+    static const FglTFImporterOptions Default;
+    static FglTFImporterOptions Current;
 };

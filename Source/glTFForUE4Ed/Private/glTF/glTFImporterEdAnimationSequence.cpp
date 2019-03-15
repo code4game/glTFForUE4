@@ -3,7 +3,7 @@
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTF/glTFImporterEdAnimationSequence.h"
 
-#include "glTF/glTFImportOptions.h"
+#include "glTF/glTFImporterOptions.h"
 #include "glTF/glTFImporter.h"
 
 #include "AssetRegistryModule.h"
@@ -33,7 +33,7 @@ FglTFImporterEdAnimationSequence::~FglTFImporterEdAnimationSequence()
     //
 }
 
-UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF
+UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF
     , const TArray<FTransform>& InNodeRelativeTransforms, const TArray<FTransform>& InNodeAbsoluteTransforms, const FglTFBuffers& InBuffers, const TMap<int32, FString>& InNodeIndexToBoneNames
     , USkeletalMesh* InSkeletalMesh, USkeleton* InSkeleton
     , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
