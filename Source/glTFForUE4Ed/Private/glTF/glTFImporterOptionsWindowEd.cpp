@@ -1,9 +1,9 @@
 // Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4EdPrivatePCH.h"
-#include "glTF/glTFImportOptionsWindowEd.h"
+#include "glTF/glTFImporterOptionsWindowEd.h"
 
-#include "glTF/glTFImportOptions.h"
+#include "glTF/glTFImporterOptions.h"
 #include "glTF/glTFImporterEd.h"
 
 //#include "SlateBasics.h"
@@ -15,13 +15,13 @@
 
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
-TSharedPtr<FglTFImportOptions> SglTFImportOptionsWindowEd::Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool& OutCancel)
+TSharedPtr<FglTFImporterOptions> SglTFImporterOptionsWindowEd::Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool& OutCancel)
 {
-    TSharedPtr<FglTFImportOptions> glTFImportOptions = MakeShareable(new FglTFImportOptions());
-    (*glTFImportOptions) = FglTFImportOptions::Current;
+    TSharedPtr<FglTFImporterOptions> glTFImporterOptions = MakeShareable(new FglTFImporterOptions());
+    (*glTFImporterOptions) = FglTFImporterOptions::Current;
 
-    glTFImportOptions->FilePathInOS = InFilePathInOS;
-    glTFImportOptions->FilePathInEngine = InFilePathInEngine;
+    glTFImporterOptions->FilePathInOS = InFilePathInOS;
+    glTFImporterOptions->FilePathInEngine = InFilePathInEngine;
 
     TSharedPtr<SWindow> ParentWindow;
 
@@ -41,18 +41,18 @@ TSharedPtr<FglTFImportOptions> SglTFImportOptionsWindowEd::Open(const FString& I
     {
         ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::SkeletalMesh)));
     }
-    else if (glTFImportOptions->ImportType == EglTFImportType::SkeletalMesh)
+    else if (glTFImporterOptions->ImportType == EglTFImportType::SkeletalMesh)
     {
-        glTFImportOptions->ImportType = EglTFImportType::StaticMesh;
+        glTFImporterOptions->ImportType = EglTFImportType::StaticMesh;
     }
     //ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::Actor)));
     //ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::Level)));
 
-    TSharedPtr<SglTFImportOptionsWindowEd> glTFImportWindow;
+    TSharedPtr<SglTFImporterOptionsWindowEd> glTFImportWindow;
     Window->SetContent
     (
-        SAssignNew(glTFImportWindow, SglTFImportOptionsWindowEd)
-            .glTFImportOptions(glTFImportOptions)
+        SAssignNew(glTFImportWindow, SglTFImporterOptionsWindowEd)
+            .glTFImporterOptions(glTFImporterOptions)
             .WidgetWindow(Window)
             .ImportTypes(ImportTypes)
             .bHasAnimation(InGlTF.animations.size() > 0)
@@ -61,26 +61,26 @@ TSharedPtr<FglTFImportOptions> SglTFImportOptionsWindowEd::Open(const FString& I
     /// Show the import options window.
     FSlateApplication::Get().AddModalWindow(Window, ParentWindow, false);
 
-    OutCancel = (glTFImportOptions != glTFImportWindow->GetImportOptions());
+    OutCancel = (glTFImporterOptions != glTFImportWindow->GetImportOptions());
 
     /// Store the option if not cancel
     if (!OutCancel)
     {
-        FglTFImportOptions::Current = (*glTFImportOptions);
+        FglTFImporterOptions::Current = (*glTFImporterOptions);
     }
-    return glTFImportOptions;
+    return glTFImporterOptions;
 }
 
-SglTFImportOptionsWindowEd::SglTFImportOptionsWindowEd()
+SglTFImporterOptionsWindowEd::SglTFImporterOptionsWindowEd()
     : Super()
 {
     //
 }
 
-void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
+void SglTFImporterOptionsWindowEd::Construct(const FArguments& InArgs)
 {
-    glTFImportOptions = InArgs._glTFImportOptions;
-    checkf(glTFImportOptions.IsValid(), TEXT("Why the argument - glTFImportOptions is null?"));
+    glTFImporterOptions = InArgs._glTFImporterOptions;
+    checkf(glTFImporterOptions.IsValid(), TEXT("Why the argument - glTFImporterOptions is null?"));
     WidgetWindow = InArgs._WidgetWindow;
     ImportTypes = InArgs._ImportTypes;
     bHasAnimation = InArgs._bHasAnimation;
@@ -117,7 +117,7 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                 [
                     SNew(STextBlock)
                         .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                        .Text(FText::FromString(glTFImportOptions.Pin()->FilePathInOS))
+                        .Text(FText::FromString(glTFImporterOptions.Pin()->FilePathInOS))
                 ]
                 + SGridPanel::Slot(0, 1)
                     .Padding(2)
@@ -135,7 +135,7 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                 [
                     SNew(STextBlock)
                     .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                    .Text(FText::FromString(glTFImportOptions.Pin()->FilePathInEngine))
+                    .Text(FText::FromString(glTFImporterOptions.Pin()->FilePathInEngine))
                 ]
             ]
         ]
@@ -162,8 +162,8 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                     .ToolTipText(LOCTEXT("ImportOptionsWindow_OnImport_ToolTip", "Import this glTF file"))
                     .HAlign(HAlign_Center)
                     .Text(LOCTEXT("ImportOptionsWindow_OnImport", "Import file"))
-                    .IsEnabled(this, &SglTFImportOptionsWindowEd::CanImport)
-                    .OnClicked(this, &SglTFImportOptionsWindowEd::OnImport)
+                    .IsEnabled(this, &SglTFImporterOptionsWindowEd::CanImport)
+                    .OnClicked(this, &SglTFImporterOptionsWindowEd::OnImport)
             ]
             + SUniformGridPanel::Slot(2, 0)
             [
@@ -171,7 +171,7 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                     .ToolTipText(LOCTEXT("ImportOptionsWindow_OnCancel_ToolTip", "Cancel to import this glTF file"))
                     .HAlign(HAlign_Center)
                     .Text(LOCTEXT("ImportOptionsWindow_OnCancel", "Cancel"))
-                    .OnClicked(this, &SglTFImportOptionsWindowEd::OnCancel)
+                    .OnClicked(this, &SglTFImporterOptionsWindowEd::OnCancel)
             ]
         ]
     ];
@@ -223,12 +223,12 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                             SNew(SComboBox<TSharedPtr<EglTFImportType>>)
                                 .InitiallySelectedItem(ImportTypes[0])
                                 .OptionsSource(&ImportTypes)
-                                .OnSelectionChanged(this, &SglTFImportOptionsWindowEd::HandleImportType)
-                                .OnGenerateWidget(this, &SglTFImportOptionsWindowEd::GenerateImportType)
+                                .OnSelectionChanged(this, &SglTFImporterOptionsWindowEd::HandleImportType)
+                                .OnGenerateWidget(this, &SglTFImporterOptionsWindowEd::GenerateImportType)
                                 .Content()
                                 [
                                     SNew(STextBlock)
-                                        .Text(this, &SglTFImportOptionsWindowEd::GetImportTypeText)
+                                        .Text(this, &SglTFImporterOptionsWindowEd::GetImportTypeText)
                                 ]
                         ]
                     ]
@@ -276,10 +276,10 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(SSpinBox<float>)
-                                .Value(glTFImportOptions.Pin()->MeshScaleRatio)
+                                .Value(glTFImporterOptions.Pin()->MeshScaleRatio)
                                 .MinValue(0.0f)
                                 .MaxValue(100000.0f)
-                                .OnValueChanged(this, &SglTFImportOptionsWindowEd::HandleMeshScaleRatio)
+                                .OnValueChanged(this, &SglTFImporterOptionsWindowEd::HandleMeshScaleRatio)
                         ]
                         + SGridPanel::Slot(0, 1)
                             .Padding(2)
@@ -297,8 +297,8 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(SCheckBox)
-                                .IsChecked(glTFImportOptions.Pin()->bInvertNormal ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleMeshInvertNormal)
+                                .IsChecked(glTFImporterOptions.Pin()->bInvertNormal ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImporterOptionsWindowEd::HandleMeshInvertNormal)
                         ]
                         + SGridPanel::Slot(0, 2)
                             .Padding(2)
@@ -316,8 +316,8 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(SCheckBox)
-                                .IsChecked(glTFImportOptions.Pin()->bUseMikkTSpace ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleMeshUseMikkTSpace)
+                                .IsChecked(glTFImporterOptions.Pin()->bUseMikkTSpace ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImporterOptionsWindowEd::HandleMeshUseMikkTSpace)
                         ]
                         + SGridPanel::Slot(0, 3)
                             .Padding(2)
@@ -335,8 +335,8 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(SCheckBox)
-                                .IsChecked(glTFImportOptions.Pin()->bRecomputeNormals ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleMeshRecomputeNormals)
+                                .IsChecked(glTFImporterOptions.Pin()->bRecomputeNormals ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImporterOptionsWindowEd::HandleMeshRecomputeNormals)
                         ]
                         + SGridPanel::Slot(0, 4)
                             .Padding(2)
@@ -354,8 +354,8 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(SCheckBox)
-                                .IsChecked(glTFImportOptions.Pin()->bRecomputeTangents ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleMeshRecomputeTangents)
+                                .IsChecked(glTFImporterOptions.Pin()->bRecomputeTangents ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImporterOptionsWindowEd::HandleMeshRecomputeTangents)
                         ]
                     ]
                 ]
@@ -387,7 +387,7 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                         .BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
                     [
                         SNew(SGridPanel)
-                            .IsEnabled(this, &SglTFImportOptionsWindowEd::CanHandleIntegrateAllMeshsForStaticMesh)
+                            .IsEnabled(this, &SglTFImporterOptionsWindowEd::CanHandleIntegrateAllMeshsForStaticMesh)
                         + SGridPanel::Slot(0, 0)
                             .Padding(2)
                             .HAlign(HAlign_Left)
@@ -405,8 +405,8 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(SCheckBox)
-                                .IsChecked(this, &SglTFImportOptionsWindowEd::CheckHandleIntegrateAllMeshsForStaticMesh)
-                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleIntegrateAllMeshsForStaticMesh)
+                                .IsChecked(this, &SglTFImporterOptionsWindowEd::CheckHandleIntegrateAllMeshsForStaticMesh)
+                                .OnCheckStateChanged(this, &SglTFImporterOptionsWindowEd::HandleIntegrateAllMeshsForStaticMesh)
                         ]
                     ]
                 ]
@@ -438,7 +438,7 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                         .BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
                     [
                         SNew(SGridPanel)
-                            .IsEnabled(this, &SglTFImportOptionsWindowEd::CanHandleImportAnimationForSkeletalMesh)
+                            .IsEnabled(this, &SglTFImporterOptionsWindowEd::CanHandleImportAnimationForSkeletalMesh)
                         + SGridPanel::Slot(0, 0)
                             .Padding(2)
                             .HAlign(HAlign_Left)
@@ -456,8 +456,8 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(SCheckBox)
-                                .IsChecked(this, &SglTFImportOptionsWindowEd::CheckHandleImportAnimationForSkeleton)
-                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleImportAnimationForSkeletalMesh)
+                                .IsChecked(this, &SglTFImporterOptionsWindowEd::CheckHandleImportAnimationForSkeleton)
+                                .OnCheckStateChanged(this, &SglTFImporterOptionsWindowEd::HandleImportAnimationForSkeletalMesh)
                         ]
                     ]
                 ]
@@ -506,8 +506,8 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(SCheckBox)
-                                .IsChecked(glTFImportOptions.Pin()->bImportMaterial ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleImportMaterial)
+                                .IsChecked(glTFImporterOptions.Pin()->bImportMaterial ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImporterOptionsWindowEd::HandleImportMaterial)
                         ]
                         + SGridPanel::Slot(0, 1)
                             .Padding(2)
@@ -526,8 +526,8 @@ void SglTFImportOptionsWindowEd::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(SCheckBox)
-                                .IsChecked(glTFImportOptions.Pin()->bImportTexture ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-                                .OnCheckStateChanged(this, &SglTFImportOptionsWindowEd::HandleImportTexture)
+                                .IsChecked(glTFImporterOptions.Pin()->bImportTexture ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImporterOptionsWindowEd::HandleImportTexture)
                         ]
                     ]
                 ]

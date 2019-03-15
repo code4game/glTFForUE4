@@ -1,9 +1,9 @@
 // Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4PrivatePCH.h"
-#include "glTF/glTFImportOptions.h"
+#include "glTF/glTFImporterOptions.h"
 
-FglTFImportOptions::FglTFImportOptions()
+FglTFImporterOptions::FglTFImporterOptions()
     : FilePathInOS(TEXT(""))
     , FilePathInEngine(TEXT(""))
     , ImportType(EglTFImportType::StaticMesh)
@@ -20,5 +20,5 @@ FglTFImportOptions::FglTFImportOptions()
     //
 }
 
-const FglTFImportOptions FglTFImportOptions::Default;
-FglTFImportOptions FglTFImportOptions::Current;
+const FglTFImporterOptions FglTFImporterOptions::Default;
+FglTFImporterOptions FglTFImporterOptions::Current;

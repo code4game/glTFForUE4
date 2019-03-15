@@ -18,7 +18,7 @@ public:
     virtual ~FglTFImporterEdAnimationSequence();
 
 public:
-    class UAnimSequence* CreateAnimationSequence(const TWeakPtr<struct FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF
+    class UAnimSequence* CreateAnimationSequence(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF
         , const TArray<FTransform>& InNodeRelativeTransforms, const TArray<FTransform>& InNodeAbsoluteTransforms, const class FglTFBuffers& InBuffers, const TMap<int32, FString>& InNodeIndexToBoneNames
         , class USkeletalMesh* InSkeletalMesh, class USkeleton* InSkeleton
         , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const;

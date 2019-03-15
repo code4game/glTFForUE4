@@ -5,34 +5,34 @@
 #include "Styling/SlateTypes.h"
 #include "Widgets/DeclarativeSyntaxSupport.h"
 #include "Widgets/SCompoundWidget.h"
-#include "glTF/glTFImportOptions.h"
+#include "glTF/glTFImporterOptions.h"
 
 namespace libgltf
 {
     struct SGlTF;
 }
 
-class GLTFFORUE4_API SglTFImportOptionsWindow : public SCompoundWidget
+class GLTFFORUE4_API SglTFImporterOptionsWindow : public SCompoundWidget
 {
 public:
-    static TSharedPtr<struct FglTFImportOptions> Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool& OutCancel);
+    static TSharedPtr<struct FglTFImporterOptions> Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool& OutCancel);
 
 public:
-    SLATE_BEGIN_ARGS(SglTFImportOptionsWindow)
-        : _glTFImportOptions(nullptr)
+    SLATE_BEGIN_ARGS(SglTFImporterOptionsWindow)
+        : _glTFImporterOptions(nullptr)
         , _WidgetWindow(nullptr)
         , _ImportTypes()
         , _bHasAnimation(false)
         {}
 
-        SLATE_ARGUMENT(TSharedPtr<struct FglTFImportOptions>, glTFImportOptions)
+        SLATE_ARGUMENT(TSharedPtr<struct FglTFImporterOptions>, glTFImporterOptions)
         SLATE_ARGUMENT(TSharedPtr<class SWindow>, WidgetWindow)
         SLATE_ARGUMENT(TArray<TSharedPtr<EglTFImportType>>, ImportTypes)
         SLATE_ARGUMENT(bool, bHasAnimation)
     SLATE_END_ARGS()
 
 public:
-    SglTFImportOptionsWindow();
+    SglTFImporterOptionsWindow();
 
 public:
     virtual void Construct(const FArguments& InArgs);
@@ -42,7 +42,7 @@ public:
     virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyEvent& InKeyEvent) override;
 
 public:
-    TSharedPtr<struct FglTFImportOptions> GetImportOptions();
+    TSharedPtr<struct FglTFImporterOptions> GetImportOptions();
 
 protected:
     bool CanImport() const;
@@ -75,7 +75,7 @@ protected:
     bool HasAnimation() const;
 
 protected:
-    TWeakPtr<struct FglTFImportOptions> glTFImportOptions;
+    TWeakPtr<struct FglTFImporterOptions> glTFImporterOptions;
     TWeakPtr<class SWindow> WidgetWindow;
     TArray<TSharedPtr<EglTFImportType>> ImportTypes;
     bool bHasAnimation;

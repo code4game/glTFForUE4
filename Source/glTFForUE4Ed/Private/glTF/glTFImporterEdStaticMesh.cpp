@@ -3,7 +3,7 @@
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTF/glTFImporterEdStaticMesh.h"
 
-#include "glTF/glTFImportOptions.h"
+#include "glTF/glTFImporterOptions.h"
 #include "glTF/glTFImporterEdMaterial.h"
 
 #include "RenderingThread.h"
@@ -61,7 +61,7 @@ FglTFImporterEdStaticMesh::~FglTFImporterEdStaticMesh()
     //
 }
 
-UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::vector<std::shared_ptr<libgltf::SScene>>& InScenes, const FglTFBuffers& InBuffers) const
+UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::vector<std::shared_ptr<libgltf::SScene>>& InScenes, const FglTFBuffers& InBuffers) const
 {
     if (!InGlTF || InScenes.empty()) return nullptr;
     if (InputClass != UStaticMesh::StaticClass() || !InputParent || !InputName.IsValid()) return nullptr;
@@ -71,8 +71,8 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     TArray<FTransform> NodeAbsoluteTransforms;
     if (!FglTFImporter::GetNodeParentIndicesAndTransforms(InGlTF, NodeParentIndices, NodeRelativeTransforms, NodeAbsoluteTransforms)) return nullptr;
 
-    TSharedPtr<FglTFImportOptions> glTFImportOptions = InglTFImportOptions.Pin();
-    FString ImportedBaseFilename = FPaths::GetBaseFilename(glTFImportOptions->FilePathInOS);
+    TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
+    FString ImportedBaseFilename = FPaths::GetBaseFilename(glTFImporterOptions->FilePathInOS);
 
     FText TaskName = FText::Format(LOCTEXT("BeginImportAsStaticMeshTask", "Importing the glTF ({0}) as a static mesh ({1})"), FText::FromName(InputName), FText::FromName(InputName));
     glTFForUE4::FFeedbackTaskWrapper FeedbackTaskWrapper(FeedbackContext, TaskName, true);
@@ -89,7 +89,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     new(StaticMesh->SourceModels) FStaticMeshSourceModel();
 
     FStaticMeshSourceModel& SourceModel = StaticMesh->SourceModels[0];
-    SourceModel.BuildSettings.bUseMikkTSpace = glTFImportOptions->bUseMikkTSpace;
+    SourceModel.BuildSettings.bUseMikkTSpace = glTFImporterOptions->bUseMikkTSpace;
 
     StaticMesh->LightingGuid = FGuid::NewGuid();
     StaticMesh->LightMapResolution = 64;
@@ -124,7 +124,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
 
     if (NewRawMesh.IsValidOrFixable())
     {
-        if (glTFImportOptions->bInvertNormal)
+        if (glTFImporterOptions->bInvertNormal)
         {
             for (FVector& Normal : NewRawMesh.WedgeTangentZ)
             {
@@ -134,11 +134,11 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
 
         for (FVector& Position : NewRawMesh.VertexPositions)
         {
-            Position = Position * glTFImportOptions->MeshScaleRatio;
+            Position = Position * glTFImporterOptions->MeshScaleRatio;
         }
 
-        SourceModel.BuildSettings.bRecomputeNormals = (glTFImportOptions->bRecomputeNormals || NewRawMesh.WedgeTangentZ.Num() != NewRawMesh.WedgeIndices.Num());
-        SourceModel.BuildSettings.bRecomputeTangents = (glTFImportOptions->bRecomputeTangents || NewRawMesh.WedgeTangentX.Num() != NewRawMesh.WedgeIndices.Num() || NewRawMesh.WedgeTangentY.Num() != NewRawMesh.WedgeIndices.Num());
+        SourceModel.BuildSettings.bRecomputeNormals = (glTFImporterOptions->bRecomputeNormals || NewRawMesh.WedgeTangentZ.Num() != NewRawMesh.WedgeIndices.Num());
+        SourceModel.BuildSettings.bRecomputeTangents = (glTFImporterOptions->bRecomputeTangents || NewRawMesh.WedgeTangentX.Num() != NewRawMesh.WedgeIndices.Num() || NewRawMesh.WedgeTangentY.Num() != NewRawMesh.WedgeIndices.Num());
         SourceModel.BuildSettings.bRemoveDegenerates = false;
         SourceModel.BuildSettings.bBuildAdjacencyBuffer = false;
         SourceModel.BuildSettings.bUseFullPrecisionUVs = false;
@@ -165,9 +165,9 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
         {
             const FglTFMaterialInfo& glTFMaterialInfo = glTFMaterialInfos[i];
             UMaterialInterface* NewMaterial = nullptr;
-            if (glTFImportOptions->bImportMaterial)
+            if (glTFImporterOptions->bImportMaterial)
             {
-                NewMaterial = glTFImporterEdMaterial->CreateMaterial(InglTFImportOptions, InGlTF, InBuffers, glTFMaterialInfo, TextureLibrary, FeedbackTaskWrapper);
+                NewMaterial = glTFImporterEdMaterial->CreateMaterial(InglTFImporterOptions, InGlTF, InBuffers, glTFMaterialInfo, TextureLibrary, FeedbackTaskWrapper);
             }
             if (!NewMaterial)
             {
@@ -189,7 +189,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
 
         if (StaticMesh->AssetImportData)
         {
-            StaticMesh->AssetImportData->Update(glTFImportOptions->FilePathInOS);
+            StaticMesh->AssetImportData->Update(glTFImporterOptions->FilePathInOS);
         }
 
         StaticMesh->PostEditChange();

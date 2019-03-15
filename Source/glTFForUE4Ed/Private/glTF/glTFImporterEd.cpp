@@ -3,7 +3,7 @@
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTF/glTFImporterEd.h"
 
-#include "glTF/glTFImportOptions.h"
+#include "glTF/glTFImporterOptions.h"
 #include "glTF/glTFImporterEdStaticMesh.h"
 #include "glTF/glTFImporterEdSkeletalMesh.h"
 
@@ -36,7 +36,7 @@ FglTFImporterEd::~FglTFImporterEd()
     //
 }
 
-UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers) const
+UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers) const
 {
     if (!InGlTF)
     {
@@ -50,7 +50,7 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImportOptions>& InglTFImpor
         return nullptr;
     }
 
-    const TSharedPtr<FglTFImportOptions> glTFImportOptions = InglTFImportOptions.Pin();
+    const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
 
     FlushRenderingCommands();
 
@@ -67,13 +67,13 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImportOptions>& InglTFImpor
         }
     }
 
-    switch (glTFImportOptions->ImportType)
+    switch (glTFImporterOptions->ImportType)
     {
     case EglTFImportType::StaticMesh:
-        return FglTFImporterEdStaticMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateStaticMesh(InglTFImportOptions, InGlTF, Scenes, InglTFBuffers);
+        return FglTFImporterEdStaticMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateStaticMesh(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
 
     case EglTFImportType::SkeletalMesh:
-        return FglTFImporterEdSkeletalMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateSkeletalMesh(InglTFImportOptions, InGlTF, Scenes, InglTFBuffers);
+        return FglTFImporterEdSkeletalMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateSkeletalMesh(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
 
     case EglTFImportType::Actor:
     case EglTFImportType::Level:

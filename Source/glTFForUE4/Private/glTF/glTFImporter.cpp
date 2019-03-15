@@ -3,7 +3,7 @@
 #include "glTFForUE4PrivatePCH.h"
 #include "glTF/glTFImporter.h"
 
-#include "glTF/glTFImportOptions.h"
+#include "glTF/glTFImporterOptions.h"
 
 #include "Misc/Base64.h"
 #include "Misc/SecureHash.h"
@@ -802,7 +802,7 @@ FglTFImporter& FglTFImporter::Set(UClass* InClass, UObject* InParent, FName InNa
     return *this;
 }
 
-UObject* FglTFImporter::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers) const
+UObject* FglTFImporter::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers) const
 {
     if (!InGlTF)
     {
@@ -816,9 +816,9 @@ UObject* FglTFImporter::Create(const TWeakPtr<FglTFImportOptions>& InglTFImportO
         return nullptr;
     }
 
-    TSharedPtr<FglTFImportOptions> glTFImportOptions = InglTFImportOptions.Pin();
+    TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
 
-    const FString FolderPathInOS = FPaths::GetPath(glTFImportOptions->FilePathInOS);
+    const FString FolderPathInOS = FPaths::GetPath(glTFImporterOptions->FilePathInOS);
     FglTFBuffers glTFBuffers;
     glTFBuffers.Cache(FolderPathInOS, InGlTF);
 

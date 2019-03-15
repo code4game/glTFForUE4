@@ -3,7 +3,7 @@
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTF/glTFImporterEdTexture.h"
 
-#include "glTF/glTFImportOptions.h"
+#include "glTF/glTFImporterOptions.h"
 
 #if (ENGINE_MINOR_VERSION < 18)
 #include "ImageWrapper.h"
@@ -33,7 +33,7 @@ FglTFImporterEdTexture::~FglTFImporterEdTexture()
     //
 }
 
-UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImportOptions>& InglTFImportOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STexture>& InglTFTexture, const FglTFBuffers& InBuffers, const FString& InTextureName, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
+UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STexture>& InglTFTexture, const FglTFBuffers& InBuffers, const FString& InTextureName, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
 {
     if (!InglTF || !InglTFTexture || !(InglTFTexture->source)) return nullptr;
     int32 ImageIndex = (int32)(*(InglTFTexture->source));
