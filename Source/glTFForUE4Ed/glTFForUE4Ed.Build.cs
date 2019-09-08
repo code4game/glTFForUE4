@@ -4,7 +4,7 @@ using UnrealBuildTool;
 
 public class glTFForUE4Ed : ModuleRules
 {
-    public glTFForUE4Ed(TargetInfo Target)
+    public glTFForUE4Ed(ReadOnlyTargetRules Target) : base(Target)
     {
         PublicIncludePaths.AddRange(new [] {
                 "glTFForUE4Ed/Public"
@@ -50,17 +50,16 @@ public class glTFForUE4Ed : ModuleRules
             if ((Target.Platform == UnrealTargetPlatform.Win32) || (Target.Platform == UnrealTargetPlatform.Win64))
             {
                 string PlatformName = "";
-                switch (Target.Platform)
+                if (Target.Platform == UnrealTargetPlatform.Win32)
                 {
-                case UnrealTargetPlatform.Win32:
                     PlatformName = "win32";
-                    break;
-                case UnrealTargetPlatform.Win64:
+                }
+                else if(Target.Platform == UnrealTargetPlatform.Win64)
+                { 
                     PlatformName = "win64";
-                    break;
                 }
 
-                string VSName = "vs" + WindowsPlatform.GetVisualStudioCompilerVersionName();
+                string VSName = "vs" + Target.WindowsPlatform.GetVisualStudioCompilerVersionName();
 
                 LibPath = System.IO.Path.Combine(glTFPath, "lib", PlatformName, VSName);
 
@@ -101,17 +100,17 @@ public class glTFForUE4Ed : ModuleRules
             if ((Target.Platform == UnrealTargetPlatform.Win32) || (Target.Platform == UnrealTargetPlatform.Win64))
             {
                 string PlatformName = "";
-                switch (Target.Platform)
+                if (Target.Platform == UnrealTargetPlatform.Win32)
                 {
-                case UnrealTargetPlatform.Win32:
                     PlatformName = "win32";
-                    break;
-                case UnrealTargetPlatform.Win64:
+                }
+                else if (Target.Platform == UnrealTargetPlatform.Win64)
+                {
                     PlatformName = "win64";
-                    break;
                 }
 
-                string VSName = "vs" + WindowsPlatform.GetVisualStudioCompilerVersionName();
+
+                string VSName = "vs" + Target.WindowsPlatform.GetVisualStudioCompilerVersionName();
 
                 LibPath = System.IO.Path.Combine(DracoPath, "lib", PlatformName, VSName);
 
