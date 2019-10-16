@@ -468,8 +468,10 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     ImportedResource->LODModels.Empty();
 #if ENGINE_MINOR_VERSION < 19
     new(ImportedResource->LODModels)FStaticLODModel();
-#else
+#elif ENGINE_MINOR_VERSION < 21
     new(ImportedResource->LODModels)FSkeletalMeshLODModel();
+#else
+    ImportedResource->LODModels.Add(new FSkeletalMeshLODModel);
 #endif
 
 #if ENGINE_MINOR_VERSION < 20
