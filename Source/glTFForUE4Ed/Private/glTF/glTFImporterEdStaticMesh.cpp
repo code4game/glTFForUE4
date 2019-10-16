@@ -85,10 +85,16 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
 
     StaticMesh->PreEditChange(nullptr);
 
-    StaticMesh->SourceModels.Empty();
-    new(StaticMesh->SourceModels) FStaticMeshSourceModel();
+#if ENGINE_MINOR_VERSION < 23
+    TArray<FStaticMeshSourceModel>& StaticMeshSourceModels = StaticMesh->SourceModels;
+#else
+    TArray<FStaticMeshSourceModel>& StaticMeshSourceModels = StaticMesh->GetSourceModels();
+#endif
 
-    FStaticMeshSourceModel& SourceModel = StaticMesh->SourceModels[0];
+    StaticMeshSourceModels.Empty();
+    new(StaticMeshSourceModels)FStaticMeshSourceModel();
+
+    FStaticMeshSourceModel& SourceModel = StaticMeshSourceModels[0];
     SourceModel.BuildSettings.bUseMikkTSpace = glTFImporterOptions->bUseMikkTSpace;
 
     StaticMesh->LightingGuid = FGuid::NewGuid();
@@ -157,6 +163,12 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
             }
         }
 
+#if ENGINE_MINOR_VERSION < 23
+        FMeshSectionInfoMap& StaticMeshSectionInfoMap = StaticMesh->SectionInfoMap;
+#else
+        FMeshSectionInfoMap& StaticMeshSectionInfoMap = StaticMesh->GetSectionInfoMap();
+#endif
+
         TSharedPtr<FglTFImporterEdMaterial> glTFImporterEdMaterial = FglTFImporterEdMaterial::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext);
         FMeshSectionInfoMap NewMap;
         static UMaterial* DefaultMaterial = UMaterial::GetDefaultMaterial(MD_Surface);
@@ -174,7 +186,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
                 NewMaterial = DefaultMaterial;
             }
 
-            FMeshSectionInfo Info = StaticMesh->SectionInfoMap.Get(0, i);
+            FMeshSectionInfo Info = StaticMeshSectionInfoMap.Get(0, i);
 
 #if (ENGINE_MINOR_VERSION < 14)
             int32 Index = StaticMesh->Materials.Add(NewMaterial);
@@ -184,8 +196,8 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
             Info.MaterialIndex = Index;
             NewMap.Set(0, i, Info);
         }
-        StaticMesh->SectionInfoMap.Clear();
-        StaticMesh->SectionInfoMap.CopyFrom(NewMap);
+        StaticMeshSectionInfoMap.Clear();
+        StaticMeshSectionInfoMap.CopyFrom(NewMap);
 
         if (StaticMesh->AssetImportData)
         {
