@@ -21,19 +21,9 @@
 
 | UE4 | Status | Download |
 |:---:|:------:|:--------:|
-| [![Support UE4.10](https://img.shields.io/badge/ue-4%2E10-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) | |
-| [![Support UE4.11](https://img.shields.io/badge/ue-4%2E11-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) | |
-| [![Support UE4.12](https://img.shields.io/badge/ue-4%2E12-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) | |
-| [![Support UE4.13](https://img.shields.io/badge/ue-4%2E13-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) | |
-| [![Support UE4.14](https://img.shields.io/badge/ue-4%2E14-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) | |
-| [![Support UE4.15](https://img.shields.io/badge/ue-4%2E15-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) | |
-| [![Support UE4.16](https://img.shields.io/badge/ue-4%2E16-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) | |
-| [![Support UE4.17](https://img.shields.io/badge/ue-4%2E17-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) | |
-| [![Support UE4.18](https://img.shields.io/badge/ue-4%2E18-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) | |
-| [![Support UE4.19](https://img.shields.io/badge/ue-4%2E19-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) | [![Download from itch.io](https://img.shields.io/badge/from-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
-| [![Support UE4.20](https://img.shields.io/badge/ue-4%2E20-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) | [![Download from itch.io](https://img.shields.io/badge/from-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
-| [![Support UE4.21](https://img.shields.io/badge/ue-4%2E21-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) | [![Download from itch.io](https://img.shields.io/badge/from-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
-| [![Support UE4.22](https://img.shields.io/badge/ue-4%2E22-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) | [![Download from itch.io](https://img.shields.io/badge/from-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
+| [![Support UE4.23](https://img.shields.io/badge/ue-4%2E23-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) | [![Download from itch.io](https://img.shields.io/badge/from-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
+| [![Support UE4.24](https://img.shields.io/badge/ue-4%2E24-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) | [![Download from itch.io](https://img.shields.io/badge/from-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
+| [![Support UE4.25](https://img.shields.io/badge/ue-4%2E25-green.svg?style=flat)](#) | [![Build success](https://img.shields.io/badge/build-success-green.svg?style=flat)](#) | [![Download from itch.io](https://img.shields.io/badge/from-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
 
 ## License
 
