@@ -1,4 +1,4 @@
-// Copyright (o) 2016-2018 Code 4 Game <develop@c4g.io>
+// Copyright 2016 - 2020 Code 4 Game <develop@c4g.io>
 
 using UnrealBuildTool;
 
