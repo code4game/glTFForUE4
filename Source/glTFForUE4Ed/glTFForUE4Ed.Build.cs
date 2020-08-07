@@ -1,14 +1,13 @@
-// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
+// Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
 
 using UnrealBuildTool;
 
 public class glTFForUE4Ed : ModuleRules
 {
-    public glTFForUE4Ed(TargetInfo Target)
+    public glTFForUE4Ed(ReadOnlyTargetRules Target) : base(Target)
     {
-        PublicIncludePaths.AddRange(new [] {
-                "glTFForUE4Ed/Public"
-            });
+        PCHUsage = PCHUsageMode.UseSharedPCHs;
+        PrivatePCHHeaderFile = "Private/glTFForUE4EdPrivatePCH.h";
 
         PrivateIncludePaths.AddRange(new [] {
                 "glTFForUE4Ed/Private",
@@ -36,8 +35,6 @@ public class glTFForUE4Ed : ModuleRules
                 "RawMesh",
                 "MeshUtilities",
                 "glTFForUE4",
-                "libgltf_ue4",
-                "libdraco_ue4",
             });
     }
 }

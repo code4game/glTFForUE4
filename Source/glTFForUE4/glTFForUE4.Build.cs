@@ -4,11 +4,10 @@ using UnrealBuildTool;
 
 public class glTFForUE4 : ModuleRules
 {
-    public glTFForUE4(TargetInfo Target)
+    public glTFForUE4(ReadOnlyTargetRules Target) : base(Target)
     {
-        PublicIncludePaths.AddRange(new [] {
-                "glTFForUE4/Public"
-            });
+        PCHUsage = PCHUsageMode.UseSharedPCHs;
+        PrivatePCHHeaderFile = "Private/glTFForUE4PrivatePCH.h";
 
         PrivateIncludePaths.AddRange(new [] {
                 "glTFForUE4/Private",
