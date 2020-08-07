@@ -6,7 +6,11 @@ public class glTFForUE4Ed : ModuleRules
 {
     public glTFForUE4Ed(ReadOnlyTargetRules Target) : base(Target)
     {
+#if UE_4_24_OR_LATER
+        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+#else
         PCHUsage = PCHUsageMode.UseSharedPCHs;
+#endif
         PrivatePCHHeaderFile = "Private/glTFForUE4EdPrivatePCH.h";
 
         PrivateIncludePaths.AddRange(new [] {

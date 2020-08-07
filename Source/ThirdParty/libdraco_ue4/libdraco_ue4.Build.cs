@@ -56,7 +56,6 @@ public class libdraco_ue4 : ModuleRules
         }
 
         PublicIncludePaths.Add(IncludePath);
-        PublicLibraryPaths.Add(LibPath);
         PublicAdditionalLibraries.Add(LibFilePath1);
         PublicAdditionalLibraries.Add(LibFilePath2);
     }
