@@ -8,12 +8,12 @@
 
 #include <libgltf/libgltf.h>
 
-#include "Components.h"
-#include "Engine/Texture.h"
-#if ENGINE_MINOR_VERSION < 13
-#include "Curves/CurveBase.h"
+#include <Components.h>
+#include <Engine/Texture.h>
+#if ENGINE_MINOR_VERSION <= 12
+#include <Curves/CurveBase.h>
 #else
-#include "Curves/RichCurve.h"
+#include <Curves/RichCurve.h>
 #endif
 
 #define GLTF_TRIANGLE_POINTS_NUM            3

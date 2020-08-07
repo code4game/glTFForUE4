@@ -85,7 +85,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
 
     StaticMesh->PreEditChange(nullptr);
 
-#if ENGINE_MINOR_VERSION < 23
+#if ENGINE_MINOR_VERSION <= 22
     TArray<FStaticMeshSourceModel>& StaticMeshSourceModels = StaticMesh->SourceModels;
 #else
     TArray<FStaticMeshSourceModel>& StaticMeshSourceModels = StaticMesh->GetSourceModels();
@@ -163,7 +163,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
             }
         }
 
-#if ENGINE_MINOR_VERSION < 23
+#if ENGINE_MINOR_VERSION <= 22
         FMeshSectionInfoMap& StaticMeshSectionInfoMap = StaticMesh->SectionInfoMap;
 #else
         FMeshSectionInfoMap& StaticMeshSectionInfoMap = StaticMesh->GetSectionInfoMap();
@@ -188,7 +188,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
 
             FMeshSectionInfo Info = StaticMeshSectionInfoMap.Get(0, i);
 
-#if (ENGINE_MINOR_VERSION < 14)
+#if (ENGINE_MINOR_VERSION <= 13)
             int32 Index = StaticMesh->Materials.Add(NewMaterial);
 #else
             int32 Index = StaticMesh->StaticMaterials.Add(NewMaterial);

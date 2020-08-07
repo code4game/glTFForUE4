@@ -5,13 +5,13 @@
 
 #include "glTF/glTFImporterOptions.h"
 
-#if (ENGINE_MINOR_VERSION < 18)
-#include "ImageWrapper.h"
+#if (ENGINE_MINOR_VERSION <= 17)
+#include <ImageWrapper.h>
 #else
-#include "IImageWrapper.h"
-#include "IImageWrapperModule.h"
+#include <IImageWrapper.h>
+#include <IImageWrapperModule.h>
 #endif
-#include "AssetRegistryModule.h"
+#include <AssetRegistryModule.h>
 
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
@@ -57,7 +57,7 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
     UTexture2D* NewTexture = nullptr;
 
     IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
-#if (ENGINE_MINOR_VERSION < 16)
+#if (ENGINE_MINOR_VERSION <= 15)
     IImageWrapperPtr ImageWrappers[7] = {
 #else
     TSharedPtr<IImageWrapper> ImageWrappers[7] = {
@@ -82,7 +82,7 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
         int32 Height = ImageWrapper->GetHeight();
 
         int32 BitDepth = ImageWrapper->GetBitDepth();
-#if (ENGINE_MINOR_VERSION < 18)
+#if (ENGINE_MINOR_VERSION <= 17)
         ERGBFormat::Type ImageFormat = ImageWrapper->GetFormat();
 #else
         ERGBFormat ImageFormat = ImageWrapper->GetFormat();
@@ -144,8 +144,13 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
         }
         NewTexture->SRGB = !InIsNormalmap;
         NewTexture->CompressionSettings = !InIsNormalmap ? TC_Default : TC_Normalmap;
+#if (ENGINE_MINOR_VERSION <= 24)
         const TArray<uint8>* RawData = nullptr;
         if (ImageWrapper->GetRaw(ImageFormat, BitDepth, RawData))
+#else
+        TSharedPtr<TArray64<uint8>> RawData = MakeShared<TArray64<uint8>>();
+        if (ImageWrapper->GetRaw(ImageFormat, BitDepth, *RawData))
+#endif
         {
             uint8* MipData = NewTexture->Source.LockMip(0);
             FMemory::Memcpy(MipData, RawData->GetData(), RawData->Num());

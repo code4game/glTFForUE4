@@ -25,7 +25,7 @@ public class libgltf_ue4 : ModuleRules
                 PlatformName = "win64";
             }
 
-            string VSName = "vs" + Target.WindowsPlatform.GetVisualStudioCompilerVersionName();
+            string VSName = "vs2015";
 
             LibPath = System.IO.Path.Combine(glTFPath, "lib", PlatformName, VSName);
 

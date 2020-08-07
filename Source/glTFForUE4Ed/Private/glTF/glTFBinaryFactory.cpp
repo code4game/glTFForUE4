@@ -5,13 +5,13 @@
 
 #include "glTFImporterEd.h"
 
-#include "Engine/StaticMesh.h"
-#if ENGINE_MINOR_VERSION < 14
-#include "Misc/CoreMisc.h"
+#include <Engine/StaticMesh.h>
+#if ENGINE_MINOR_VERSION <= 13
+#include <Misc/CoreMisc.h>
 #else
-#include "Misc/FileHelper.h"
+#include <Misc/FileHelper.h>
 #endif
-#include "Misc/Paths.h"
+#include <Misc/Paths.h>
 
 #define GLTF_FILE_SIZE_MAX      0x7FFFFFFF
 #define GLTF_ASCII_UINT32(x)    ((((x) & 0xFF000000) >> 24) | (((x) & 0x000000FF) << 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8))
