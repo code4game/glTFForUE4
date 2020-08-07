@@ -4,7 +4,7 @@ using UnrealBuildTool;
 
 public class libdraco_ue4 : ModuleRules
 {
-    public libdraco_ue4(TargetInfo Target)
+    public libdraco_ue4(ReadOnlyTargetRules Target) : base(Target)
     {
         Type = ModuleType.External;
 
@@ -17,17 +17,16 @@ public class libdraco_ue4 : ModuleRules
         if ((Target.Platform == UnrealTargetPlatform.Win32) || (Target.Platform == UnrealTargetPlatform.Win64))
         {
             string PlatformName = "";
-            switch (Target.Platform)
+            if (Target.Platform == UnrealTargetPlatform.Win32)
             {
-            case UnrealTargetPlatform.Win32:
                 PlatformName = "win32";
-                break;
-            case UnrealTargetPlatform.Win64:
+            }
+            else if (Target.Platform == UnrealTargetPlatform.Win64)
+            {
                 PlatformName = "win64";
-                break;
             }
 
-            string VSName = "vs" + WindowsPlatform.GetVisualStudioCompilerVersionName();
+            string VSName = "vs" + Target.WindowsPlatform.GetVisualStudioCompilerVersionName();
 
             LibPath = System.IO.Path.Combine(DracoPath, "lib", PlatformName, VSName);
 
