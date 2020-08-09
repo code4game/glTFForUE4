@@ -1073,7 +1073,7 @@ namespace glTFImporter
         OutDataArray.Empty();
 
         FString FilePath;
-        if (InAccessor->type == TEXT("SCALAR"))
+        if (InAccessor->type == TCHAR_TO_WCHAR(TEXT("SCALAR")))
         {
             TArray<TAccessorTypeScale<TAccessorDataType>> AccessorDataArray;
             if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
@@ -1089,7 +1089,7 @@ namespace glTFImporter
                 return false;
             }
         }
-        else if (InAccessor->type == TEXT("VEC2"))
+        else if (InAccessor->type == TCHAR_TO_WCHAR(TEXT("VEC2")))
         {
             TArray<TAccessorTypeVec2<TAccessorDataType, bSwapYZ, bInverseX>> AccessorDataArray;
             if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
@@ -1105,7 +1105,7 @@ namespace glTFImporter
                 return false;
             }
         }
-        else if (InAccessor->type == TEXT("VEC3"))
+        else if (InAccessor->type == TCHAR_TO_WCHAR(TEXT("VEC3")))
         {
             TArray<TAccessorTypeVec3<TAccessorDataType, bSwapYZ, bInverseX>> AccessorDataArray;
             if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
@@ -1121,7 +1121,7 @@ namespace glTFImporter
                 return false;
             }
         }
-        else if (InAccessor->type == TEXT("VEC4"))
+        else if (InAccessor->type == TCHAR_TO_WCHAR(TEXT("VEC4")))
         {
             TArray<TAccessorTypeVec4<TAccessorDataType, bSwapYZ, bInverseX>> AccessorDataArray;
             if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
@@ -1137,7 +1137,7 @@ namespace glTFImporter
                 return false;
             }
         }
-        else if (InAccessor->type == TEXT("MAT4"))
+        else if (InAccessor->type == TCHAR_TO_WCHAR(TEXT("MAT4")))
         {
             TArray<TAccessorTypeMat4x4<TAccessorDataType, bSwapYZ, bInverseX>> AccessorDataArray;
             if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
