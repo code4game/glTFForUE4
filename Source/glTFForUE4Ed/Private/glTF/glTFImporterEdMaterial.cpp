@@ -1,4 +1,4 @@
-// Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
+// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTF/glTFImporterEdMaterial.h"
@@ -66,9 +66,10 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
     const libgltf::SKHR_materials_pbrSpecularGlossinessglTFextension* ExternalMaterialPBRSpecularGlossiness = nullptr;
     {
         const std::shared_ptr<libgltf::SExtension>& Extensions = glTFMaterial->extensions;
-        if (!!Extensions && (Extensions->properties.find(TEXT("KHR_materials_pbrSpecularGlossiness")) != Extensions->properties.end()))
+        const GLTFString extension_property = GLTF_TCHAR_TO_GLTFSTRING(TEXT("KHR_materials_pbrSpecularGlossiness"));
+        if (!!Extensions && (Extensions->properties.find(extension_property) != Extensions->properties.end()))
         {
-            ExternalMaterialPBRSpecularGlossiness = (const libgltf::SKHR_materials_pbrSpecularGlossinessglTFextension*)Extensions->properties[TEXT("KHR_materials_pbrSpecularGlossiness")].get();
+            ExternalMaterialPBRSpecularGlossiness = (const libgltf::SKHR_materials_pbrSpecularGlossinessglTFextension*)Extensions->properties[extension_property].get();
         }
     }
 
@@ -114,7 +115,7 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
     {
         TArray<FName> ParameterNames;
         TArray<FGuid> ParameterGuids;
-#if (ENGINE_MINOR_VERSION < 19)
+#if (ENGINE_MINOR_VERSION <= 18)
         NewMaterial->GetAllScalarParameterNames(ParameterNames, ParameterGuids);
 #else
         TArray<FMaterialParameterInfo> ParameterInfos;
@@ -136,7 +137,7 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
     {
         TArray<FName> ParameterNames;
         TArray<FGuid> ParameterGuids;
-#if (ENGINE_MINOR_VERSION < 19)
+#if (ENGINE_MINOR_VERSION <= 18)
         NewMaterial->GetAllVectorParameterNames(ParameterNames, ParameterGuids);
 #else
         TArray<FMaterialParameterInfo> ParameterInfos;
@@ -158,7 +159,7 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
     {
         TArray<FName> ParameterNames;
         TArray<FGuid> ParameterGuids;
-#if (ENGINE_MINOR_VERSION < 19)
+#if (ENGINE_MINOR_VERSION <= 18)
         NewMaterial->GetAllTextureParameterNames(ParameterNames, ParameterGuids);
 #else
         TArray<FMaterialParameterInfo> ParameterInfos;
@@ -315,7 +316,7 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
 
     {
         /// Setup the blend mode
-        FString AlphaMode(glTFMaterial->alphaMode.c_str());
+        const FString AlphaMode = GLTF_GLTFSTRING_TO_TCHAR(glTFMaterial->alphaMode.c_str());
         if (AlphaMode.Equals(TEXT("OPAQUE"), ESearchCase::IgnoreCase))
         {
             NewMaterial->BlendMode = BLEND_Opaque;

@@ -1,4 +1,4 @@
-// Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
+// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTF/glTFImporterEdAnimationSequence.h"
@@ -6,11 +6,11 @@
 #include "glTF/glTFImporterOptions.h"
 #include "glTF/glTFImporter.h"
 
-#include "AssetRegistryModule.h"
+#include <AssetRegistryModule.h>
 
-#if ENGINE_MINOR_VERSION < 13
+#if ENGINE_MINOR_VERSION <= 12
 #else
-#include "Animation/AnimSequence.h"
+#include <Animation/AnimSequence.h>
 #endif
 
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
@@ -111,12 +111,12 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
             }
 
             FName CurveName = FName(*(InNodeIndexToBoneNames[glTFAnimationSequenceData.NodeIndex]));
-#if ENGINE_MINOR_VERSION < 14
+#if ENGINE_MINOR_VERSION <= 13
             FSmartNameMapping::UID CurveUID = FSmartNameMapping::MaxUID;
 #else
             SmartName::UID_Type CurveUID = SmartName::MaxUID;
 #endif
-#if ENGINE_MINOR_VERSION < 11
+#if ENGINE_MINOR_VERSION <= 10
             FSmartNameMapping* NameMapping = InSkeleton->SmartNames.GetContainer(USkeleton::AnimTrackCurveMappingName);
             if (NameMapping == nullptr)
             {
@@ -130,7 +130,7 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
                 //WARN:
                 continue;
             }
-#elif ENGINE_MINOR_VERSION < 13
+#elif ENGINE_MINOR_VERSION <= 12
             const FSmartNameMapping* NameMapping = InSkeleton->GetOrAddSmartNameContainer(USkeleton::AnimTrackCurveMappingName);
             check(NameMapping);
             if (!InSkeleton->AddSmartNameAndModify(USkeleton::AnimTrackCurveMappingName, CurveName, CurveUID))
@@ -152,7 +152,7 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
             {
                 AnimSequence->AddKeyToSequence(KeyData.Time, CurveName, KeyData.Transform);
 
-#if ENGINE_MINOR_VERSION < 16
+#if ENGINE_MINOR_VERSION <= 15
                 FTransformCurve* TransformCurve = static_cast<FTransformCurve*>(AnimSequence->RawCurveData.GetCurveData(CurveUID, FRawCurveTracks::TransformType));
 #else
                 FTransformCurve* TransformCurve = static_cast<FTransformCurve*>(AnimSequence->RawCurveData.GetCurveData(CurveUID, ERawCurveTrackTypes::RCT_Transform));
@@ -179,7 +179,7 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
     }
 
     AnimSequence->SequenceLength = SequenceLength;
-#if ENGINE_MINOR_VERSION < 22
+#if ENGINE_MINOR_VERSION <= 21
     AnimSequence->NumFrames = NumFrames;
 #else
     AnimSequence->SetRawNumberOfFrame(NumFrames);

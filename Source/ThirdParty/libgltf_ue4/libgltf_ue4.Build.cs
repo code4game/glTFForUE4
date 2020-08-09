@@ -1,10 +1,10 @@
-// Copyright (o) 2016-2018 Code 4 Game <develop@c4g.io>
+// Copyright 2016 - 2020 Code 4 Game <develop@c4g.io>
 
 using UnrealBuildTool;
 
 public class libgltf_ue4 : ModuleRules
 {
-    public libgltf_ue4(TargetInfo Target)
+    public libgltf_ue4(ReadOnlyTargetRules Target) : base(Target)
     {
         Type = ModuleType.External;
 
@@ -16,17 +16,16 @@ public class libgltf_ue4 : ModuleRules
         if ((Target.Platform == UnrealTargetPlatform.Win32) || (Target.Platform == UnrealTargetPlatform.Win64))
         {
             string PlatformName = "";
-            switch (Target.Platform)
+            if (Target.Platform == UnrealTargetPlatform.Win32)
             {
-            case UnrealTargetPlatform.Win32:
                 PlatformName = "win32";
-                break;
-            case UnrealTargetPlatform.Win64:
+            }
+            else if (Target.Platform == UnrealTargetPlatform.Win64)
+            {
                 PlatformName = "win64";
-                break;
             }
 
-            string VSName = "vs" + WindowsPlatform.GetVisualStudioCompilerVersionName();
+            string VSName = "vs2015";
 
             LibPath = System.IO.Path.Combine(glTFPath, "lib", PlatformName, VSName);
 
@@ -52,7 +51,7 @@ public class libgltf_ue4 : ModuleRules
         }
 
         PublicIncludePaths.Add(IncludePath);
-        PublicLibraryPaths.Add(LibPath);
         PublicAdditionalLibraries.Add(LibFilePath);
+        PublicDefinitions.Add("UNICODE");
     }
 }

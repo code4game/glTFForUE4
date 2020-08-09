@@ -1,4 +1,4 @@
-// Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
+// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
 
 #pragma once
 
@@ -8,16 +8,24 @@
 
 #include <libgltf/libgltf.h>
 
-#include "Components.h"
-#include "Engine/Texture.h"
-#if ENGINE_MINOR_VERSION < 13
-#include "Curves/CurveBase.h"
+#include <Components.h>
+#include <Engine/Texture.h>
+#if ENGINE_MINOR_VERSION <= 12
+#include <Curves/CurveBase.h>
 #else
-#include "Curves/RichCurve.h"
+#include <Curves/RichCurve.h>
 #endif
 
 #define GLTF_TRIANGLE_POINTS_NUM            3
 #define GLTF_JOINT_LAYERS_NUM_MAX           3
+
+#if defined(UNICODE)
+#define GLTF_TCHAR_TO_GLTFSTRING(a)         TCHAR_TO_WCHAR(a)
+#define GLTF_GLTFSTRING_TO_TCHAR(a)         WCHAR_TO_TCHAR(a)
+#else
+#define GLTF_TCHAR_TO_GLTFSTRING(a)         (a)
+#define GLTF_GLTFSTRING_TO_TCHAR(a)         (a)
+#endif
 
 namespace glTFForUE4
 {

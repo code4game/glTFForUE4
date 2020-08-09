@@ -1,4 +1,4 @@
-// Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
+// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTFFactory.h"
@@ -78,7 +78,11 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
 
     /// Parse and check the buffer
     std::shared_ptr<libgltf::SGlTF> GlTF;
-    std::wstring GlTFString = *InglTFJson;
+#if defined(UNICODE)
+    const GLTFString GlTFString = TCHAR_TO_WCHAR(*InglTFJson);
+#else
+    const GLTFString GlTFString = *InglTFJson;
+#endif
     if (!(GlTF << GlTFString))
     {
         InWarn->Log(ELogVerbosity::Error, FText::Format(NSLOCTEXT("glTFForUE4Ed", "FailedToParseTheglTFFile", "Failed to parse the glTF file {0}"), FText::FromName(InName)).ToString());

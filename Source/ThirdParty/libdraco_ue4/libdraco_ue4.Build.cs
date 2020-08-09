@@ -1,10 +1,10 @@
-// Copyright (o) 2016-2018 Code 4 Game <develop@c4g.io>
+// Copyright 2016 - 2020 Code 4 Game <develop@c4g.io>
 
 using UnrealBuildTool;
 
 public class libdraco_ue4 : ModuleRules
 {
-    public libdraco_ue4(TargetInfo Target)
+    public libdraco_ue4(ReadOnlyTargetRules Target) : base(Target)
     {
         Type = ModuleType.External;
 
@@ -17,17 +17,16 @@ public class libdraco_ue4 : ModuleRules
         if ((Target.Platform == UnrealTargetPlatform.Win32) || (Target.Platform == UnrealTargetPlatform.Win64))
         {
             string PlatformName = "";
-            switch (Target.Platform)
+            if (Target.Platform == UnrealTargetPlatform.Win32)
             {
-            case UnrealTargetPlatform.Win32:
                 PlatformName = "win32";
-                break;
-            case UnrealTargetPlatform.Win64:
+            }
+            else if (Target.Platform == UnrealTargetPlatform.Win64)
+            {
                 PlatformName = "win64";
-                break;
             }
 
-            string VSName = "vs" + WindowsPlatform.GetVisualStudioCompilerVersionName();
+            string VSName = "vs2015";
 
             LibPath = System.IO.Path.Combine(DracoPath, "lib", PlatformName, VSName);
 
@@ -57,7 +56,6 @@ public class libdraco_ue4 : ModuleRules
         }
 
         PublicIncludePaths.Add(IncludePath);
-        PublicLibraryPaths.Add(LibPath);
         PublicAdditionalLibraries.Add(LibFilePath1);
         PublicAdditionalLibraries.Add(LibFilePath2);
     }

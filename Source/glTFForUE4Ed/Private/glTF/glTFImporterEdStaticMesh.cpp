@@ -1,4 +1,4 @@
-// Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
+// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTF/glTFImporterEdStaticMesh.h"
@@ -85,7 +85,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
 
     StaticMesh->PreEditChange(nullptr);
 
-#if ENGINE_MINOR_VERSION < 23
+#if ENGINE_MINOR_VERSION <= 22
     TArray<FStaticMeshSourceModel>& StaticMeshSourceModels = StaticMesh->SourceModels;
 #else
     TArray<FStaticMeshSourceModel>& StaticMeshSourceModels = StaticMesh->GetSourceModels();
@@ -163,7 +163,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
             }
         }
 
-#if ENGINE_MINOR_VERSION < 23
+#if ENGINE_MINOR_VERSION <= 22
         FMeshSectionInfoMap& StaticMeshSectionInfoMap = StaticMesh->SectionInfoMap;
 #else
         FMeshSectionInfoMap& StaticMeshSectionInfoMap = StaticMesh->GetSectionInfoMap();
@@ -188,7 +188,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
 
             FMeshSectionInfo Info = StaticMeshSectionInfoMap.Get(0, i);
 
-#if (ENGINE_MINOR_VERSION < 14)
+#if (ENGINE_MINOR_VERSION <= 13)
             int32 Index = StaticMesh->Materials.Add(NewMaterial);
 #else
             int32 Index = StaticMesh->StaticMaterials.Add(NewMaterial);
@@ -277,7 +277,7 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const std::shared_ptr<libgltf::S
 {
     if (!InMesh) return false;
 
-    FString MeshName = InMesh->name.c_str();
+    const FString MeshName = GLTF_GLTFSTRING_TO_TCHAR(InMesh->name.c_str());
     for (int32 i = 0; i < static_cast<int32>(InMesh->primitives.size()); ++i)
     {
         const auto& Primitive = InMesh->primitives[i];

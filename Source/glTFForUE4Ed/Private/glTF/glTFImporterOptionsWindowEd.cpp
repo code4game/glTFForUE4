@@ -1,4 +1,4 @@
-// Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
+// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTF/glTFImporterOptionsWindowEd.h"
@@ -6,12 +6,11 @@
 #include "glTF/glTFImporterOptions.h"
 #include "glTF/glTFImporterEd.h"
 
-//#include "SlateBasics.h"
-#include "Interfaces/IMainFrameModule.h"
-#include "IDocumentation.h"
-#include "PropertyEditorModule.h"
-#include "IDetailsView.h"
-#include "EditorStyle.h"
+#include <SlateBasics.h>
+#include <Interfaces/IMainFrameModule.h>
+#include <IDocumentation.h>
+#include <PropertyEditorModule.h>
+#include <IDetailsView.h>
 
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 

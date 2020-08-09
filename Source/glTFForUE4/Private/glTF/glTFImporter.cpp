@@ -1,25 +1,25 @@
-// Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
+// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4PrivatePCH.h"
 #include "glTF/glTFImporter.h"
 
 #include "glTF/glTFImporterOptions.h"
 
-#include "Misc/Base64.h"
-#include "Misc/SecureHash.h"
-#include "Misc/FeedbackContext.h"
-#if ENGINE_MINOR_VERSION < 14
-#include "Misc/CoreMisc.h"
+#include <Misc/Base64.h>
+#include <Misc/SecureHash.h>
+#include <Misc/FeedbackContext.h>
+#if ENGINE_MINOR_VERSION <= 13
+#include <Misc/CoreMisc.h>
 #else
-#include "Misc/FileHelper.h"
+#include <Misc/FileHelper.h>
 #endif
-#include "Misc/Paths.h"
+#include <Misc/Paths.h>
 
 #if defined(ERROR)
 #define DRACO_MACRO_TEMP_ERROR      ERROR
 #undef ERROR
 #endif
-#include "draco/compression/decode.h"
+#include <draco/compression/decode.h>
 #if defined(DRACO_MACRO_TEMP_ERROR)
 #define ERROR           DRACO_MACRO_TEMP_ERROR
 #undef DRACO_MACRO_TEMP_ERROR
@@ -180,7 +180,7 @@ bool FglTFBuffers::CacheImages(uint32 InIndex, const FString& InFileFolderRoot, 
 {
     if (!InImage) return false;
     IndexToIndex[EglTFBufferSource::Images].Add(InIndex, Datas.Num());
-    Datas.Add(MakeShareable(new FglTFBufferData(InFileFolderRoot, InImage->uri.c_str())));
+    Datas.Add(MakeShareable(new FglTFBufferData(InFileFolderRoot, GLTF_GLTFSTRING_TO_TCHAR(InImage->uri.c_str()))));
     return true;
 }
 
@@ -188,7 +188,7 @@ bool FglTFBuffers::CacheBuffers(uint32 InIndex, const FString& InFileFolderRoot,
 {
     if (!InBuffer) return false;
     IndexToIndex[EglTFBufferSource::Buffers].Add(InIndex, Datas.Num());
-    Datas.Add(MakeShareable(new FglTFBufferData(InFileFolderRoot, InBuffer->uri.c_str())));
+    Datas.Add(MakeShareable(new FglTFBufferData(InFileFolderRoot, GLTF_GLTFSTRING_TO_TCHAR(InBuffer->uri.c_str()))));
     return true;
 }
 
@@ -257,7 +257,8 @@ public:
         typedef std::map<GLTFString, std::shared_ptr<libgltf::SGlTFId>> TAttributes;
 
         {
-            TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(TEXT("POSITION"));
+            const GLTFString extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(TEXT("POSITION"));
+            TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(extension_attribute);
             if (AttributeCIt != InExtensionDraco->attributes.cend())
             {
                 int32_t UniqueId = *(AttributeCIt->second);
@@ -273,7 +274,8 @@ public:
         }
 
         {
-            TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(TEXT("NORMAL"));
+            const GLTFString extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(TEXT("NORMAL"));
+            TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(extension_attribute);
             if (AttributeCIt != InExtensionDraco->attributes.cend())
             {
                 int32_t UniqueId = *(AttributeCIt->second);
@@ -289,7 +291,8 @@ public:
         }
 
         {
-            TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(TEXT("COLOR"));
+            const GLTFString extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(TEXT("COLOR"));
+            TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(extension_attribute);
             if (AttributeCIt != InExtensionDraco->attributes.cend())
             {
                 int32_t UniqueId = *(AttributeCIt->second);
@@ -305,12 +308,12 @@ public:
         }
 
         {
-            wchar_t AttributeName[NAME_SIZE];
             for (int32 i = 0; i < TexCoordNumber; ++i)
             {
-                std::swprintf(AttributeName, NAME_SIZE, TEXT("TEXCOORD_%d\0"), i);
+                const FString ExtensionAttribute = FString::Printf(TEXT("TEXCOORD_%d"), i);
+                const GLTFString extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(*ExtensionAttribute);
 
-                TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(AttributeName);
+                TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(extension_attribute);
                 if (AttributeCIt != InExtensionDraco->attributes.cend())
                 {
                     int32_t UniqueId = *(AttributeCIt->second);
@@ -327,12 +330,12 @@ public:
         }
 
         {
-            wchar_t AttributeName[NAME_SIZE];
             for (int32 i = 0; i < JointNumber; ++i)
             {
-                std::swprintf(AttributeName, NAME_SIZE, TEXT("JOINTS_%d\0"), i);
+                const FString ExtensionAttribute = FString::Printf(TEXT("JOINTS_%d"), i);
+                const GLTFString extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(*ExtensionAttribute);
 
-                TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(AttributeName);
+                TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(extension_attribute);
                 if (AttributeCIt != InExtensionDraco->attributes.cend())
                 {
                     int32_t UniqueId = *(AttributeCIt->second);
@@ -345,12 +348,12 @@ public:
         }
 
         {
-            wchar_t AttributeName[NAME_SIZE];
             for (int32 i = 0; i < JointNumber; ++i)
             {
-                std::swprintf(AttributeName, NAME_SIZE, TEXT("WEIGHTS_%d\0"), i);
+                const FString ExtensionAttribute = FString::Printf(TEXT("WEIGHTS_%d"), i);
+                const GLTFString extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(*ExtensionAttribute);
 
-                TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(AttributeName);
+                TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(extension_attribute);
                 if (AttributeCIt != InExtensionDraco->attributes.cend())
                 {
                     int32_t UniqueId = *(AttributeCIt->second);
@@ -806,13 +809,14 @@ UObject* FglTFImporter::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImpor
 {
     if (!InGlTF)
     {
-        UE_LOG(LogglTFForUE4, Error, TEXT("Invalid InGlTF!"));
+        UE_LOG(LogglTFForUE4, Error, TEXT("Invalid glTF!"));
         return nullptr;
     }
 
-    if (!InGlTF->asset || InGlTF->asset->version != TEXT("2.0"))
+    if (!InGlTF->asset || InGlTF->asset->version != GLTF_TCHAR_TO_GLTFSTRING(TEXT("2.0")))
     {
-        UE_LOG(LogglTFForUE4, Error, TEXT("Invalid version: %s!"), !(InGlTF->asset) ? TEXT("none") : InGlTF->asset->version.c_str());
+        const FString AssetVersion = (InGlTF->asset != nullptr) ? GLTF_GLTFSTRING_TO_TCHAR(InGlTF->asset->version.c_str()) : TEXT("none");
+        UE_LOG(LogglTFForUE4, Error, TEXT("Invalid version: %s!"), *AssetVersion);
         return nullptr;
     }
 
@@ -1066,14 +1070,18 @@ namespace glTFImporter
     template<typename TAccessorDataType, typename TEngineDataType, bool bSwapYZ, bool bInverseX>
     bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBuffers, const std::shared_ptr<libgltf::SAccessor>& InAccessor, TArray<TEngineDataType>& OutDataArray)
     {
-        if (!InAccessor || !InAccessor->bufferView) return false;
+        if (!InAccessor || !InAccessor->bufferView)
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Invalid accessor!"));
+            return false;
+        }
 
         int32 BufferViewIndex = (*InAccessor->bufferView);
 
         OutDataArray.Empty();
 
         FString FilePath;
-        if (InAccessor->type == TEXT("SCALAR"))
+        if (InAccessor->type == GLTF_TCHAR_TO_GLTFSTRING(TEXT("SCALAR")))
         {
             TArray<TAccessorTypeScale<TAccessorDataType>> AccessorDataArray;
             if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
@@ -1089,7 +1097,7 @@ namespace glTFImporter
                 return false;
             }
         }
-        else if (InAccessor->type == TEXT("VEC2"))
+        else if (InAccessor->type == GLTF_TCHAR_TO_GLTFSTRING(TEXT("VEC2")))
         {
             TArray<TAccessorTypeVec2<TAccessorDataType, bSwapYZ, bInverseX>> AccessorDataArray;
             if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
@@ -1105,7 +1113,7 @@ namespace glTFImporter
                 return false;
             }
         }
-        else if (InAccessor->type == TEXT("VEC3"))
+        else if (InAccessor->type == GLTF_TCHAR_TO_GLTFSTRING(TEXT("VEC3")))
         {
             TArray<TAccessorTypeVec3<TAccessorDataType, bSwapYZ, bInverseX>> AccessorDataArray;
             if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
@@ -1121,7 +1129,7 @@ namespace glTFImporter
                 return false;
             }
         }
-        else if (InAccessor->type == TEXT("VEC4"))
+        else if (InAccessor->type == GLTF_TCHAR_TO_GLTFSTRING(TEXT("VEC4")))
         {
             TArray<TAccessorTypeVec4<TAccessorDataType, bSwapYZ, bInverseX>> AccessorDataArray;
             if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
@@ -1137,7 +1145,7 @@ namespace glTFImporter
                 return false;
             }
         }
-        else if (InAccessor->type == TEXT("MAT4"))
+        else if (InAccessor->type == GLTF_TCHAR_TO_GLTFSTRING(TEXT("MAT4")))
         {
             TArray<TAccessorTypeMat4x4<TAccessorDataType, bSwapYZ, bInverseX>> AccessorDataArray;
             if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
@@ -1155,7 +1163,8 @@ namespace glTFImporter
         }
         else
         {
-            UE_LOG(LogglTFForUE4, Error, TEXT("Not supports the accessor's type(%s)!"), InAccessor->type.c_str());
+            const FString AccessorType = WCHAR_TO_TCHAR(InAccessor->type.c_str());
+            UE_LOG(LogglTFForUE4, Error, TEXT("Not supports the accessor's type(%s)!"), *AccessorType);
             return false;
         }
         return true;
@@ -1206,9 +1215,10 @@ namespace glTFImporter
     bool GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector>& OutVertexPositions)
     {
         if (!InGlTF || !InMeshPrimitive) return false;
-        if (InMeshPrimitive->attributes.find(TEXT("POSITION")) == InMeshPrimitive->attributes.cend()) return true;
+        const GLTFString get_key = GLTF_TCHAR_TO_GLTFSTRING(TEXT("POSITION"));
+        if (InMeshPrimitive->attributes.find(get_key) == InMeshPrimitive->attributes.cend()) return true;
 
-        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[TEXT("POSITION")])];
+        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[get_key])];
         return GetAccessorData<FVector, bSwapYZ, bInverseX>(InGlTF, InBufferFiles, Accessor, OutVertexPositions);
     }
 
@@ -1216,9 +1226,10 @@ namespace glTFImporter
     bool GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector>& OutVertexNormals)
     {
         if (!InGlTF || !InMeshPrimitive) return false;
-        if (InMeshPrimitive->attributes.find(TEXT("NORMAL")) == InMeshPrimitive->attributes.cend()) return true;
+        const GLTFString get_key = GLTF_TCHAR_TO_GLTFSTRING(TEXT("NORMAL"));
+        if (InMeshPrimitive->attributes.find(get_key) == InMeshPrimitive->attributes.cend()) return true;
 
-        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[TEXT("NORMAL")])];
+        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[get_key])];
         return GetAccessorData<FVector, bSwapYZ, bInverseX>(InGlTF, InBufferFiles, Accessor, OutVertexNormals);
     }
 
@@ -1226,9 +1237,10 @@ namespace glTFImporter
     bool GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector4>& OutVertexTangents)
     {
         if (!InGlTF || !InMeshPrimitive) return false;
-        if (InMeshPrimitive->attributes.find(TEXT("TANGENT")) == InMeshPrimitive->attributes.cend()) return true;
+        const GLTFString get_key = GLTF_TCHAR_TO_GLTFSTRING(TEXT("TANGENT"));
+        if (InMeshPrimitive->attributes.find(get_key) == InMeshPrimitive->attributes.cend()) return true;
 
-        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[TEXT("TANGENT")])];
+        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[get_key])];
         return GetAccessorData<FVector4, bSwapYZ, bInverseX>(InGlTF, InBufferFiles, Accessor, OutVertexTangents);
     }
 
@@ -1237,18 +1249,18 @@ namespace glTFImporter
     {
         if (!InGlTF || !InMeshPrimitive) return false;
 
-        wchar_t texcoord_str[NAME_SIZE];
         for (int32 i = 0; i < TexCoordNumber; ++i)
         {
             OutVertexTexcoords[i].Empty();
 
-            std::swprintf(texcoord_str, NAME_SIZE, TEXT("TEXCOORD_%d\0"), i);
-            if (InMeshPrimitive->attributes.find(texcoord_str) == InMeshPrimitive->attributes.cend())
+            const FString PrimitiveAttribute = FString::Printf(TEXT("TEXCOORD_%d"), i);
+            const GLTFString primitive_attribute = GLTF_TCHAR_TO_GLTFSTRING(*PrimitiveAttribute);
+            if (InMeshPrimitive->attributes.find(primitive_attribute) == InMeshPrimitive->attributes.cend())
             {
                 continue;
             }
 
-            const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[texcoord_str])];
+            const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[primitive_attribute])];
             if (GetAccessorData<FVector2D, false, false>(InGlTF, InBufferFiles, Accessor, OutVertexTexcoords[i]))
             {
                 continue;
@@ -1270,20 +1282,20 @@ namespace glTFImporter
     bool GetJointIndeies(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, int32 InIndex, const FglTFBuffers& InBufferFiles, TArray<FVector4>& OutJointIndeies)
     {
         if (!InGlTF || !InMeshPrimitive) return false;
-        FString JointName = FString::Printf(TEXT("JOINTS_%d"), InIndex);
-        if (InMeshPrimitive->attributes.find(*JointName) == InMeshPrimitive->attributes.cend()) return true;
+        const GLTFString JointName = GLTF_TCHAR_TO_GLTFSTRING(*FString::Printf(TEXT("JOINTS_%d"), InIndex));
+        if (InMeshPrimitive->attributes.find(JointName) == InMeshPrimitive->attributes.cend()) return true;
 
-        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[*JointName])];
+        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[JointName])];
         return GetAccessorData<FVector4, false, false>(InGlTF, InBufferFiles, Accessor, OutJointIndeies);
     }
 
     bool GetJointWeights(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, int32 InIndex, const FglTFBuffers& InBufferFiles, TArray<FVector4>& OutJointWeights)
     {
         if (!InGlTF || !InMeshPrimitive) return false;
-        FString JointName = FString::Printf(TEXT("WEIGHTS_%d"), InIndex);
-        if (InMeshPrimitive->attributes.find(*JointName) == InMeshPrimitive->attributes.cend()) return true;
+        const GLTFString JointName = GLTF_TCHAR_TO_GLTFSTRING(*FString::Printf(TEXT("WEIGHTS_%d"), InIndex));
+        if (InMeshPrimitive->attributes.find(JointName) == InMeshPrimitive->attributes.cend()) return true;
 
-        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[*JointName])];
+        const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[JointName])];
         return GetAccessorData<FVector4, false, false>(InGlTF, InBufferFiles, Accessor, OutJointWeights);
     }
 
@@ -1310,9 +1322,10 @@ namespace glTFImporter
         const libgltf::SKHR_draco_mesh_compressionextension* ExtensionDraco = nullptr;
         {
             const std::shared_ptr<libgltf::SExtension>& Extensions = InMeshPrimitive->extensions;
-            if (!!Extensions && (Extensions->properties.find(TEXT("KHR_draco_mesh_compression")) != Extensions->properties.end()))
+            const GLTFString extension_property = GLTF_TCHAR_TO_GLTFSTRING(TEXT("KHR_draco_mesh_compression"));
+            if (!!Extensions && (Extensions->properties.find(extension_property) != Extensions->properties.end()))
             {
-                ExtensionDraco = (const libgltf::SKHR_draco_mesh_compressionextension*)Extensions->properties[TEXT("KHR_draco_mesh_compression")].get();
+                ExtensionDraco = (const libgltf::SKHR_draco_mesh_compressionextension*)Extensions->properties[extension_property].get();
             }
         }
 
@@ -1432,12 +1445,13 @@ bool FglTFImporter::GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlT
         TArray<float> Times;
         if (!glTFImporter::GetAccessorData<float, false, false>(InGlTF, InBufferFiles, glTFInputAccessorPtr, Times)) continue;
 
-        ERichCurveInterpMode Interpolation = StringToRichCurveInterpMode(FString(glTFAnimationSamplerPtr->interpolation.c_str()));
+        const FString glTFAnimationSamplerInterpolation = GLTF_GLTFSTRING_TO_TCHAR(glTFAnimationSamplerPtr->interpolation.c_str());
+        ERichCurveInterpMode Interpolation = StringToRichCurveInterpMode(glTFAnimationSamplerInterpolation);
 
         TArray<FVector> Translations;
         TArray<FQuat> Rotations;
         TArray<FVector> Scales;
-        FString glTFAnimationChannelTargetPath(glTFAnimationChannelTargetPtr->path.c_str());
+        const FString glTFAnimationChannelTargetPath = GLTF_GLTFSTRING_TO_TCHAR(glTFAnimationChannelTargetPtr->path.c_str());
         if (glTFAnimationChannelTargetPath.Equals(TEXT("translation"), ESearchCase::IgnoreCase))
         {
             if (bSwapYZ)
