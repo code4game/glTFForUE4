@@ -277,7 +277,7 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const std::shared_ptr<libgltf::S
 {
     if (!InMesh) return false;
 
-    FString MeshName = InMesh->name.c_str();
+    const FString MeshName = GLTF_GLTFSTRING_TO_TCHAR(InMesh->name.c_str());
     for (int32 i = 0; i < static_cast<int32>(InMesh->primitives.size()); ++i)
     {
         const auto& Primitive = InMesh->primitives[i];

@@ -79,9 +79,9 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
     /// Parse and check the buffer
     std::shared_ptr<libgltf::SGlTF> GlTF;
 #if defined(UNICODE)
-    std::wstring GlTFString = TCHAR_TO_WCHAR(*InglTFJson);
+    const GLTFString GlTFString = TCHAR_TO_WCHAR(*InglTFJson);
 #else
-    std::string GlTFString = *InglTFJson;
+    const GLTFString GlTFString = *InglTFJson;
 #endif
     if (!(GlTF << GlTFString))
     {

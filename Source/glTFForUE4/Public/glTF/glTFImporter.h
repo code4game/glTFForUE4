@@ -19,6 +19,14 @@
 #define GLTF_TRIANGLE_POINTS_NUM            3
 #define GLTF_JOINT_LAYERS_NUM_MAX           3
 
+#if defined(UNICODE)
+#define GLTF_TCHAR_TO_GLTFSTRING(a)         TCHAR_TO_WCHAR(a)
+#define GLTF_GLTFSTRING_TO_TCHAR(a)         WCHAR_TO_TCHAR(a)
+#else
+#define GLTF_TCHAR_TO_GLTFSTRING(a)         (a)
+#define GLTF_GLTFSTRING_TO_TCHAR(a)         (a)
+#endif
+
 namespace glTFForUE4
 {
     class GLTFFORUE4_API FFeedbackTaskWrapper

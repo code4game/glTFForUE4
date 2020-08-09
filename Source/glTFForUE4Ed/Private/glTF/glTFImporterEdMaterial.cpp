@@ -66,9 +66,10 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
     const libgltf::SKHR_materials_pbrSpecularGlossinessglTFextension* ExternalMaterialPBRSpecularGlossiness = nullptr;
     {
         const std::shared_ptr<libgltf::SExtension>& Extensions = glTFMaterial->extensions;
-        if (!!Extensions && (Extensions->properties.find(TEXT("KHR_materials_pbrSpecularGlossiness")) != Extensions->properties.end()))
+        const GLTFString extension_property = GLTF_TCHAR_TO_GLTFSTRING(TEXT("KHR_materials_pbrSpecularGlossiness"));
+        if (!!Extensions && (Extensions->properties.find(extension_property) != Extensions->properties.end()))
         {
-            ExternalMaterialPBRSpecularGlossiness = (const libgltf::SKHR_materials_pbrSpecularGlossinessglTFextension*)Extensions->properties[TEXT("KHR_materials_pbrSpecularGlossiness")].get();
+            ExternalMaterialPBRSpecularGlossiness = (const libgltf::SKHR_materials_pbrSpecularGlossinessglTFextension*)Extensions->properties[extension_property].get();
         }
     }
 
@@ -315,7 +316,7 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
 
     {
         /// Setup the blend mode
-        FString AlphaMode(glTFMaterial->alphaMode.c_str());
+        const FString AlphaMode = GLTF_TCHAR_TO_GLTFSTRING(glTFMaterial->alphaMode.c_str());
         if (AlphaMode.Equals(TEXT("OPAQUE"), ESearchCase::IgnoreCase))
         {
             NewMaterial->BlendMode = BLEND_Opaque;

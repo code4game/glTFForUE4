@@ -414,7 +414,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
 
     /// Create new static mesh
-    FString MeshName(InMesh->name.c_str());
+    FString MeshName = GLTF_GLTFSTRING_TO_TCHAR(InMesh->name.c_str());
     if (MeshName.IsEmpty())
     {
         MeshName = FString::Printf(TEXT("Id%d"), InMeshId);
@@ -586,7 +586,7 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
     , FSkeletalMeshImportData& OutSkeletalMeshImportData, TArray<FMatrix>& OutInverseBindMatrices, TMap<int32, FString>& OutNodeIndexToBoneNames, TArray<FglTFMaterialInfo>& InOutMaterialInfo
     , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
 {
-    FString MeshName = InMesh->name.c_str();
+    const FString MeshName = GLTF_GLTFSTRING_TO_TCHAR(InMesh->name.c_str());
     for (int32 i = 0; i < static_cast<int32>(InMesh->primitives.size()); ++i)
     {
         const auto& Primitive = InMesh->primitives[i];
