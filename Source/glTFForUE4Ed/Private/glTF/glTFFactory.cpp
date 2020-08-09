@@ -78,7 +78,11 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
 
     /// Parse and check the buffer
     std::shared_ptr<libgltf::SGlTF> GlTF;
+#if defined(UNICODE)
     std::wstring GlTFString = *InglTFJson;
+#else
+    std::string GlTFString = *InglTFJson;
+#endif
     if (!(GlTF << GlTFString))
     {
         InWarn->Log(ELogVerbosity::Error, FText::Format(NSLOCTEXT("glTFForUE4Ed", "FailedToParseTheglTFFile", "Failed to parse the glTF file {0}"), FText::FromName(InName)).ToString());
