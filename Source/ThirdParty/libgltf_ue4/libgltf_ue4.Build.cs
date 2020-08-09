@@ -52,5 +52,6 @@ public class libgltf_ue4 : ModuleRules
 
         PublicIncludePaths.Add(IncludePath);
         PublicAdditionalLibraries.Add(LibFilePath);
+        PublicDefinitions.Add("UNICODE");
     }
 }
