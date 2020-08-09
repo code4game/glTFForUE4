@@ -6,12 +6,11 @@
 #include "glTF/glTFImporterOptions.h"
 #include "glTF/glTFImporterEd.h"
 
-//#include "SlateBasics.h"
-#include "Interfaces/IMainFrameModule.h"
-#include "IDocumentation.h"
-#include "PropertyEditorModule.h"
-#include "IDetailsView.h"
-#include "EditorStyle.h"
+#include <SlateBasics.h>
+#include <Interfaces/IMainFrameModule.h>
+#include <IDocumentation.h>
+#include <PropertyEditorModule.h>
+#include <IDetailsView.h>
 
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
