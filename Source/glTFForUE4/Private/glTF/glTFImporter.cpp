@@ -812,7 +812,8 @@ UObject* FglTFImporter::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImpor
 
     if (!InGlTF->asset || InGlTF->asset->version != TCHAR_TO_WCHAR(TEXT("2.0")))
     {
-        UE_LOG(LogglTFForUE4, Error, TEXT("Invalid version: %s!"), !(InGlTF->asset) ? TEXT("none") : InGlTF->asset->version.c_str());
+        const FString AssetVersion = (InGlTF->asset != nullptr) ? WCHAR_TO_TCHAR(InGlTF->asset->version.c_str()) : TEXT("none");
+        UE_LOG(LogglTFForUE4, Error, TEXT("Invalid version: %s!"), *AssetVersion);
         return nullptr;
     }
 
@@ -1066,7 +1067,11 @@ namespace glTFImporter
     template<typename TAccessorDataType, typename TEngineDataType, bool bSwapYZ, bool bInverseX>
     bool GetAccessorData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InBuffers, const std::shared_ptr<libgltf::SAccessor>& InAccessor, TArray<TEngineDataType>& OutDataArray)
     {
-        if (!InAccessor || !InAccessor->bufferView) return false;
+        if (!InAccessor || !InAccessor->bufferView)
+        {
+            UE_LOG(LogglTFForUE4, Error, TEXT("Invalid accessor!"));
+            return false;
+        }
 
         int32 BufferViewIndex = (*InAccessor->bufferView);
 
@@ -1155,7 +1160,8 @@ namespace glTFImporter
         }
         else
         {
-            UE_LOG(LogglTFForUE4, Error, TEXT("Not supports the accessor's type(%s)!"), InAccessor->type.c_str());
+            const FString AccessorType = WCHAR_TO_TCHAR(InAccessor->type.c_str());
+            UE_LOG(LogglTFForUE4, Error, TEXT("Not supports the accessor's type(%s)!"), *AccessorType);
             return false;
         }
         return true;
