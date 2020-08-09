@@ -316,7 +316,7 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
 
     {
         /// Setup the blend mode
-        const FString AlphaMode = GLTF_TCHAR_TO_GLTFSTRING(glTFMaterial->alphaMode.c_str());
+        const FString AlphaMode = GLTF_GLTFSTRING_TO_TCHAR(glTFMaterial->alphaMode.c_str());
         if (AlphaMode.Equals(TEXT("OPAQUE"), ESearchCase::IgnoreCase))
         {
             NewMaterial->BlendMode = BLEND_Opaque;

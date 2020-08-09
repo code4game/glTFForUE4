@@ -1445,12 +1445,13 @@ bool FglTFImporter::GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlT
         TArray<float> Times;
         if (!glTFImporter::GetAccessorData<float, false, false>(InGlTF, InBufferFiles, glTFInputAccessorPtr, Times)) continue;
 
-        ERichCurveInterpMode Interpolation = StringToRichCurveInterpMode(FString(glTFAnimationSamplerPtr->interpolation.c_str()));
+        const FString glTFAnimationSamplerInterpolation = GLTF_GLTFSTRING_TO_TCHAR(glTFAnimationSamplerPtr->interpolation.c_str());
+        ERichCurveInterpMode Interpolation = StringToRichCurveInterpMode(glTFAnimationSamplerInterpolation);
 
         TArray<FVector> Translations;
         TArray<FQuat> Rotations;
         TArray<FVector> Scales;
-        FString glTFAnimationChannelTargetPath(glTFAnimationChannelTargetPtr->path.c_str());
+        const FString glTFAnimationChannelTargetPath = GLTF_GLTFSTRING_TO_TCHAR(glTFAnimationChannelTargetPtr->path.c_str());
         if (glTFAnimationChannelTargetPath.Equals(TEXT("translation"), ESearchCase::IgnoreCase))
         {
             if (bSwapYZ)
