@@ -46,7 +46,8 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
 
     if (!InGlTF->asset || InGlTF->asset->version != TCHAR_TO_WCHAR(TEXT("2.0")))
     {
-        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Invalid version: %s!"), !(InGlTF->asset) ? TEXT("none") : InGlTF->asset->version.c_str());
+        const FString AssetVersion = (InGlTF->asset != nullptr) ? WCHAR_TO_TCHAR(InGlTF->asset->version.c_str()) : TEXT("none");
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Invalid version: %s!"), *AssetVersion);
         return nullptr;
     }
 
