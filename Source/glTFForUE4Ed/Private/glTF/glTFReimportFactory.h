@@ -24,3 +24,11 @@ public:
     virtual bool FactoryCanImport(const FString& Filename) override;
     //~ End UFactory Interface
 };
+
+UCLASS(hidecategories = Object)
+class UglTFSkeletalMeshReimportFactory : public UglTFReimportFactory
+{
+    GENERATED_UCLASS_BODY()
+
+public:
+};

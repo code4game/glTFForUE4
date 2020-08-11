@@ -196,22 +196,6 @@ void SglTFImporterOptionsWindow::HandleIntegrateAllMeshsForStaticMesh(ECheckBoxS
     glTFImporterOptions.Pin()->bIntegrateAllMeshsForStaticMesh = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
-bool SglTFImporterOptionsWindow::CanHandleImportAnimationForSkeletalMesh() const
-{
-    TSharedPtr<FglTFImporterOptions> glTFImporterOptionsPtr = glTFImporterOptions.Pin();
-    return (bHasAnimation && glTFImporterOptionsPtr->ImportType == EglTFImportType::SkeletalMesh);
-}
-
-ECheckBoxState SglTFImporterOptionsWindow::CheckHandleImportAnimationForSkeleton() const
-{
-    return (glTFImporterOptions.Pin()->bImportAnimationForSkeletalMesh ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
-}
-
-void SglTFImporterOptionsWindow::HandleImportAnimationForSkeletalMesh(ECheckBoxState InCheckBoxState)
-{
-    glTFImporterOptions.Pin()->bImportAnimationForSkeletalMesh = (InCheckBoxState == ECheckBoxState::Checked);
-}
-
 void SglTFImporterOptionsWindow::HandleImportMaterial(ECheckBoxState InCheckBoxState)
 {
     glTFImporterOptions.Pin()->bImportMaterial = (InCheckBoxState == ECheckBoxState::Checked);

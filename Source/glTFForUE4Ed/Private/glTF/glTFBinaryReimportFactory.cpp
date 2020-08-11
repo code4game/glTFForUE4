@@ -6,7 +6,9 @@
 UglTFBinaryReimportFactory::UglTFBinaryReimportFactory(const FObjectInitializer& InObjectInitializer)
     : Super(InObjectInitializer)
 {
-    ImportPriority = DefaultImportPriority - 1;
+    SupportedClass = UStaticMesh::StaticClass();
+    ImportPriority = DefaultImportPriority + 1;
+    bReimport = true;
 }
 
 bool UglTFBinaryReimportFactory::CanReimport(UObject* Obj, TArray<FString>& OutFilenames)
@@ -34,4 +36,10 @@ int32 UglTFBinaryReimportFactory::GetPriority() const
 bool UglTFBinaryReimportFactory::FactoryCanImport(const FString& Filename)
 {
     return false;
+}
+
+UglTFBinarySkeletalMeshReimportFactory::UglTFBinarySkeletalMeshReimportFactory(const FObjectInitializer& InObjectInitializer)
+    : Super(InObjectInitializer)
+{
+    SupportedClass = USkeletalMesh::StaticClass();
 }

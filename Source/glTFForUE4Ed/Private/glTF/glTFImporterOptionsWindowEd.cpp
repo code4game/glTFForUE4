@@ -450,57 +450,6 @@ void SglTFImporterOptionsWindowEd::Construct(const FArguments& InArgs)
                 [
                     SNew(STextBlock)
                         .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                        .Text(LOCTEXT("ImportOptionsWindow_SkeletonMesh_Title", "Skeleton Mesh"))
-                ]
-                + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(2)
-                [
-                    SNew(SBorder)
-                        .BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
-                    [
-                        SNew(SGridPanel)
-                            .IsEnabled(this, &SglTFImporterOptionsWindowEd::CanHandleImportAnimationForSkeletalMesh)
-                        + SGridPanel::Slot(0, 0)
-                            .Padding(2)
-                            .HAlign(HAlign_Left)
-                            .VAlign(VAlign_Center)
-                        [
-                            SNew(STextBlock)
-                                .ToolTipText(LOCTEXT("ImportOptionsWindow_ImportAnimationForSkeletonMesh_ToolTip", "Import Animation!"))
-                                .MinDesiredWidth(200)
-                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                                .Text(LOCTEXT("ImportOptionsWindow_ImportAnimationForSkeletonMesh_Title", "Import Animation: "))
-                        ]
-                        + SGridPanel::Slot(1, 0)
-                            .Padding(2)
-                            .HAlign(HAlign_Left)
-                            .VAlign(VAlign_Center)
-                        [
-                            SNew(SCheckBox)
-                                .IsChecked(this, &SglTFImporterOptionsWindowEd::CheckHandleImportAnimationForSkeleton)
-                                .OnCheckStateChanged(this, &SglTFImporterOptionsWindowEd::HandleImportAnimationForSkeletalMesh)
-                        ]
-                    ]
-                ]
-            ]
-        ]
-        + SVerticalBox::Slot()
-            .AutoHeight()
-            .Padding(2)
-        [
-            SNew(SBorder)
-                .BorderImage(FEditorStyle::GetBrush("ToolPanel.DarkGroupBorder"))
-            [
-                SNew(SVerticalBox)
-                + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(2)
-                    .HAlign(HAlign_Left)
-                    .VAlign(VAlign_Center)
-                [
-                    SNew(STextBlock)
-                        .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
                         .Text(LOCTEXT("ImportOptionsWindow_Material_Title", "Material"))
                 ]
                 + SVerticalBox::Slot()

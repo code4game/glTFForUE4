@@ -37,7 +37,9 @@ public:
         UglTFFactory::StaticClass();
         UglTFBinaryFactory::StaticClass();
         UglTFReimportFactory::StaticClass();
+        UglTFSkeletalMeshReimportFactory::StaticClass();
         UglTFBinaryReimportFactory::StaticClass();
+        UglTFBinarySkeletalMeshReimportFactory::StaticClass();
     }
 
     virtual void ShutdownModule()

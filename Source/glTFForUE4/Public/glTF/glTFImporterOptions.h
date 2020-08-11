@@ -48,10 +48,6 @@ struct GLTFFORUE4_API FglTFImporterOptions
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bIntegrateAllMeshsForStaticMesh;
 
-    /// Skeletal Mesh options
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bImportAnimationForSkeletalMesh;
-
     /// Material options
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bImportMaterial;

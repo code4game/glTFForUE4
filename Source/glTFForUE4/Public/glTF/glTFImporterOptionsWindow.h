@@ -66,10 +66,6 @@ protected:
     ECheckBoxState CheckHandleIntegrateAllMeshsForStaticMesh() const;
     void HandleIntegrateAllMeshsForStaticMesh(ECheckBoxState InCheckBoxState);
 
-    bool CanHandleImportAnimationForSkeletalMesh() const;
-    ECheckBoxState CheckHandleImportAnimationForSkeleton() const;
-    void HandleImportAnimationForSkeletalMesh(ECheckBoxState InCheckBoxState);
-
     void HandleImportMaterial(ECheckBoxState InCheckBoxState);
     void HandleImportTexture(ECheckBoxState InCheckBoxState);
 

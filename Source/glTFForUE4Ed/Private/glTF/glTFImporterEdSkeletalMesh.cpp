@@ -421,7 +421,11 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
         MeshName = FString::Printf(TEXT("Id%d"), InMeshId);
     }
     FName SkeletalMeshName(*FString::Printf(TEXT("%s_%s"), *InputName.ToString(), *MeshName));
-    USkeletalMesh* SkeletalMesh = NewObject<USkeletalMesh>(InputParent, InputClass, SkeletalMeshName, InputFlags);
+    USkeletalMesh* SkeletalMesh = FindObject<USkeletalMesh>(InputParent, *SkeletalMeshName.ToString());
+    if (!SkeletalMesh)
+    {
+        SkeletalMesh = NewObject<USkeletalMesh>(InputParent, InputClass, SkeletalMeshName, InputFlags);
+    }
     checkSlow(SkeletalMesh);
     if (!SkeletalMesh) return nullptr;
     FAssetRegistryModule::AssetCreated(SkeletalMesh);
@@ -465,7 +469,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
 #else
     FSkeletalMeshModel* ImportedResource = SkeletalMesh->GetImportedModel();
 #endif
-    check(ImportedResource->LODModels.Num() == 0);
+    /// Clean old data
     ImportedResource->LODModels.Empty();
 #if ENGINE_MINOR_VERSION <= 18
     new(ImportedResource->LODModels)FStaticLODModel();
@@ -523,7 +527,15 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
 
     /// generate the skeleton object
     FString SkeletonObjectName = FString::Printf(TEXT("%s_Skeleton"), *SkeletalMeshName.ToString());
-    USkeleton* Skeleton = NewObject<USkeleton>(InputParent, USkeleton::StaticClass(), *SkeletonObjectName, InputFlags);
+    USkeleton* Skeleton = SkeletalMesh->Skeleton;
+    if (!Skeleton)
+    {
+        FindObject<USkeleton>(InputParent, *SkeletonObjectName);
+    }
+    if (!Skeleton)
+    {
+        Skeleton = NewObject<USkeleton>(InputParent, USkeleton::StaticClass(), *SkeletonObjectName, InputFlags);
+    }
     if (Skeleton)
     {
         FAssetRegistryModule::AssetCreated(Skeleton);
@@ -538,11 +550,9 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
         Skeleton->MarkPackageDirty();
     }
 
-    /// generate the skeleton animation
-    if (glTFImporterOptions->bImportAnimationForSkeletalMesh)
     {
-        TSharedPtr<FglTFImporterEdAnimationSequence> glTFImporterEdAnimationSequence = FglTFImporterEdAnimationSequence::Get(InputFactory, InputClass, InputParent, SkeletalMeshName, InputFlags, FeedbackContext);
-        glTFImporterEdAnimationSequence->CreateAnimationSequence(
+        /// generate the skeleton animation
+        FglTFImporterEdAnimationSequence::Get(InputFactory, InputClass, InputParent, SkeletalMeshName, InputFlags, FeedbackContext)->CreateAnimationSequence(
             InglTFImporterOptions, InGlTF
             , InNodeRelativeTransforms, InNodeAbsoluteTransforms, InBuffers, NodeIndexToBoneNames
             , SkeletalMesh, Skeleton

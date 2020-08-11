@@ -74,11 +74,11 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
 UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, UObject* InContext, const TCHAR* InType, FFeedbackContext* InWarn, const FString& InglTFJson, TSharedPtr<FglTFBuffers> InglTFBuffers /*= nullptr*/)
 {
     const FString& FilePathInOS = UFactory::GetCurrentFilename();
-    if (!ObjectTools::SanitizeObjectName(FPaths::GetBaseFilename(FilePathInOS)).Equals(InName.ToString()))
-    {
-        UE_LOG(LogglTFForUE4Ed, Error, TEXT("It is different between current filename(%s) and name(%s)!!"), *FilePathInOS, *InName.ToString());
-        return nullptr;
-    }
+    //if (!ObjectTools::SanitizeObjectName(FPaths::GetBaseFilename(FilePathInOS)).Equals(InName.ToString()))
+    //{
+    //    UE_LOG(LogglTFForUE4Ed, Error, TEXT("It is different between current filename(%s) and name(%s)!!"), *FilePathInOS, *InName.ToString());
+    //    return nullptr;
+    //}
 
     /// Parse and check the buffer
     std::shared_ptr<libgltf::SGlTF> GlTF;

@@ -6,8 +6,9 @@
 UglTFReimportFactory::UglTFReimportFactory(const FObjectInitializer& InObjectInitializer)
     : Super(InObjectInitializer)
 {
+    SupportedClass = UStaticMesh::StaticClass();
+    ImportPriority = DefaultImportPriority + 1;
     bReimport = true;
-    ImportPriority = DefaultImportPriority - 1;
 }
 
 bool UglTFReimportFactory::CanReimport(UObject* Obj, TArray<FString>& OutFilenames)
@@ -71,7 +72,8 @@ EReimportResult::Type UglTFReimportFactory::Reimport(UObject* Obj)
     }
 
     Super::CurrentFilename = AssetImportFilename;
-    UObject* RenewObject = Super::FactoryCreate(Obj->GetClass(), Obj->GetOuter(), FName(*Obj->GetName()), Obj->GetFlags(), Obj, nullptr, nullptr, glTFJson);
+    const FString BaseFilename = FglTFImporter::SanitizeObjectName(FPaths::GetBaseFilename(AssetImportFilename));
+    UObject* RenewObject = Super::FactoryCreate(Obj->GetClass(), Obj->GetOuter(), FName(*BaseFilename), Obj->GetFlags(), Obj, nullptr, nullptr, glTFJson);
     if (RenewObject != Obj)
     {
         return EReimportResult::Failed;
@@ -87,4 +89,10 @@ int32 UglTFReimportFactory::GetPriority() const
 bool UglTFReimportFactory::FactoryCanImport(const FString& Filename)
 {
     return false;
+}
+
+UglTFSkeletalMeshReimportFactory::UglTFSkeletalMeshReimportFactory(const FObjectInitializer& InObjectInitializer)
+    : Super(InObjectInitializer)
+{
+    SupportedClass = USkeletalMesh::StaticClass();
 }

@@ -13,7 +13,6 @@ FglTFImporterOptions::FglTFImporterOptions()
     , bRecomputeNormals(false)
     , bRecomputeTangents(false)
     , bIntegrateAllMeshsForStaticMesh(true)
-    , bImportAnimationForSkeletalMesh(false)
     , bImportMaterial(true)
     , bImportTexture(true)
 {
