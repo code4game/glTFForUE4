@@ -18,6 +18,7 @@
 
 UglTFFactory::UglTFFactory()
     : Super()
+    , bReimport(false)
     , ImportClass(nullptr)
 {
     //
@@ -56,7 +57,10 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
 {
     if (!InBuffer || !InBufferEnd || InBuffer >= InBufferEnd)
     {
-        InWarn->Log(ELogVerbosity::Error, FText::Format(NSLOCTEXT("glTFForUE4Ed", "BufferHasErrorInFactoryCreateText", "Buffer has some errors when create the glTF file {0}"), FText::FromName(InName)).ToString());
+        if (InWarn)
+        {
+            InWarn->Log(ELogVerbosity::Error, FText::Format(NSLOCTEXT("glTFForUE4Ed", "BufferHasErrorInFactoryCreateText", "Buffer has some errors when create the glTF file {0}"), FText::FromName(InName)).ToString());
+        }
         return nullptr;
     }
 
@@ -78,20 +82,22 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
 
     /// Parse and check the buffer
     std::shared_ptr<libgltf::SGlTF> GlTF;
-#if defined(UNICODE)
-    const GLTFString GlTFString = TCHAR_TO_WCHAR(*InglTFJson);
-#else
-    const GLTFString GlTFString = *InglTFJson;
-#endif
+    const GLTFString GlTFString = GLTF_TCHAR_TO_GLTFSTRING(*InglTFJson);
     if (!(GlTF << GlTFString))
     {
-        InWarn->Log(ELogVerbosity::Error, FText::Format(NSLOCTEXT("glTFForUE4Ed", "FailedToParseTheglTFFile", "Failed to parse the glTF file {0}"), FText::FromName(InName)).ToString());
+        if (InWarn)
+        {
+            InWarn->Log(ELogVerbosity::Error, FText::Format(NSLOCTEXT("glTFForUE4Ed", "FailedToParseTheglTFFile", "Failed to parse the glTF file {0}"), FText::FromName(InName)).ToString());
+        }
         return nullptr;
     }
 
-    /// Open import window, allow to configure some options
+    /// Open the importer window, allow to configure some options when is not automated
     bool bCancel = false;
-    TSharedPtr<FglTFImporterOptions> glTFImporterOptions = SglTFImporterOptionsWindowEd::Open(FilePathInOS, InParent->GetPathName(), *GlTF, bCancel);
+    TSharedPtr<FglTFImporterOptions> glTFImporterOptions
+        = IsAutomatedImport()
+        ? MakeShared<FglTFImporterOptions>()
+        : SglTFImporterOptionsWindowEd::Open(InContext, FilePathInOS, InParent->GetPathName(), *GlTF, bReimport, bCancel);
     if (glTFImporterOptions.IsValid())
     {
         if (glTFImporterOptions->ImportType == EglTFImportType::StaticMesh)
@@ -101,10 +107,6 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
         else if (glTFImporterOptions->ImportType == EglTFImportType::SkeletalMesh)
         {
             ImportClass = USkeletalMesh::StaticClass();
-        }
-        else if (glTFImporterOptions->ImportType == EglTFImportType::Actor)
-        {
-            ImportClass = AActor::StaticClass();
         }
         else if (glTFImporterOptions->ImportType == EglTFImportType::Level)
         {
@@ -116,11 +118,13 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
             ImportClass = UStaticMesh::StaticClass();
         }
     }
+
     if (bCancel)
     {
         UE_LOG(LogglTFForUE4Ed, Display, TEXT("Cancel to import the file - %s"), *FilePathInOS);
         return nullptr;
     }
+
     if (!glTFImporterOptions.IsValid())
     {
         UE_LOG(LogglTFForUE4Ed, Error, TEXT("Failed to open import window"));
@@ -129,8 +133,9 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
 
     if (!InglTFBuffers.IsValid())
     {
-        InglTFBuffers = MakeShareable(new FglTFBuffers);
+        InglTFBuffers = MakeShared<FglTFBuffers>();
     }
+
     const FString FolderPathInOS = FPaths::GetPath(glTFImporterOptions->FilePathInOS);
     InglTFBuffers->Cache(FolderPathInOS, GlTF);
 

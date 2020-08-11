@@ -8,7 +8,6 @@ enum class EglTFImportType : uint8
     None,
     StaticMesh,
     SkeletalMesh,
-    Actor,
     Level,
 };
 

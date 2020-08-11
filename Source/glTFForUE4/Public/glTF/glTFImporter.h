@@ -236,6 +236,7 @@ public:
 
 public:
     static FString SanitizeObjectName(const FString& InObjectName);
+    static class UAssetImportData* GetAssetImportData(UObject* InObject);
 
 public:
     static const FMatrix& GetglTFSpaceToUnrealSpace(bool bSwapYZ = true, bool bInverseX = false);

@@ -52,6 +52,9 @@ SglTFImporterOptionsWindow::SglTFImporterOptionsWindow()
     : SCompoundWidget()
     , glTFImporterOptions(nullptr)
     , WidgetWindow(nullptr)
+    , ImportTypes()
+    , bHasAnimation(false)
+    , bReimport(false)
 {
     //
 }
@@ -139,10 +142,6 @@ FText SglTFImporterOptionsWindow::GetImportTypeText(EglTFImportType InImportType
 
     case EglTFImportType::SkeletalMesh:
         ImportTypeText = LOCTEXT("EglTFImportType::SkeletalMesh", "SkeletalMesh");
-        break;
-
-    case EglTFImportType::Actor:
-        ImportTypeText = LOCTEXT("EglTFImportType::Actor", "Actor");
         break;
 
     case EglTFImportType::Level:

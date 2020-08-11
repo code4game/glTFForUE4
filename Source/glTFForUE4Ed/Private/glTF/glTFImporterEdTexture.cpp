@@ -24,6 +24,7 @@ TSharedPtr<FglTFImporterEdTexture> FglTFImporterEdTexture::Get(UFactory* InFacto
 }
 
 FglTFImporterEdTexture::FglTFImporterEdTexture()
+    : Super()
 {
     //
 }
@@ -54,8 +55,6 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
     if (!TexturePackage) return nullptr;
     TexturePackage->FullyLoad();
 
-    UTexture2D* NewTexture = nullptr;
-
     IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
 #if (ENGINE_MINOR_VERSION <= 15)
     IImageWrapperPtr ImageWrappers[7] = {
@@ -71,6 +70,7 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
         ImageWrapperModule.CreateImageWrapper(EImageFormat::ICNS),
     };
 
+    UTexture2D* NewTexture = nullptr;
     for (auto ImageWrapper : ImageWrappers)
     {
         if (!ImageWrapper.IsValid()) continue;
@@ -126,7 +126,11 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
             break;
         }
 
-        NewTexture = NewObject<UTexture2D>(TexturePackage, UTexture2D::StaticClass(), *InTextureName, InputFlags);
+        NewTexture = FindObject<UTexture2D>(TexturePackage, *InTextureName);
+        if (!NewTexture)
+        {
+            NewTexture = NewObject<UTexture2D>(TexturePackage, UTexture2D::StaticClass(), *InTextureName, InputFlags);
+        }
         checkSlow(NewTexture);
         if (!NewTexture) break;
         FAssetRegistryModule::AssetCreated(NewTexture);

@@ -52,6 +52,7 @@ TSharedPtr<FglTFImporterEdStaticMesh> FglTFImporterEdStaticMesh::Get(UFactory* I
 }
 
 FglTFImporterEdStaticMesh::FglTFImporterEdStaticMesh()
+    : Super()
 {
     //
 }
@@ -77,18 +78,22 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     FText TaskName = FText::Format(LOCTEXT("BeginImportAsStaticMeshTask", "Importing the glTF ({0}) as a static mesh ({1})"), FText::FromName(InputName), FText::FromName(InputName));
     glTFForUE4::FFeedbackTaskWrapper FeedbackTaskWrapper(FeedbackContext, TaskName, true);
 
-    /// Create new static mesh
-    UStaticMesh* StaticMesh = NewObject<UStaticMesh>(InputParent, InputClass, InputName, InputFlags);
-    checkSlow(StaticMesh);
-    if (!StaticMesh) return nullptr;
-    FAssetRegistryModule::AssetCreated(StaticMesh);
+    UStaticMesh* NewStaticMesh = FindObject<UStaticMesh>(InputParent, *InputName.ToString());
+    if (!NewStaticMesh)
+    {
+        /// Create a new static mesh
+        NewStaticMesh = NewObject<UStaticMesh>(InputParent, InputClass, InputName, InputFlags);
+    }
+    checkSlow(NewStaticMesh);
+    if (!NewStaticMesh) return nullptr;
+    FAssetRegistryModule::AssetCreated(NewStaticMesh);
 
-    StaticMesh->PreEditChange(nullptr);
+    NewStaticMesh->PreEditChange(nullptr);
 
 #if ENGINE_MINOR_VERSION <= 22
-    TArray<FStaticMeshSourceModel>& StaticMeshSourceModels = StaticMesh->SourceModels;
+    TArray<FStaticMeshSourceModel>& StaticMeshSourceModels = NewStaticMesh->SourceModels;
 #else
-    TArray<FStaticMeshSourceModel>& StaticMeshSourceModels = StaticMesh->GetSourceModels();
+    TArray<FStaticMeshSourceModel>& StaticMeshSourceModels = NewStaticMesh->GetSourceModels();
 #endif
 
     StaticMeshSourceModels.Empty();
@@ -97,9 +102,9 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     FStaticMeshSourceModel& SourceModel = StaticMeshSourceModels[0];
     SourceModel.BuildSettings.bUseMikkTSpace = glTFImporterOptions->bUseMikkTSpace;
 
-    StaticMesh->LightingGuid = FGuid::NewGuid();
-    StaticMesh->LightMapResolution = 64;
-    StaticMesh->LightMapCoordinateIndex = 1;
+    NewStaticMesh->LightingGuid = FGuid::NewGuid();
+    NewStaticMesh->LightMapResolution = 64;
+    NewStaticMesh->LightMapCoordinateIndex = 1;
 
     FRawMesh NewRawMesh;
     SourceModel.RawMeshBulkData->LoadRawMesh(NewRawMesh);
@@ -153,7 +158,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
 
         /// Build the static mesh
         TArray<FText> BuildErrors;
-        StaticMesh->Build(false, &BuildErrors);
+        NewStaticMesh->Build(false, &BuildErrors);
         if (BuildErrors.Num() > 0)
         {
             FeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("StaticMeshBuildHasError", "Failed to build the static mesh!"));
@@ -164,9 +169,9 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
         }
 
 #if ENGINE_MINOR_VERSION <= 22
-        FMeshSectionInfoMap& StaticMeshSectionInfoMap = StaticMesh->SectionInfoMap;
+        FMeshSectionInfoMap& StaticMeshSectionInfoMap = NewStaticMesh->SectionInfoMap;
 #else
-        FMeshSectionInfoMap& StaticMeshSectionInfoMap = StaticMesh->GetSectionInfoMap();
+        FMeshSectionInfoMap& StaticMeshSectionInfoMap = NewStaticMesh->GetSectionInfoMap();
 #endif
 
         TSharedPtr<FglTFImporterEdMaterial> glTFImporterEdMaterial = FglTFImporterEdMaterial::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext);
@@ -189,9 +194,9 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
             FMeshSectionInfo Info = StaticMeshSectionInfoMap.Get(0, i);
 
 #if (ENGINE_MINOR_VERSION <= 13)
-            int32 Index = StaticMesh->Materials.Add(NewMaterial);
+            int32 Index = NewStaticMesh->Materials.Add(NewMaterial);
 #else
-            int32 Index = StaticMesh->StaticMaterials.Add(NewMaterial);
+            int32 Index = NewStaticMesh->StaticMaterials.Add(NewMaterial);
 #endif
             Info.MaterialIndex = Index;
             NewMap.Set(0, i, Info);
@@ -199,20 +204,20 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
         StaticMeshSectionInfoMap.Clear();
         StaticMeshSectionInfoMap.CopyFrom(NewMap);
 
-        if (StaticMesh->AssetImportData)
+        if (NewStaticMesh->AssetImportData)
         {
-            StaticMesh->AssetImportData->Update(glTFImporterOptions->FilePathInOS);
+            NewStaticMesh->AssetImportData->Update(glTFImporterOptions->FilePathInOS);
         }
 
-        StaticMesh->PostEditChange();
-        StaticMesh->MarkPackageDirty();
+        NewStaticMesh->PostEditChange();
+        NewStaticMesh->MarkPackageDirty();
     }
     else
     {
-        StaticMesh->ConditionalBeginDestroy();
-        StaticMesh = nullptr;
+        NewStaticMesh->ConditionalBeginDestroy();
+        NewStaticMesh = nullptr;
     }
-    return StaticMesh;
+    return NewStaticMesh;
 }
 
 bool FglTFImporterEdStaticMesh::GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InGlTF

@@ -14,7 +14,7 @@ class SglTFImporterOptionsWindowEd : public SglTFImporterOptionsWindow
     typedef SglTFImporterOptionsWindow Super;
 
 public:
-    static TSharedPtr<struct FglTFImporterOptions> Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool& OutCancel);
+    static TSharedPtr<struct FglTFImporterOptions> Open(UObject* InContext, const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool InReimport, bool& OutCancel);
 
 public:
     SglTFImporterOptionsWindowEd();

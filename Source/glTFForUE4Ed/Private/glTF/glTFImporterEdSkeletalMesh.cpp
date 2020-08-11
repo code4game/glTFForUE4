@@ -275,6 +275,7 @@ TSharedPtr<FglTFImporterEdSkeletalMesh> FglTFImporterEdSkeletalMesh::Get(UFactor
 }
 
 FglTFImporterEdSkeletalMesh::FglTFImporterEdSkeletalMesh()
+    : Super()
 {
     //
 }

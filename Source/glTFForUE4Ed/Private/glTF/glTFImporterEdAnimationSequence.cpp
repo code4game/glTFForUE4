@@ -24,6 +24,7 @@ TSharedPtr<FglTFImporterEdAnimationSequence> FglTFImporterEdAnimationSequence::G
 }
 
 FglTFImporterEdAnimationSequence::FglTFImporterEdAnimationSequence()
+    : Super()
 {
     //
 }

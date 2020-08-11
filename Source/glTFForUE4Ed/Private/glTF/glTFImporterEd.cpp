@@ -6,6 +6,7 @@
 #include "glTF/glTFImporterOptions.h"
 #include "glTF/glTFImporterEdStaticMesh.h"
 #include "glTF/glTFImporterEdSkeletalMesh.h"
+#include "glTF/glTFImporterEdLevel.h"
 
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
@@ -76,8 +77,9 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
     case EglTFImportType::SkeletalMesh:
         return FglTFImporterEdSkeletalMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateSkeletalMesh(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
 
-    case EglTFImportType::Actor:
     case EglTFImportType::Level:
+        return FglTFImporterEdLevel::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateLevel(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
+
     default:
         break;
     }

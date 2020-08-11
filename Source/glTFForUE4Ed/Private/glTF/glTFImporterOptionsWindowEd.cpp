@@ -14,7 +14,7 @@
 
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
-TSharedPtr<FglTFImporterOptions> SglTFImporterOptionsWindowEd::Open(const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool& OutCancel)
+TSharedPtr<FglTFImporterOptions> SglTFImporterOptionsWindowEd::Open(UObject* InContext, const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool InReimport, bool& OutCancel)
 {
     TSharedPtr<FglTFImporterOptions> glTFImporterOptions = MakeShareable(new FglTFImporterOptions());
     (*glTFImporterOptions) = FglTFImporterOptions::Current;
@@ -35,17 +35,37 @@ TSharedPtr<FglTFImporterOptions> SglTFImporterOptionsWindowEd::Open(const FStrin
         .SizingRule(ESizingRule::Autosized);
 
     TArray<TSharedPtr<EglTFImportType>> ImportTypes;
-    ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::StaticMesh)));
-    if (InGlTF.skins.size() > 0)
+    if (InReimport)
     {
-        ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::SkeletalMesh)));
+        if (UStaticMesh* StaticMesh = Cast<UStaticMesh>(InContext))
+        {
+            ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::StaticMesh)));
+            glTFImporterOptions->ImportType = EglTFImportType::StaticMesh;
+        }
+        else if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(InContext))
+        {
+            ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::SkeletalMesh)));
+            glTFImporterOptions->ImportType = EglTFImportType::SkeletalMesh;
+        }
+        else if (ULevel* Level = Cast<ULevel>(InContext))
+        {
+            ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::Level)));
+            glTFImporterOptions->ImportType = EglTFImportType::Level;
+        }
     }
-    else if (glTFImporterOptions->ImportType == EglTFImportType::SkeletalMesh)
+    else
     {
-        glTFImporterOptions->ImportType = EglTFImportType::StaticMesh;
+        ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::StaticMesh)));
+        if (InGlTF.skins.size() > 0)
+        {
+            ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::SkeletalMesh)));
+        }
+        else if (glTFImporterOptions->ImportType == EglTFImportType::SkeletalMesh)
+        {
+            glTFImporterOptions->ImportType = EglTFImportType::StaticMesh;
+        }
+        ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::Level)));
     }
-    //ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::Actor)));
-    //ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::Level)));
 
     TSharedPtr<SglTFImporterOptionsWindowEd> glTFImportWindow;
     Window->SetContent
@@ -55,6 +75,7 @@ TSharedPtr<FglTFImporterOptions> SglTFImporterOptionsWindowEd::Open(const FStrin
             .WidgetWindow(Window)
             .ImportTypes(ImportTypes)
             .bHasAnimation(InGlTF.animations.size() > 0)
+            .bReimport(InReimport)
     );
 
     /// Show the import options window.
@@ -83,6 +104,7 @@ void SglTFImporterOptionsWindowEd::Construct(const FArguments& InArgs)
     WidgetWindow = InArgs._WidgetWindow;
     ImportTypes = InArgs._ImportTypes;
     bHasAnimation = InArgs._bHasAnimation;
+    bReimport = InArgs._bReimport;
 
     if (ImportTypes.Num() <= 0)
     {
@@ -220,6 +242,7 @@ void SglTFImporterOptionsWindowEd::Construct(const FArguments& InArgs)
                             .VAlign(VAlign_Center)
                         [
                             SNew(SComboBox<TSharedPtr<EglTFImportType>>)
+                                .IsEnabled(!bReimport)
                                 .InitiallySelectedItem(ImportTypes[0])
                                 .OptionsSource(&ImportTypes)
                                 .OnSelectionChanged(this, &SglTFImporterOptionsWindowEd::HandleImportType)

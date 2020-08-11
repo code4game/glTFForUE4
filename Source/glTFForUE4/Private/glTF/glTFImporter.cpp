@@ -1686,6 +1686,20 @@ FString FglTFImporter::SanitizeObjectName(const FString& InObjectName)
     return SanitizedName;
 }
 
+UAssetImportData* FglTFImporter::GetAssetImportData(UObject* InObject)
+{
+    UAssetImportData* AssetImportData = nullptr;
+    if (UStaticMesh* StaticMesh = Cast<UStaticMesh>(InObject))
+    {
+        AssetImportData = StaticMesh->AssetImportData;
+    }
+    else if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(InObject))
+    {
+        AssetImportData = SkeletalMesh->AssetImportData;
+    }
+    return AssetImportData;
+}
+
 const FMatrix& FglTFImporter::GetglTFSpaceToUnrealSpace(bool bSwapYZ /*= true*/, bool bInverseX /*= false*/)
 {
     static const FMatrix GglTFSpaceToUnrealSpacePX(

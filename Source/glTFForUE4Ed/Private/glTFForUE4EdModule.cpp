@@ -9,6 +9,8 @@
 /// From glTFForUE4Ed module
 #include "glTF/glTFFactory.h"
 #include "glTF/glTFBinaryFactory.h"
+#include "glTF/glTFReimportFactory.h"
+#include "glTF/glTFBinaryReimportFactory.h"
 
 /// From engine
 #include "ISettingsModule.h"
@@ -34,6 +36,8 @@ public:
 
         UglTFFactory::StaticClass();
         UglTFBinaryFactory::StaticClass();
+        UglTFReimportFactory::StaticClass();
+        UglTFBinaryReimportFactory::StaticClass();
     }
 
     virtual void ShutdownModule()
