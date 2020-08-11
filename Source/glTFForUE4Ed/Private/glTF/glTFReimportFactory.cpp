@@ -19,7 +19,7 @@ bool UglTFReimportFactory::CanReimport(UObject* Obj, TArray<FString>& OutFilenam
         return false;
     }
 
-    UAssetImportData* AssetImportData = FglTFImporter::GetAssetImportData(Obj);
+    UAssetImportData* AssetImportData = FglTFImporterEd::GetAssetImportData(Obj);
     if (!AssetImportData)
     {
         const FString ObjPathName = Obj->GetPathName();
@@ -35,7 +35,7 @@ void UglTFReimportFactory::SetReimportPaths(UObject* Obj, const TArray<FString>&
 {
     if (!Obj || NewReimportPaths.Num() <= 0) return;
 
-    UAssetImportData* AssetImportData = FglTFImporter::GetAssetImportData(Obj);
+    UAssetImportData* AssetImportData = FglTFImporterEd::GetAssetImportData(Obj);
     if (!AssetImportData) return;
 
     AssetImportData->Update(NewReimportPaths[0]);
@@ -49,7 +49,7 @@ EReimportResult::Type UglTFReimportFactory::Reimport(UObject* Obj)
         return EReimportResult::Failed;
     }
 
-    UAssetImportData* AssetImportData = FglTFImporter::GetAssetImportData(Obj);
+    UAssetImportData* AssetImportData = FglTFImporterEd::GetAssetImportData(Obj);
     if (!AssetImportData)
     {
         const FString ObjPathName = Obj->GetPathName();

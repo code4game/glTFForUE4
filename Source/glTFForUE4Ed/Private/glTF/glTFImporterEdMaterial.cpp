@@ -111,9 +111,9 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
 
         NewMaterial = Cast<UMaterial>(StaticDuplicateObject(glTFMaterialOrigin, MaterialPackage, *MaterialName, InputFlags, glTFMaterialOrigin->GetClass()));
         checkSlow(NewMaterial);
+        if (NewMaterial) FAssetRegistryModule::AssetCreated(NewMaterial);
     }
     if (!NewMaterial) return nullptr;
-    FAssetRegistryModule::AssetCreated(NewMaterial);
 
     NewMaterial->PreEditChange(nullptr);
 

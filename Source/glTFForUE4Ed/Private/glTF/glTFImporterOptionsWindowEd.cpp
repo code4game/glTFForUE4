@@ -55,15 +55,13 @@ TSharedPtr<FglTFImporterOptions> SglTFImporterOptionsWindowEd::Open(UObject* InC
     }
     else
     {
-        ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::StaticMesh)));
+        glTFImporterOptions->ImportType = EglTFImportType::StaticMesh;
         if (InGlTF.skins.size() > 0)
         {
             ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::SkeletalMesh)));
+            glTFImporterOptions->ImportType = EglTFImportType::SkeletalMesh;
         }
-        else if (glTFImporterOptions->ImportType == EglTFImportType::SkeletalMesh)
-        {
-            glTFImporterOptions->ImportType = EglTFImportType::StaticMesh;
-        }
+        ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::StaticMesh)));
         ImportTypes.Add(TSharedPtr<EglTFImportType>(new EglTFImportType(EglTFImportType::Level)));
     }
 

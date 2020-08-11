@@ -12,7 +12,6 @@
 #include "AssetRegistryModule.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/Material.h"
-#include "EditorFramework/AssetImportData.h"
 #include "Misc/Paths.h"
 
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
@@ -83,10 +82,10 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     {
         /// Create a new static mesh
         NewStaticMesh = NewObject<UStaticMesh>(InputParent, InputClass, InputName, InputFlags);
+        checkSlow(NewStaticMesh);
+        if (NewStaticMesh) FAssetRegistryModule::AssetCreated(NewStaticMesh);
     }
-    checkSlow(NewStaticMesh);
     if (!NewStaticMesh) return nullptr;
-    FAssetRegistryModule::AssetCreated(NewStaticMesh);
 
     NewStaticMesh->PreEditChange(nullptr);
 
@@ -203,14 +202,6 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
         }
         StaticMeshSectionInfoMap.Clear();
         StaticMeshSectionInfoMap.CopyFrom(NewMap);
-
-        if (NewStaticMesh->AssetImportData)
-        {
-            NewStaticMesh->AssetImportData->Update(glTFImporterOptions->FilePathInOS);
-        }
-
-        NewStaticMesh->PostEditChange();
-        NewStaticMesh->MarkPackageDirty();
     }
     else
     {

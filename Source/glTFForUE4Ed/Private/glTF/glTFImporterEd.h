@@ -29,4 +29,8 @@ public:
 
 protected:
     class UFactory* InputFactory;
+
+public:
+    static class UAssetImportData* GetAssetImportData(UObject* InObject);
+    static void UpdateAssetImportData(UObject* InObject, const FString& InFilePath);
 };

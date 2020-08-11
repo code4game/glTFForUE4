@@ -130,10 +130,10 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
         if (!NewTexture)
         {
             NewTexture = NewObject<UTexture2D>(TexturePackage, UTexture2D::StaticClass(), *InTextureName, InputFlags);
+            checkSlow(NewTexture);
+            if (NewTexture) FAssetRegistryModule::AssetCreated(NewTexture);
         }
-        checkSlow(NewTexture);
         if (!NewTexture) break;
-        FAssetRegistryModule::AssetCreated(NewTexture);
 
         NewTexture->PreEditChange(nullptr);
 
@@ -180,13 +180,7 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
     if (NewTexture)
     {
         NewTexture->UpdateResource();
-        if (!ImageFilePath.IsEmpty())
-        {
-            NewTexture->AssetImportData->Update(*ImageFilePath);
-        }
-
-        NewTexture->PostEditChange();
-        NewTexture->MarkPackageDirty();
+        FglTFImporterEd::UpdateAssetImportData(NewTexture, ImageFilePath);
     }
     return NewTexture;
 }
