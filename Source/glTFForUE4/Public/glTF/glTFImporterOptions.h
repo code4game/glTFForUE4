@@ -44,6 +44,18 @@ struct GLTFFORUE4_API FglTFImporterOptions
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bRecomputeTangents;
 
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    bool bRemoveDegenerates;
+    
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    bool bBuildAdjacencyBuffer;
+
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    bool bUseFullPrecisionUVs;
+    
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    bool bGenerateLightmapUVs;
+
     /// Material options
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bImportMaterial;

@@ -178,6 +178,26 @@ void SglTFImporterOptionsWindow::HandleMeshRecomputeTangents(ECheckBoxState InCh
     glTFImporterOptions.Pin()->bRecomputeTangents = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
+void SglTFImporterOptionsWindow::HandleMeshRemoveDegenerates(ECheckBoxState InCheckBoxState)
+{
+    glTFImporterOptions.Pin()->bRemoveDegenerates = (InCheckBoxState == ECheckBoxState::Checked);
+}
+
+void SglTFImporterOptionsWindow::HandleMeshBuildAdjacencyBuffer(ECheckBoxState InCheckBoxState)
+{
+    glTFImporterOptions.Pin()->bBuildAdjacencyBuffer = (InCheckBoxState == ECheckBoxState::Checked);
+}
+
+void SglTFImporterOptionsWindow::HandleMeshUseFullPrecisionUVs(ECheckBoxState InCheckBoxState)
+{
+    glTFImporterOptions.Pin()->bUseFullPrecisionUVs = (InCheckBoxState == ECheckBoxState::Checked);
+}
+
+void SglTFImporterOptionsWindow::HandleMeshGenerateLightmapUVs(ECheckBoxState InCheckBoxState)
+{
+    glTFImporterOptions.Pin()->bGenerateLightmapUVs = (InCheckBoxState == ECheckBoxState::Checked);
+}
+
 void SglTFImporterOptionsWindow::HandleImportMaterial(ECheckBoxState InCheckBoxState)
 {
     glTFImporterOptions.Pin()->bImportMaterial = (InCheckBoxState == ECheckBoxState::Checked);

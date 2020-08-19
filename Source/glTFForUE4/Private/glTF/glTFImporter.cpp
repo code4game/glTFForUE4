@@ -172,7 +172,7 @@ FglTFBuffers::~FglTFBuffers()
 bool FglTFBuffers::CacheBinary(uint32 InIndex, const TArray<uint8>& InData)
 {
     IndexToIndex[EglTFBufferSource::Binaries].Add(InIndex, Datas.Num());
-    Datas.Add(MakeShareable(new FglTFBufferData(InData)));
+    Datas.Add(MakeShared<FglTFBufferData>(InData));
     return true;
 }
 
@@ -180,7 +180,7 @@ bool FglTFBuffers::CacheImages(uint32 InIndex, const FString& InFileFolderRoot, 
 {
     if (!InImage) return false;
     IndexToIndex[EglTFBufferSource::Images].Add(InIndex, Datas.Num());
-    Datas.Add(MakeShareable(new FglTFBufferData(InFileFolderRoot, GLTF_GLTFSTRING_TO_TCHAR(InImage->uri.c_str()))));
+    Datas.Add(MakeShared<FglTFBufferData>(InFileFolderRoot, GLTF_GLTFSTRING_TO_TCHAR(InImage->uri.c_str())));
     return true;
 }
 
@@ -188,7 +188,7 @@ bool FglTFBuffers::CacheBuffers(uint32 InIndex, const FString& InFileFolderRoot,
 {
     if (!InBuffer) return false;
     IndexToIndex[EglTFBufferSource::Buffers].Add(InIndex, Datas.Num());
-    Datas.Add(MakeShareable(new FglTFBufferData(InFileFolderRoot, GLTF_GLTFSTRING_TO_TCHAR(InBuffer->uri.c_str()))));
+    Datas.Add(MakeShared<FglTFBufferData>(InFileFolderRoot, GLTF_GLTFSTRING_TO_TCHAR(InBuffer->uri.c_str())));
     return true;
 }
 
@@ -687,7 +687,7 @@ FglTFAnimationSequenceKeyData* FglTFAnimationSequenceData::FindOrAddSequenceKeyD
     {
         FglTFAnimationSequenceKeyData KeyData;
         KeyData.Time = InTime;
-        KeyDatas.Add(KeyData);
+        KeyDatas.Emplace(KeyData);
         KeyDataPtr = &(KeyDatas.Last());
     }
     return KeyDataPtr;
@@ -741,7 +741,7 @@ FglTFAnimationSequenceData* FglTFAnimationSequenceDatas::FindOrAddSequenceData(i
     {
         FglTFAnimationSequenceData SequenceData;
         SequenceData.NodeIndex = InNodeIndex;
-        Datas.Add(SequenceData);
+        Datas.Emplace(SequenceData);
         SequenceDataPtr = &(Datas.Last());
     }
     return SequenceDataPtr;
@@ -1627,12 +1627,12 @@ bool FglTFImporter::GetNodeParentIndicesAndTransforms(const std::shared_ptr<libg
             {
                 if (ParentIndex == INDEX_NONE)
                 {
-                    ChildIndices.Add(i);
+                    ChildIndices.Emplace(i);
                 }
             }
             else if (ParentIndices.Contains(ParentIndex))
             {
-                ChildIndices.Add(i);
+                ChildIndices.Emplace(i);
             }
         }
 

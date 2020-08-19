@@ -26,17 +26,21 @@ public:
 private:
     TArray<class USkeletalMesh*> CreateSkeletalMesh(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions
         , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SNode>& InNode
+        , const FTransform& InNodeTransform
         , const TArray<int32>& InNodeParentIndices, const TArray<FTransform>& InNodeRelativeTransforms, const TArray<FTransform>& InNodeAbsoluteTransforms, const class FglTFBuffers& InBuffers) const;
     class USkeletalMesh* CreateSkeletalMesh(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions
         , const std::shared_ptr<libgltf::SGlTF>& InGlTF, int32 InMeshId, const std::shared_ptr<libgltf::SMesh>& InMesh, const std::shared_ptr<libgltf::SSkin>& InSkin
+        , const FTransform& InNodeTransform
         , const TArray<int32>& InNodeParentIndices, const TArray<FTransform>& InNodeRelativeTransforms, const TArray<FTransform>& InNodeAbsoluteTransforms, const class FglTFBuffers& InBuffers) const;
 
 private:
     bool GenerateSkeletalMeshImportData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMesh>& InMesh, const std::shared_ptr<libgltf::SSkin>& InSkin
+        , const FTransform& InNodeTransform
         , const TArray<int32>& InNodeParentIndices, const TArray<FTransform>& InNodeRelativeTransforms, const TArray<FTransform>& InNodeAbsoluteTransforms, const class FglTFBuffers& InBuffers
         , class FSkeletalMeshImportData& OutSkeletalMeshImportData, TArray<FMatrix>& OutInverseBindMatrices, TMap<int32, FString>& OutNodeIndexToBoneNames, TArray<FglTFMaterialInfo>& InOutMaterialInfo
         , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const;
     bool GenerateSkeletalMeshImportData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const std::shared_ptr<libgltf::SSkin>& InSkin
+        , const FTransform& InNodeTransform
         , const TArray<int32>& InNodeParentIndices, const TArray<FTransform>& InNodeRelativeTransforms, const TArray<FTransform>& InNodeAbsoluteTransforms, const class FglTFBuffers& InBuffers
         , class FSkeletalMeshImportData& OutSkeletalMeshImportData, TArray<FMatrix>& OutInverseBindMatrices, TMap<int32, FString>& OutNodeIndexToBoneNames
         , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const;

@@ -59,6 +59,10 @@ protected:
     void HandleMeshUseMikkTSpace(ECheckBoxState InCheckBoxState);
     void HandleMeshRecomputeNormals(ECheckBoxState InCheckBoxState);
     void HandleMeshRecomputeTangents(ECheckBoxState InCheckBoxState);
+    void HandleMeshRemoveDegenerates(ECheckBoxState InCheckBoxState);
+    void HandleMeshBuildAdjacencyBuffer(ECheckBoxState InCheckBoxState);
+    void HandleMeshUseFullPrecisionUVs(ECheckBoxState InCheckBoxState);
+    void HandleMeshGenerateLightmapUVs(ECheckBoxState InCheckBoxState);
 
     void HandleImportMaterial(ECheckBoxState InCheckBoxState);
     void HandleImportTexture(ECheckBoxState InCheckBoxState);

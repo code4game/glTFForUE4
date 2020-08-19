@@ -160,10 +160,10 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
 
     SourceModel.BuildSettings.bRecomputeNormals = (glTFImporterOptions->bRecomputeNormals || NewRawMesh.WedgeTangentZ.Num() != NewRawMesh.WedgeIndices.Num());
     SourceModel.BuildSettings.bRecomputeTangents = (glTFImporterOptions->bRecomputeTangents || NewRawMesh.WedgeTangentX.Num() != NewRawMesh.WedgeIndices.Num() || NewRawMesh.WedgeTangentY.Num() != NewRawMesh.WedgeIndices.Num());
-    SourceModel.BuildSettings.bRemoveDegenerates = false;
-    SourceModel.BuildSettings.bBuildAdjacencyBuffer = false;
-    SourceModel.BuildSettings.bUseFullPrecisionUVs = false;
-    SourceModel.BuildSettings.bGenerateLightmapUVs = false;
+    SourceModel.BuildSettings.bRemoveDegenerates = glTFImporterOptions->bRemoveDegenerates;
+    SourceModel.BuildSettings.bBuildAdjacencyBuffer = glTFImporterOptions->bBuildAdjacencyBuffer;
+    SourceModel.BuildSettings.bUseFullPrecisionUVs = glTFImporterOptions->bUseFullPrecisionUVs;
+    SourceModel.BuildSettings.bGenerateLightmapUVs = glTFImporterOptions->bGenerateLightmapUVs;
     SourceModel.RawMeshBulkData->SaveRawMesh(NewRawMesh);
 
     /// Build the static mesh

@@ -353,6 +353,82 @@ void SglTFImporterOptionsWindowEd::Construct(const FArguments& InArgs)
                                 .IsChecked(glTFImporterOptions.Pin()->bRecomputeTangents ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
                                 .OnCheckStateChanged(this, &SglTFImporterOptionsWindowEd::HandleMeshRecomputeTangents)
                         ]
+                        + SGridPanel::Slot(0, 5)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(STextBlock)
+                                .MinDesiredWidth(200)
+                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                                .Text(LOCTEXT("ImportOptionsWindow_RemoveDegenerates_Title", "Remove Degenerates: "))
+                        ]
+                        + SGridPanel::Slot(1, 5)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(SCheckBox)
+                                .IsChecked(glTFImporterOptions.Pin()->bRemoveDegenerates ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImporterOptionsWindowEd::HandleMeshRemoveDegenerates)
+                        ]
+                        + SGridPanel::Slot(0, 6)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(STextBlock)
+                                .MinDesiredWidth(200)
+                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                                .Text(LOCTEXT("ImportOptionsWindow_BuildAdjacencyBuffer_Title", "Build Adjacency Buffer: "))
+                        ]
+                        + SGridPanel::Slot(1, 6)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(SCheckBox)
+                                .IsChecked(glTFImporterOptions.Pin()->bBuildAdjacencyBuffer ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImporterOptionsWindowEd::HandleMeshBuildAdjacencyBuffer)
+                        ]
+                        + SGridPanel::Slot(0, 7)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(STextBlock)
+                                .MinDesiredWidth(200)
+                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                                .Text(LOCTEXT("ImportOptionsWindow_UseFullPrecisionUVs_Title", "Use Full Precision UVs: "))
+                        ]
+                        + SGridPanel::Slot(1, 7)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(SCheckBox)
+                                .IsChecked(glTFImporterOptions.Pin()->bUseFullPrecisionUVs ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImporterOptionsWindowEd::HandleMeshUseFullPrecisionUVs)
+                        ]
+                        + SGridPanel::Slot(0, 8)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(STextBlock)
+                                .MinDesiredWidth(200)
+                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+                                .Text(LOCTEXT("ImportOptionsWindow_GenerateLightmapUVs_Title", "Generate Lightmap UVs: "))
+                        ]
+                        + SGridPanel::Slot(1, 8)
+                            .Padding(2)
+                            .HAlign(HAlign_Left)
+                            .VAlign(VAlign_Center)
+                        [
+                            SNew(SCheckBox)
+                                .IsChecked(glTFImporterOptions.Pin()->bGenerateLightmapUVs ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+                                .OnCheckStateChanged(this, &SglTFImporterOptionsWindowEd::HandleMeshGenerateLightmapUVs)
+                        ]
                     ]
                 ]
             ]
