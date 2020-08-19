@@ -54,7 +54,6 @@ SglTFImporterOptionsWindow::SglTFImporterOptionsWindow()
     , WidgetWindow(nullptr)
     , ImportTypes()
     , bHasAnimation(false)
-    , bReimport(false)
 {
     //
 }

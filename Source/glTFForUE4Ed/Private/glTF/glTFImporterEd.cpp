@@ -3,7 +3,6 @@
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTF/glTFImporterEd.h"
 
-#include "glTF/glTFImporterOptions.h"
 #include "glTF/glTFImporterEdStaticMesh.h"
 #include "glTF/glTFImporterEdSkeletalMesh.h"
 #include "glTF/glTFImporterEdLevel.h"
@@ -90,8 +89,41 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
         break;
     }
 
-    FglTFImporterEd::UpdateAssetImportData(CreatedObject, glTFImporterOptions->FilePathInOS);
+    FglTFImporterEd::UpdateAssetImportData(CreatedObject, InglTFImporterOptions);
     return CreatedObject;
+}
+
+bool FglTFImporterEd::SetAssetImportData(UObject* InObject, const FglTFImporterOptions& InglTFImporterOptions)
+{
+    if (!InObject) return false;
+    // just supports `UStaticMesh` and `USkeletalMesh`
+    if (!InObject->IsA<UStaticMesh>() && !InObject->IsA<USkeletalMesh>())
+    {
+        return false;
+    }
+
+    UglTFImporterEdData* glTFImporterEdData = Cast<UglTFImporterEdData>(GetAssetImportData(InObject));
+    if (!glTFImporterEdData)
+    {
+        glTFImporterEdData = NewObject<UglTFImporterEdData>(InObject);
+    }
+    glTFImporterEdData->glTFImporterOptions = InglTFImporterOptions;
+    glTFImporterEdData->glTFImporterOptions.FilePathInEngine = InObject->GetPathName();
+    glTFImporterEdData->Update(InglTFImporterOptions.FilePathInOS);
+
+    if (UStaticMesh* StaticMesh = Cast<UStaticMesh>(InObject))
+    {
+        StaticMesh->AssetImportData = glTFImporterEdData;
+    }
+    else if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(InObject))
+    {
+        SkeletalMesh->AssetImportData = glTFImporterEdData;
+    }
+    if (glTFImporterEdData)
+    {
+        glTFImporterEdData->MarkPackageDirty();
+    }
+    return true;
 }
 
 UAssetImportData* FglTFImporterEd::GetAssetImportData(UObject* InObject)
@@ -112,13 +144,13 @@ UAssetImportData* FglTFImporterEd::GetAssetImportData(UObject* InObject)
     return AssetImportData;
 }
 
-void FglTFImporterEd::UpdateAssetImportData(UObject* InObject, const FString& InFilePath)
+void FglTFImporterEd::UpdateAssetImportData(UObject* InObject, const FString& InFilePathInOS)
 {
-    if (!InFilePath.IsEmpty())
+    if (!InFilePathInOS.IsEmpty())
     {
         if (UAssetImportData* AssetImportData = GetAssetImportData(InObject))
         {
-            AssetImportData->Update(InFilePath);
+            AssetImportData->Update(InFilePathInOS);
         }
     }
 
@@ -127,6 +159,33 @@ void FglTFImporterEd::UpdateAssetImportData(UObject* InObject, const FString& In
         InObject->PostEditChange();
         InObject->MarkPackageDirty();
     }
+}
+
+void FglTFImporterEd::UpdateAssetImportData(UObject* InObject, const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions)
+{
+    if (!InglTFImporterOptions.IsValid())
+    {
+        return;
+    }
+
+    const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
+
+    if (!glTFImporterOptions->FilePathInOS.IsEmpty())
+    {
+        SetAssetImportData(InObject, *glTFImporterOptions);
+    }
+
+    if (InObject)
+    {
+        InObject->PostEditChange();
+        InObject->MarkPackageDirty();
+    }
+}
+
+UglTFImporterEdData::UglTFImporterEdData(const FObjectInitializer& InObjectInitializer)
+    : Super(InObjectInitializer)
+{
+    //
 }
 
 #undef LOCTEXT_NAMESPACE

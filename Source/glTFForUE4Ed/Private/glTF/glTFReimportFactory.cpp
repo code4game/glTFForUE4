@@ -8,7 +8,6 @@ UglTFReimportFactory::UglTFReimportFactory(const FObjectInitializer& InObjectIni
 {
     SupportedClass = UStaticMesh::StaticClass();
     ImportPriority = DefaultImportPriority + 1;
-    bReimport = true;
 }
 
 bool UglTFReimportFactory::CanReimport(UObject* Obj, TArray<FString>& OutFilenames)
@@ -55,6 +54,13 @@ EReimportResult::Type UglTFReimportFactory::Reimport(UObject* Obj)
         const FString ObjPathName = Obj->GetPathName();
         UE_LOG(LogglTFForUE4Ed, Error, TEXT("Not support! %s"), *ObjPathName);
         return EReimportResult::Failed;
+    }
+
+    // get the import data
+    if (UglTFImporterEdData* glTFImporterEdData = Cast<UglTFImporterEdData>(AssetImportData))
+    {
+        glTFReimporterOptions = MakeShared<FglTFImporterOptions>();
+        *glTFReimporterOptions = glTFImporterEdData->glTFImporterOptions;
     }
 
     const FString AssetImportFilename = AssetImportData->GetFirstFilename();

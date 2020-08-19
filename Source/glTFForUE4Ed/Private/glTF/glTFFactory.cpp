@@ -16,16 +16,9 @@
 
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
-UglTFFactory::UglTFFactory()
-    : Super()
-    , bReimport(false)
-    , ImportClass(nullptr)
-{
-    //
-}
-
 UglTFFactory::UglTFFactory(const FObjectInitializer& InObjectInitializer)
     : Super(InObjectInitializer)
+    , glTFReimporterOptions(nullptr)
     , ImportClass(nullptr)
 {
     if (Formats.Num() > 0) Formats.Empty();
@@ -94,10 +87,13 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
 
     /// Open the importer window, allow to configure some options when is not automated
     bool bCancel = false;
-    TSharedPtr<FglTFImporterOptions> glTFImporterOptions
-        = IsAutomatedImport()
-        ? MakeShared<FglTFImporterOptions>()
-        : SglTFImporterOptionsWindowEd::Open(InContext, FilePathInOS, InParent->GetPathName(), *GlTF, bReimport, bCancel);
+    TSharedPtr<FglTFImporterOptions> glTFImporterOptions = glTFReimporterOptions;
+    if (!glTFImporterOptions.IsValid())
+    {
+        glTFImporterOptions = IsAutomatedImport()
+            ? MakeShared<FglTFImporterOptions>()
+            : SglTFImporterOptionsWindowEd::Open(InContext, FilePathInOS, InParent->GetPathName(), *GlTF, bCancel);
+    }
     if (glTFImporterOptions.IsValid())
     {
         if (glTFImporterOptions->ImportType == EglTFImportType::StaticMesh)

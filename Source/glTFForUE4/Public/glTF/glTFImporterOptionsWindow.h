@@ -23,14 +23,12 @@ public:
         , _WidgetWindow(nullptr)
         , _ImportTypes()
         , _bHasAnimation(false)
-        , _bReimport(false)
         {}
 
         SLATE_ARGUMENT(TSharedPtr<struct FglTFImporterOptions>, glTFImporterOptions)
         SLATE_ARGUMENT(TSharedPtr<class SWindow>, WidgetWindow)
         SLATE_ARGUMENT(TArray<TSharedPtr<EglTFImportType>>, ImportTypes)
         SLATE_ARGUMENT(bool, bHasAnimation)
-        SLATE_ARGUMENT(bool, bReimport)
     SLATE_END_ARGS()
 
 public:
@@ -77,5 +75,4 @@ protected:
     TWeakPtr<class SWindow> WidgetWindow;
     TArray<TSharedPtr<EglTFImportType>> ImportTypes;
     bool bHasAnimation;
-    bool bReimport;
 };

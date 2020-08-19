@@ -44,7 +44,7 @@ namespace glTFForUE4Ed
         {
             Vertex.VertexIndex += PointsStartIndex;
             Vertex.MatIndex += MaterialsStartIndex;
-            OutImportData.Wedges.Add(Vertex);
+            OutImportData.Wedges.Emplace(Vertex);
         }
 
 #if ENGINE_MINOR_VERSION <= 20
@@ -58,7 +58,7 @@ namespace glTFForUE4Ed
                 Triangle.WedgeIndex[i] += WedgesStartIndex;
             }
             Triangle.MatIndex += MaterialsStartIndex;
-            OutImportData.Faces.Add(Triangle);
+            OutImportData.Faces.Emplace(Triangle);
         }
 
 #if ENGINE_MINOR_VERSION <= 20
@@ -68,13 +68,13 @@ namespace glTFForUE4Ed
 #endif
         {
             RawBoneInfluence.VertexIndex += PointsStartIndex;
-            OutImportData.Influences.Add(RawBoneInfluence);
+            OutImportData.Influences.Emplace(RawBoneInfluence);
         }
 
         for (int32 PointToRawMapIndex : InImportData.PointToRawMap)
         {
             PointToRawMapIndex += PointsStartIndex;
-            OutImportData.PointToRawMap.Add(PointToRawMapIndex);
+            OutImportData.PointToRawMap.Emplace(PointToRawMapIndex);
         }
 
         if (OutImportData.Materials.Num() > 0)
@@ -95,7 +95,7 @@ namespace glTFForUE4Ed
 #endif
         {
             Bone.ParentIndex += RefBonesBinaryStartIndex;
-            OutImportData.RefBonesBinary.Add(Bone);
+            OutImportData.RefBonesBinary.Emplace(Bone);
         }
         OutInverseBindMatrix.Append(InInverseBindMatrix);
 
@@ -367,7 +367,7 @@ TArray<USkeletalMesh*> FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWe
         USkeletalMesh* NewSkeletalMeshs = CreateSkeletalMesh(InglTFImporterOptions, InGlTF, MeshId, Mesh, Skin, InNodeParentIndices, InNodeRelativeTransforms, InNodeAbsoluteTransforms, InBuffers);
         if (NewSkeletalMeshs)
         {
-            SkeletalMeshs.Add(NewSkeletalMeshs);
+            SkeletalMeshs.Emplace(NewSkeletalMeshs);
         }
         else
         {
@@ -533,6 +533,8 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     }
     SkeletalMesh->BuildPhysicsData();
 
+    SkeletalMesh->Materials.Empty();
+
     /// import the material
     if (glTFImporterOptions->bImportMaterial)
     {
@@ -546,7 +548,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
                 checkSlow(0);
                 continue;
             }
-            SkeletalMesh->Materials.Add(FSkeletalMaterial(NewMaterial));
+            SkeletalMesh->Materials.Emplace(FSkeletalMaterial(NewMaterial));
         }
     }
     else
@@ -557,7 +559,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
         for (const SkeletalMeshImportData::FMaterial& Material : SkeletalMeshImportData.Materials)
 #endif
         {
-            SkeletalMesh->Materials.Add(Material.Material.Get());
+            SkeletalMesh->Materials.Emplace(Material.Material.Get());
         }
     }
 
@@ -633,7 +635,7 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
 
         FString PrimitiveName = FString::Printf(TEXT("%s%d"), *MeshName, i);
         PrimitiveName = FglTFImporter::SanitizeObjectName(PrimitiveName);
-        InOutMaterialInfo.Add(FglTFMaterialInfo(MaterialId, PrimitiveName));
+        InOutMaterialInfo.Emplace(FglTFMaterialInfo(MaterialId, PrimitiveName));
     }
     return true;
 }
@@ -669,7 +671,7 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
     for (const std::shared_ptr<libgltf::SGlTFId>& JointIdPtr : InSkin->joints)
     {
         if (!JointIdPtr) return false;
-        JointIds.Add(*JointIdPtr);
+        JointIds.Emplace(*JointIdPtr);
     }
 
     OutInverseBindMatrices = InverseBindMatrices;
@@ -722,7 +724,7 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
         Bone.BonePos.YSize = 100.0f;
         Bone.BonePos.ZSize = 100.0f;
 
-        OutSkeletalMeshImportData.RefBonesBinary.Add(Bone);
+        OutSkeletalMeshImportData.RefBonesBinary.Emplace(Bone);
 
         OutNodeIndexToBoneNames.Add(JointId, Bone.Name);
     }

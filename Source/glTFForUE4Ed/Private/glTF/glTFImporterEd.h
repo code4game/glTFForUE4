@@ -3,6 +3,9 @@
 #pragma once
 
 #include "glTF/glTFImporter.h"
+#include "glTF/glTFImporterOptions.h"
+#include <EditorFramework/AssetImportData.h>
+#include "glTFImporterEd.generated.h"
 
 class FglTFImporterEd : public FglTFImporter
 {
@@ -31,6 +34,18 @@ protected:
     class UFactory* InputFactory;
 
 public:
-    static class UAssetImportData* GetAssetImportData(UObject* InObject);
-    static void UpdateAssetImportData(UObject* InObject, const FString& InFilePath);
+    static bool SetAssetImportData(UObject* InObject, const FglTFImporterOptions& InglTFImporterOptions);
+    static UAssetImportData* GetAssetImportData(UObject* InObject);
+    static void UpdateAssetImportData(UObject* InObject, const FString& InFilePathInOS);
+    static void UpdateAssetImportData(UObject* InObject, const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions);
+};
+
+UCLASS()
+class UglTFImporterEdData : public UAssetImportData
+{
+    GENERATED_UCLASS_BODY()
+
+public:
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    FglTFImporterOptions glTFImporterOptions;
 };

@@ -8,7 +8,6 @@ UglTFBinaryReimportFactory::UglTFBinaryReimportFactory(const FObjectInitializer&
 {
     SupportedClass = UStaticMesh::StaticClass();
     ImportPriority = DefaultImportPriority + 1;
-    bReimport = true;
 }
 
 bool UglTFBinaryReimportFactory::CanReimport(UObject* Obj, TArray<FString>& OutFilenames)

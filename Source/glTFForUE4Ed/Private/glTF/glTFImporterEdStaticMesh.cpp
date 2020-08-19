@@ -77,6 +77,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     FText TaskName = FText::Format(LOCTEXT("BeginImportAsStaticMeshTask", "Importing the glTF ({0}) as a static mesh ({1})"), FText::FromName(InputName), FText::FromName(InputName));
     glTFForUE4::FFeedbackTaskWrapper FeedbackTaskWrapper(FeedbackContext, TaskName, true);
 
+    bool bCreated = false;
     UStaticMesh* NewStaticMesh = FindObject<UStaticMesh>(InputParent, *InputName.ToString());
     if (!NewStaticMesh)
     {
@@ -84,6 +85,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
         NewStaticMesh = NewObject<UStaticMesh>(InputParent, InputClass, InputName, InputFlags);
         checkSlow(NewStaticMesh);
         if (NewStaticMesh) FAssetRegistryModule::AssetCreated(NewStaticMesh);
+        bCreated = true;
     }
     if (!NewStaticMesh) return nullptr;
 
@@ -132,82 +134,93 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
         }
     }
 
-    if (NewRawMesh.IsValidOrFixable())
+    if (!NewRawMesh.IsValidOrFixable())
     {
-        if (glTFImporterOptions->bInvertNormal)
+        // destroy new object
+        if (bCreated)
         {
-            for (FVector& Normal : NewRawMesh.WedgeTangentZ)
-            {
-                Normal *= -1.0f;
-            }
+            NewStaticMesh->ConditionalBeginDestroy();
+            NewStaticMesh = nullptr;
         }
+        return NewStaticMesh;
+    }
 
-        for (FVector& Position : NewRawMesh.VertexPositions)
+    if (glTFImporterOptions->bInvertNormal)
+    {
+        for (FVector& Normal : NewRawMesh.WedgeTangentZ)
         {
-            Position = Position * glTFImporterOptions->MeshScaleRatio;
+            Normal *= -1.0f;
         }
+    }
 
-        SourceModel.BuildSettings.bRecomputeNormals = (glTFImporterOptions->bRecomputeNormals || NewRawMesh.WedgeTangentZ.Num() != NewRawMesh.WedgeIndices.Num());
-        SourceModel.BuildSettings.bRecomputeTangents = (glTFImporterOptions->bRecomputeTangents || NewRawMesh.WedgeTangentX.Num() != NewRawMesh.WedgeIndices.Num() || NewRawMesh.WedgeTangentY.Num() != NewRawMesh.WedgeIndices.Num());
-        SourceModel.BuildSettings.bRemoveDegenerates = false;
-        SourceModel.BuildSettings.bBuildAdjacencyBuffer = false;
-        SourceModel.BuildSettings.bUseFullPrecisionUVs = false;
-        SourceModel.BuildSettings.bGenerateLightmapUVs = false;
-        SourceModel.RawMeshBulkData->SaveRawMesh(NewRawMesh);
+    for (FVector& Position : NewRawMesh.VertexPositions)
+    {
+        Position = Position * glTFImporterOptions->MeshScaleRatio;
+    }
 
-        /// Build the static mesh
-        TArray<FText> BuildErrors;
-        NewStaticMesh->Build(false, &BuildErrors);
-        if (BuildErrors.Num() > 0)
+    SourceModel.BuildSettings.bRecomputeNormals = (glTFImporterOptions->bRecomputeNormals || NewRawMesh.WedgeTangentZ.Num() != NewRawMesh.WedgeIndices.Num());
+    SourceModel.BuildSettings.bRecomputeTangents = (glTFImporterOptions->bRecomputeTangents || NewRawMesh.WedgeTangentX.Num() != NewRawMesh.WedgeIndices.Num() || NewRawMesh.WedgeTangentY.Num() != NewRawMesh.WedgeIndices.Num());
+    SourceModel.BuildSettings.bRemoveDegenerates = false;
+    SourceModel.BuildSettings.bBuildAdjacencyBuffer = false;
+    SourceModel.BuildSettings.bUseFullPrecisionUVs = false;
+    SourceModel.BuildSettings.bGenerateLightmapUVs = false;
+    SourceModel.RawMeshBulkData->SaveRawMesh(NewRawMesh);
+
+    /// Build the static mesh
+    TArray<FText> BuildErrors;
+    NewStaticMesh->Build(false, &BuildErrors);
+    if (BuildErrors.Num() > 0)
+    {
+        FeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("StaticMeshBuildHasError", "Failed to build the static mesh!"));
+        for (const FText& BuildError : BuildErrors)
         {
-            FeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("StaticMeshBuildHasError", "Failed to build the static mesh!"));
-            for (const FText& BuildError : BuildErrors)
-            {
-                FeedbackTaskWrapper.Log(ELogVerbosity::Warning, BuildError);
-            }
+            FeedbackTaskWrapper.Log(ELogVerbosity::Warning, BuildError);
         }
+    }
+
+    // clear old materials
+#if (ENGINE_MINOR_VERSION <= 13)
+    NewStaticMesh->Materials.Empty();
+#else
+    NewStaticMesh->StaticMaterials.Empty();
+#endif
 
 #if ENGINE_MINOR_VERSION <= 22
-        FMeshSectionInfoMap& StaticMeshSectionInfoMap = NewStaticMesh->SectionInfoMap;
+    FMeshSectionInfoMap& StaticMeshSectionInfoMap = NewStaticMesh->SectionInfoMap;
 #else
-        FMeshSectionInfoMap& StaticMeshSectionInfoMap = NewStaticMesh->GetSectionInfoMap();
+    FMeshSectionInfoMap& StaticMeshSectionInfoMap = NewStaticMesh->GetSectionInfoMap();
 #endif
 
-        TSharedPtr<FglTFImporterEdMaterial> glTFImporterEdMaterial = FglTFImporterEdMaterial::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext);
-        FMeshSectionInfoMap NewMap;
-        static UMaterial* DefaultMaterial = UMaterial::GetDefaultMaterial(MD_Surface);
-        TMap<FString, UTexture*> TextureLibrary;
-        for (int32 i = 0; i < glTFMaterialInfos.Num(); ++i)
+    TSharedPtr<FglTFImporterEdMaterial> glTFImporterEdMaterial = FglTFImporterEdMaterial::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext);
+    FMeshSectionInfoMap NewMap;
+    static UMaterial* DefaultMaterial = UMaterial::GetDefaultMaterial(MD_Surface);
+    TMap<FString, UTexture*> TextureLibrary;
+    int32 MaterialIndex = 0;
+    for (int32 i = 0; i < glTFMaterialInfos.Num(); ++i)
+    {
+        const FglTFMaterialInfo& glTFMaterialInfo = glTFMaterialInfos[i];
+        UMaterialInterface* NewMaterial = nullptr;
+        if (glTFImporterOptions->bImportMaterial)
         {
-            const FglTFMaterialInfo& glTFMaterialInfo = glTFMaterialInfos[i];
-            UMaterialInterface* NewMaterial = nullptr;
-            if (glTFImporterOptions->bImportMaterial)
-            {
-                NewMaterial = glTFImporterEdMaterial->CreateMaterial(InglTFImporterOptions, InGlTF, InBuffers, glTFMaterialInfo, TextureLibrary, FeedbackTaskWrapper);
-            }
-            if (!NewMaterial)
-            {
-                NewMaterial = DefaultMaterial;
-            }
+            NewMaterial = glTFImporterEdMaterial->CreateMaterial(InglTFImporterOptions, InGlTF, InBuffers, glTFMaterialInfo, TextureLibrary, FeedbackTaskWrapper);
+        }
+        if (!NewMaterial)
+        {
+            NewMaterial = DefaultMaterial;
+        }
 
-            FMeshSectionInfo Info = StaticMeshSectionInfoMap.Get(0, i);
+        FMeshSectionInfo Info = StaticMeshSectionInfoMap.Get(0, i);
 
 #if (ENGINE_MINOR_VERSION <= 13)
-            int32 Index = NewStaticMesh->Materials.Add(NewMaterial);
+        MaterialIndex = NewStaticMesh->Materials.Emplace(NewMaterial);
 #else
-            int32 Index = NewStaticMesh->StaticMaterials.Add(NewMaterial);
+        MaterialIndex = NewStaticMesh->StaticMaterials.Emplace(NewMaterial);
 #endif
-            Info.MaterialIndex = Index;
-            NewMap.Set(0, i, Info);
-        }
-        StaticMeshSectionInfoMap.Clear();
-        StaticMeshSectionInfoMap.CopyFrom(NewMap);
+        Info.MaterialIndex = MaterialIndex;
+        NewMap.Set(0, i, Info);
     }
-    else
-    {
-        NewStaticMesh->ConditionalBeginDestroy();
-        NewStaticMesh = nullptr;
-    }
+    StaticMeshSectionInfoMap.Clear();
+    StaticMeshSectionInfoMap.CopyFrom(NewMap);
     return NewStaticMesh;
 }
 
