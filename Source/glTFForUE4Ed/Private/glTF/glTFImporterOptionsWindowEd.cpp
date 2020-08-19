@@ -373,57 +373,6 @@ void SglTFImporterOptionsWindowEd::Construct(const FArguments& InArgs)
                 [
                     SNew(STextBlock)
                         .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                        .Text(LOCTEXT("ImportOptionsWindow_StaticMesh_Title", "Static Mesh"))
-                ]
-                + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(2)
-                [
-                    SNew(SBorder)
-                        .BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
-                    [
-                        SNew(SGridPanel)
-                            .IsEnabled(this, &SglTFImporterOptionsWindowEd::CanHandleIntegrateAllMeshsForStaticMesh)
-                        + SGridPanel::Slot(0, 0)
-                            .Padding(2)
-                            .HAlign(HAlign_Left)
-                            .VAlign(VAlign_Center)
-                        [
-                            SNew(STextBlock)
-                                .ToolTipText(LOCTEXT("ImportOptionsWindow_IntegrateAllMeshsForStaticMesh_ToolTip", "Integrate All Meshs!"))
-                                .MinDesiredWidth(200)
-                                .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
-                                .Text(LOCTEXT("ImportOptionsWindow_IntegrateAllMeshsForStaticMesh_Title", "Integrate All Meshs: "))
-                        ]
-                        + SGridPanel::Slot(1, 0)
-                            .Padding(2)
-                            .HAlign(HAlign_Left)
-                            .VAlign(VAlign_Center)
-                        [
-                            SNew(SCheckBox)
-                                .IsChecked(this, &SglTFImporterOptionsWindowEd::CheckHandleIntegrateAllMeshsForStaticMesh)
-                                .OnCheckStateChanged(this, &SglTFImporterOptionsWindowEd::HandleIntegrateAllMeshsForStaticMesh)
-                        ]
-                    ]
-                ]
-            ]
-        ]
-        + SVerticalBox::Slot()
-            .AutoHeight()
-            .Padding(2)
-        [
-            SNew(SBorder)
-                .BorderImage(FEditorStyle::GetBrush("ToolPanel.DarkGroupBorder"))
-            [
-                SNew(SVerticalBox)
-                + SVerticalBox::Slot()
-                    .AutoHeight()
-                    .Padding(2)
-                    .HAlign(HAlign_Left)
-                    .VAlign(VAlign_Center)
-                [
-                    SNew(STextBlock)
-                        .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
                         .Text(LOCTEXT("ImportOptionsWindow_Material_Title", "Material"))
                 ]
                 + SVerticalBox::Slot()

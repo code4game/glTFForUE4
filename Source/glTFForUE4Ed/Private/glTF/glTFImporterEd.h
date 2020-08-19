@@ -46,6 +46,6 @@ class UglTFImporterEdData : public UAssetImportData
     GENERATED_UCLASS_BODY()
 
 public:
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    UPROPERTY(VisibleAnywhere, Category = glTFForUE4Ed)
     FglTFImporterOptions glTFImporterOptions;
 };

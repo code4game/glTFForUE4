@@ -60,10 +60,6 @@ protected:
     void HandleMeshRecomputeNormals(ECheckBoxState InCheckBoxState);
     void HandleMeshRecomputeTangents(ECheckBoxState InCheckBoxState);
 
-    bool CanHandleIntegrateAllMeshsForStaticMesh() const;
-    ECheckBoxState CheckHandleIntegrateAllMeshsForStaticMesh() const;
-    void HandleIntegrateAllMeshsForStaticMesh(ECheckBoxState InCheckBoxState);
-
     void HandleImportMaterial(ECheckBoxState InCheckBoxState);
     void HandleImportTexture(ECheckBoxState InCheckBoxState);
 

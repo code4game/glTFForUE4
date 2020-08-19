@@ -44,10 +44,6 @@ struct GLTFFORUE4_API FglTFImporterOptions
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bRecomputeTangents;
 
-    /// Static Mesh options
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bIntegrateAllMeshsForStaticMesh;
-
     /// Material options
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bImportMaterial;

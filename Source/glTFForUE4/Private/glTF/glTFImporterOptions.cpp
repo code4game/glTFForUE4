@@ -12,7 +12,6 @@ FglTFImporterOptions::FglTFImporterOptions()
     , bUseMikkTSpace(true)
     , bRecomputeNormals(false)
     , bRecomputeTangents(false)
-    , bIntegrateAllMeshsForStaticMesh(true)
     , bImportMaterial(true)
     , bImportTexture(true)
 {

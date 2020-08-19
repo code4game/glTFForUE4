@@ -178,23 +178,6 @@ void SglTFImporterOptionsWindow::HandleMeshRecomputeTangents(ECheckBoxState InCh
     glTFImporterOptions.Pin()->bRecomputeTangents = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
-bool SglTFImporterOptionsWindow::CanHandleIntegrateAllMeshsForStaticMesh() const
-{
-    //TSharedPtr<FglTFImporterOptions> glTFImporterOptionsPtr = glTFImporterOptions.Pin();
-    //return glTFImporterOptionsPtr->ImportType == EglTFImportType::StaticMesh;
-    return false;
-}
-
-ECheckBoxState SglTFImporterOptionsWindow::CheckHandleIntegrateAllMeshsForStaticMesh() const
-{
-    return (glTFImporterOptions.Pin()->bIntegrateAllMeshsForStaticMesh ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
-}
-
-void SglTFImporterOptionsWindow::HandleIntegrateAllMeshsForStaticMesh(ECheckBoxState InCheckBoxState)
-{
-    glTFImporterOptions.Pin()->bIntegrateAllMeshsForStaticMesh = (InCheckBoxState == ECheckBoxState::Checked);
-}
-
 void SglTFImporterOptionsWindow::HandleImportMaterial(ECheckBoxState InCheckBoxState)
 {
     glTFImporterOptions.Pin()->bImportMaterial = (InCheckBoxState == ECheckBoxState::Checked);
