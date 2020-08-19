@@ -366,7 +366,9 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
     return NewMaterial;
 }
 
-bool FglTFImporterEdMaterial::ConstructSampleParameter(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STextureInfo>& InglTFTextureInfo, const FglTFBuffers& InBuffers, const FString& InParameterName, TMap<FString, UTexture*>& InOutTextureLibrary, class UMaterialExpressionTextureSampleParameter* InSampleParameter, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
+bool FglTFImporterEdMaterial::ConstructSampleParameter(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions
+    , const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STextureInfo>& InglTFTextureInfo, const FglTFBuffers& InBuffers
+    , const FString& InParameterName, TMap<FString, UTexture*>& InOutTextureLibrary, class UMaterialExpressionTextureSampleParameter* InSampleParameter, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
 {
     if (!InglTF || !InglTFTextureInfo || !InSampleParameter) return false;
     if (!(InglTFTextureInfo->index)) return false;
@@ -377,7 +379,9 @@ bool FglTFImporterEdMaterial::ConstructSampleParameter(const TWeakPtr<FglTFImpor
 
     const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
 
-    FString TextureName = FString::Printf(TEXT("T_%s_%d_%s"), *InputName.ToString(), glTFTextureId, *InParameterName);
+    /// optimize the number of the texture
+    /// use the texture's id as key
+    FString TextureName = FString::Printf(TEXT("T_%s_%d"), *InputName.ToString(), glTFTextureId);
     TextureName = FglTFImporter::SanitizeObjectName(TextureName);
     UTexture* Texture = nullptr;
     if (InOutTextureLibrary.Contains(TextureName))
@@ -386,7 +390,6 @@ bool FglTFImporterEdMaterial::ConstructSampleParameter(const TWeakPtr<FglTFImpor
     }
     else if (glTFImporterOptions->bImportTexture)
     {
-        //TODO: optimize the number of the texture
         TSharedPtr<FglTFImporterEdTexture> glTFImporterEdTexture = FglTFImporterEdTexture::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext);
         Texture = glTFImporterEdTexture->CreateTexture(InglTFImporterOptions, InglTF, glTFTexture, InBuffers, TextureName, InIsNormalmap, InFeedbackTaskWrapper);
         if (Texture)
@@ -398,7 +401,7 @@ bool FglTFImporterEdMaterial::ConstructSampleParameter(const TWeakPtr<FglTFImpor
     {
         InSampleParameter->Texture = Texture;
     }
-    //TODO: test the `texCoord`
+
     InSampleParameter->ConstCoordinate = static_cast<uint32>(InglTFTextureInfo->texCoord);
     return (Texture != nullptr);
 }
