@@ -3,6 +3,9 @@
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTFReimportFactory.h"
 
+#include <Engine/StaticMesh.h>
+#include <Engine/SkeletalMesh.h>
+
 UglTFReimportFactory::UglTFReimportFactory(const FObjectInitializer& InObjectInitializer)
     : Super(InObjectInitializer)
 {
@@ -18,6 +21,14 @@ bool UglTFReimportFactory::CanReimport(UObject* Obj, TArray<FString>& OutFilenam
         return false;
     }
 
+    if (!Obj->IsA<UStaticMesh>() && !Obj->IsA<USkeletalMesh>())
+    {
+        UClass* ObjClass = Obj->GetClass();
+        const FString ObjClassName = ObjClass ? ObjClass->GetName() : "None";
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("The class Is not supported! %s"), *ObjClassName);
+        return false;
+    }
+
     UAssetImportData* AssetImportData = FglTFImporterEd::GetAssetImportData(Obj);
     if (!AssetImportData)
     {
@@ -27,6 +38,10 @@ bool UglTFReimportFactory::CanReimport(UObject* Obj, TArray<FString>& OutFilenam
     }
 
     OutFilenames = AssetImportData->ExtractFilenames();
+    if (OutFilenames.Num() > 0)
+    {
+        return Super::FactoryCanImport(OutFilenames[0]);
+    }
     return true;
 }
 
