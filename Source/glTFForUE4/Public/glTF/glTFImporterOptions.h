@@ -28,6 +28,9 @@ struct GLTFFORUE4_API FglTFImporterOptions
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     EglTFImportType ImportType;
 
+    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    bool bImportAllScene;
+
     /// Mesh options
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     float MeshScaleRatio;

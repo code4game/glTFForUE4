@@ -1651,6 +1651,26 @@ bool FglTFImporter::GetNodeParentIndicesAndTransforms(const std::shared_ptr<libg
     return true;
 }
 
+bool FglTFImporter::GetNodeInfos(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TMap<int32, struct FglTFImporterNodeInfo>& OutNodeInfos, bool bSwapYZ /*= true*/)
+{
+    TArray<int32> NodeParentIndices;
+    TArray<FTransform> NodeRelativeTransforms;
+    TArray<FTransform> NodeAbsoluteTransforms;
+    if (!FglTFImporter::GetNodeParentIndicesAndTransforms(InGlTF, NodeParentIndices, NodeRelativeTransforms, NodeAbsoluteTransforms, bSwapYZ)) return false;
+    if (NodeParentIndices.Num() != NodeRelativeTransforms.Num() || NodeParentIndices.Num() != NodeAbsoluteTransforms.Num()) return false;
+
+    OutNodeInfos.Empty();
+    FglTFImporterNodeInfo NodeInfo;
+    for (int32 i = 0; i < NodeParentIndices.Num(); ++i)
+    {
+        NodeInfo.ParentIndex = NodeParentIndices[i];
+        NodeInfo.RelativeTransform = NodeRelativeTransforms[i];
+        NodeInfo.AbsoluteTransform = NodeAbsoluteTransforms[i];
+        OutNodeInfos.Add(i, NodeInfo);
+    }
+    return true;
+}
+
 FString FglTFImporter::SanitizeObjectName(const FString& InObjectName)
 {
     FString SanitizedName;
@@ -1801,4 +1821,33 @@ ERichCurveInterpMode FglTFImporter::StringToRichCurveInterpMode(const FString& I
     }
     //WARN:
     return RichCurveInterpMode;
+}
+
+FglTFImporterNodeInfo::FglTFImporterNodeInfo()
+    : ParentIndex(INDEX_NONE)
+    , RelativeTransform()
+    , AbsoluteTransform()
+{
+    //
+}
+
+const FglTFImporterNodeInfo FglTFImporterNodeInfo::Default;
+
+FglTFImporterCollection::FglTFImporterCollection()
+    : NodeInfos()
+    , Textures()
+    , Materials()
+    , StaticMeshes()
+    , SkeletalMeshes()
+{
+    //
+}
+
+const FglTFImporterNodeInfo& FglTFImporterCollection::FindNodeInfo(int32 InNodeId) const
+{
+    if (NodeInfos.Contains(InNodeId))
+    {
+        return NodeInfos[InNodeId];
+    }
+    return FglTFImporterNodeInfo::Default;
 }

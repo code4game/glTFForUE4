@@ -58,38 +58,93 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
     FlushRenderingCommands();
 
     std::vector<std::shared_ptr<libgltf::SScene>> Scenes;
-    if (InGlTF->scene)
+    if (!glTFImporterOptions->bImportAllScene && InGlTF->scene)
     {
         Scenes.push_back(InGlTF->scenes[(int32)(*InGlTF->scene)]);
     }
     else if (InGlTF->scenes.size() > 0)
     {
-        for (const std::shared_ptr<libgltf::SScene>& Scene : InGlTF->scenes)
-        {
-            Scenes.push_back(Scene);
-        }
+        Scenes = InGlTF->scenes;
+    }
+
+    if (Scenes.empty())
+    {
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("No scene!"));
+        return nullptr;
+    }
+
+    FglTFImporterCollection glTFImporterCollection;
+    if (!FglTFImporter::GetNodeInfos(InGlTF, glTFImporterCollection.NodeInfos))
+    {
+        //TODO: print a message
+        return nullptr;
     }
 
     UObject* CreatedObject = nullptr;
+    for (const std::shared_ptr<libgltf::SScene>& ScenePtr : Scenes)
+    {
+        for (const std::shared_ptr<libgltf::SGlTFId>& NodeIdPtr : ScenePtr->nodes)
+        {
+            if (!NodeIdPtr)
+            {
+                checkSlow(0);
+                continue;
+            }
+            const int32 NodeId = *NodeIdPtr;
+            if (NodeId < 0 || NodeId >= static_cast<int32>(InGlTF->nodes.size()))
+            {
+                checkSlow(0);
+                continue;
+            }
+            const std::shared_ptr<libgltf::SNode>& NodePtr = InGlTF->nodes[NodeId];
+            if (!NodePtr)
+            {
+                checkSlow(0);
+                continue;
+            }
+            //TODO: children
+            if (!!(NodePtr->mesh))
+            {
+                if (!NodePtr->skin)
+                {
+                    UStaticMesh* NewStaticMesh = FglTFImporterEdStaticMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)
+                        ->CreateStaticMesh(InglTFImporterOptions
+                            , InGlTF, NodePtr->mesh
+                            , FTransform::Identity, InglTFBuffers
+                            , glTFImporterCollection);
+                    FglTFImporterEd::UpdateAssetImportData(NewStaticMesh, InglTFImporterOptions);
+                    CreatedObject = CreatedObject != nullptr ? CreatedObject : NewStaticMesh;
+                }
+                else
+                {
+                    //TODO:
+                }
+            }
+            if (!!(NodePtr->camera))
+            {
+                //TODO:
+            }
+        }
+    }
+
     switch (glTFImporterOptions->ImportType)
     {
     case EglTFImportType::StaticMesh:
-        CreatedObject = FglTFImporterEdStaticMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateStaticMesh(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
+        //CreatedObject = FglTFImporterEdStaticMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateStaticMesh(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
         break;
 
     case EglTFImportType::SkeletalMesh:
-        CreatedObject = FglTFImporterEdSkeletalMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateSkeletalMesh(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
+        //CreatedObject = FglTFImporterEdSkeletalMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateSkeletalMesh(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
         break;
 
     case EglTFImportType::Level:
-        CreatedObject = FglTFImporterEdLevel::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateLevel(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
+        //CreatedObject = FglTFImporterEdLevel::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateLevel(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
         break;
 
     default:
         break;
     }
 
-    FglTFImporterEd::UpdateAssetImportData(CreatedObject, InglTFImporterOptions);
     return CreatedObject;
 }
 
