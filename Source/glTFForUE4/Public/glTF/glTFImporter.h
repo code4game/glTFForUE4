@@ -223,14 +223,10 @@ public:
     virtual UObject* Create(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers) const;
 
 protected:
-    virtual class UWorld* GetTargetWorld() const;
-
-protected:
     UObject* InputParent;
     FName InputName;
     EObjectFlags InputFlags;
     class FFeedbackContext* FeedbackContext;
-    UWorld* TargetWorld;
 
 public:
     static bool GetStaticMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_STATIC_TEXCOORDS], bool bSwapYZ = true);
@@ -282,6 +278,9 @@ struct GLTFFORUE4_API FglTFImporterCollection
     GENERATED_USTRUCT_BODY()
 
     FglTFImporterCollection();
+
+    UPROPERTY()
+    class UWorld* TargetWorld;
     
     UPROPERTY()
     TMap<int32, FglTFImporterNodeInfo> NodeInfos;

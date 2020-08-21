@@ -790,7 +790,6 @@ FglTFImporter::FglTFImporter()
     , InputName()
     , InputFlags(RF_NoFlags)
     , FeedbackContext(nullptr)
-    , TargetWorld(nullptr)
 {
     //
 }
@@ -832,12 +831,6 @@ UObject* FglTFImporter::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImpor
 
     //TODO: generate the procedural mesh
 
-    return nullptr;
-}
-
-UWorld* FglTFImporter::GetTargetWorld() const
-{
-    //TODO:
     return nullptr;
 }
 
@@ -1868,7 +1861,8 @@ FglTFImporterNodeInfo::FglTFImporterNodeInfo()
 const FglTFImporterNodeInfo FglTFImporterNodeInfo::Default;
 
 FglTFImporterCollection::FglTFImporterCollection()
-    : NodeInfos()
+    : TargetWorld(nullptr)
+    , NodeInfos()
     , Textures()
     , Materials()
     , StaticMeshes()

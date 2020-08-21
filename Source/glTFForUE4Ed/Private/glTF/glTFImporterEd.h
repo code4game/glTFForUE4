@@ -22,9 +22,6 @@ public:
     virtual UObject* Create(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions
         , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers) const override;
 
-protected:
-    virtual class UWorld* GetTargetWorld() const override;
-
 private:
     UObject* CreateNodes(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions
         , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::vector<std::shared_ptr<libgltf::SGlTFId>>& InNodeIdPtrs, const FglTFBuffers& InglTFBuffers

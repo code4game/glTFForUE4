@@ -5,7 +5,6 @@
 
 #include "glTF/glTFImporterEdStaticMesh.h"
 #include "glTF/glTFImporterEdSkeletalMesh.h"
-#include "glTF/glTFImporterEdLevel.h"
 
 #include <EditorFramework/AssetImportData.h>
 
@@ -74,6 +73,37 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
         return nullptr;
     }
 
+    /// make sure the target world
+    if (glTFImporterOptions->Details->bBuildLevel)
+    {
+        if (glTFImporterOptions->Details->bBuildLevelByTemplate)
+        {
+            if (glTFImporterOptions->Details->BuildLevelTemplate.IsValid())
+            {
+                /// create a world by a template
+                UPackage* NewAssetPackage = FindPackage(nullptr, *glTFImporterOptions->FilePathInEngine);
+                if (!NewAssetPackage) NewAssetPackage = CreatePackage(nullptr, *glTFImporterOptions->FilePathInEngine);
+                checkSlow(NewAssetPackage);
+                if (NewAssetPackage)
+                {
+                    glTFImporterCollection.TargetWorld = Cast<UWorld>(StaticDuplicateObject(glTFImporterOptions->Details->BuildLevelTemplate.TryLoad(), NewAssetPackage, InputName, InputFlags, UWorld::StaticClass()));
+                }
+                else
+                {
+                    glTFImporterOptions->Details->bBuildLevel = false;
+                }
+            }
+        }
+        else
+        {
+            glTFImporterCollection.TargetWorld = GEditor ? GEditor->GetEditorWorldContext(false).World() : nullptr;
+        }
+    }
+    else
+    {
+        glTFImporterCollection.TargetWorld = nullptr;
+    }
+
     // scale the transform
     if (glTFImporterOptions->Details->MeshScaleRatio != 1.0f)
     {
@@ -94,11 +124,6 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
     }
 
     return CreatedObject;
-}
-
-UWorld* FglTFImporterEd::GetTargetWorld() const
-{
-    return GEditor ? GEditor->GetEditorWorldContext(false).World() : nullptr;
 }
 
 UObject* FglTFImporterEd::CreateNodes(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions
@@ -141,7 +166,7 @@ UObject* FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImporterOptions>& InglT
             CreatedObjects.Emplace(NewStaticMesh);
             if (glTFImporterOptions->Details->bBuildLevel)
             {
-                SpawnStaticMeshActor(GetTargetWorld(), NodeInfo.AbsoluteTransform, NewStaticMesh);
+                SpawnStaticMeshActor(InOutglTFImporterCollection.TargetWorld, NodeInfo.AbsoluteTransform, NewStaticMesh);
             }
         }
         else
@@ -153,7 +178,7 @@ UObject* FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImporterOptions>& InglT
             CreatedObjects.Emplace(NewSkeletalMesh);
             if (glTFImporterOptions->Details->bBuildLevel)
             {
-                SpawnSkeletalMeshActor(GetTargetWorld(), NodeInfo.AbsoluteTransform, NewSkeletalMesh);
+                SpawnSkeletalMeshActor(InOutglTFImporterCollection.TargetWorld, NodeInfo.AbsoluteTransform, NewSkeletalMesh);
             }
         }
     }
