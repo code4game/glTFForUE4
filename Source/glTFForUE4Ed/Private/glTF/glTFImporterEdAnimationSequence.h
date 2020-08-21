@@ -19,7 +19,8 @@ public:
 
 public:
     class UAnimSequence* CreateAnimationSequence(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF
-        , const TArray<FTransform>& InNodeRelativeTransforms, const TArray<FTransform>& InNodeAbsoluteTransforms, const class FglTFBuffers& InBuffers, const TMap<int32, FString>& InNodeIndexToBoneNames
+        , const class FglTFBuffers& InBuffers, const TMap<int32, FString>& InNodeIndexToBoneNames
         , class USkeletalMesh* InSkeletalMesh, class USkeleton* InSkeleton
-        , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const;
+        , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper
+        , struct FglTFImporterCollection& InOutglTFImporterCollection) const;
 };

@@ -24,5 +24,7 @@ public:
 
 public:
     /// Create the texture for material
-    class UTexture* CreateTexture(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STexture>& InglTFTexture, const class FglTFBuffers& InBuffers, const FString& InTextureName, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const;
+    class UTexture* CreateTexture(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions
+        , const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::SGlTFId>& InTextureId, const class FglTFBuffers& InBuffers, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper
+        , struct FglTFImporterCollection& InOutglTFImporterCollection) const;
 };

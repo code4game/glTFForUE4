@@ -23,6 +23,9 @@ public:
 
     /// Mesh options
     UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    bool bUseAbsolateTransform;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
     float MeshScaleRatio;
 
     UPROPERTY(EditAnywhere, Config, Category = "Mesh")

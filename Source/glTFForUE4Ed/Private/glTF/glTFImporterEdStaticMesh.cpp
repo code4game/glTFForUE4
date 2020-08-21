@@ -102,13 +102,14 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     const FString StaticMeshName = MeshName.IsEmpty()
         ? FString::Printf(TEXT("SM_%s_%d"), *InputName.ToString(), MeshId)
         : FString::Printf(TEXT("SM_%s_%d_%s"), *InputName.ToString(), MeshId, *MeshName);
-    FText TaskName = FText::Format(LOCTEXT("BeginImportAsStaticMeshTask", "Importing the glTF mesh ({0}) as a static mesh ({1})"), FText::AsNumber(MeshId), FText::FromString(StaticMeshName));
+
+    const FText TaskName = FText::Format(LOCTEXT("BeginImportAsStaticMeshTask", "Importing the glTF mesh ({0}) as a static mesh ({1})"), FText::AsNumber(MeshId), FText::FromString(StaticMeshName));
     glTFForUE4::FFeedbackTaskWrapper FeedbackTaskWrapper(FeedbackContext, TaskName, true);
 
     FRawMesh NewRawMesh;
-    TArray<FglTFMaterialInfo> glTFMaterialInfos;
+    TArray<int32> glTFMaterialIds;
     if (!GenerateRawMesh(InGlTF, MeshPtr, InNodeAbsoluteTransform, InBuffers
-        , NewRawMesh, glTFMaterialInfos, InOutglTFImporterCollection, FeedbackTaskWrapper))
+        , NewRawMesh, glTFMaterialIds, InOutglTFImporterCollection, FeedbackTaskWrapper))
     {
         checkSlow(0);
         return nullptr;
@@ -203,15 +204,16 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     TSharedPtr<FglTFImporterEdMaterial> glTFImporterEdMaterial = FglTFImporterEdMaterial::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext);
     FMeshSectionInfoMap NewMap;
     static UMaterial* DefaultMaterial = UMaterial::GetDefaultMaterial(MD_Surface);
-    TMap<FString, UTexture*> TextureLibrary;
     int32 MaterialIndex = 0;
-    for (int32 i = 0; i < glTFMaterialInfos.Num(); ++i)
+    for (int32 i = 0; i < glTFMaterialIds.Num(); ++i)
     {
-        const FglTFMaterialInfo& glTFMaterialInfo = glTFMaterialInfos[i];
+        const int32& glTFMaterialId = glTFMaterialIds[i];
         UMaterialInterface* NewMaterial = nullptr;
         if (glTFImporterOptions->Details->bImportMaterial)
         {
-            NewMaterial = glTFImporterEdMaterial->CreateMaterial(InglTFImporterOptions, InGlTF, InBuffers, glTFMaterialInfo, TextureLibrary, FeedbackTaskWrapper);
+            NewMaterial = glTFImporterEdMaterial->CreateMaterial(InglTFImporterOptions
+                , InGlTF, glTFMaterialId, InBuffers, FeedbackTaskWrapper
+                , InOutglTFImporterCollection);
         }
         if (!NewMaterial)
         {
@@ -241,7 +243,7 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const std::shared_ptr<libgltf::S
     , const FTransform& InNodeAbsoluteTransform
     , const FglTFBuffers& InBuffers
     , FRawMesh& OutRawMesh
-    , TArray<FglTFMaterialInfo>& InOutglTFMaterialInfos
+    , TArray<int32>& InOutglTFMaterialIds
     , FglTFImporterCollection& InOutglTFImporterCollection
     , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
 {
@@ -257,7 +259,7 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const std::shared_ptr<libgltf::S
         {
             MaterialId = (*Primitive->material);
         }
-        if (!GenerateRawMesh(InGlTF, Primitive, InNodeAbsoluteTransform, InBuffers, NewRawMesh, InOutglTFMaterialInfos.Num(), InOutglTFImporterCollection, InFeedbackTaskWrapper))
+        if (!GenerateRawMesh(InGlTF, Primitive, InNodeAbsoluteTransform, InBuffers, NewRawMesh, InOutglTFMaterialIds.Num(), InOutglTFImporterCollection, InFeedbackTaskWrapper))
         {
             checkSlow(0);
             continue;
@@ -267,9 +269,8 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const std::shared_ptr<libgltf::S
             checkSlow(0);
             continue;
         }
-        FString PrimitiveName = FString::Printf(TEXT("%s%d"), *MeshName, i);
-        PrimitiveName = FglTFImporter::SanitizeObjectName(PrimitiveName);
-        InOutglTFMaterialInfos.Add(FglTFMaterialInfo(MaterialId, PrimitiveName));
+
+        InOutglTFMaterialIds.Add(MaterialId);
     }
     return true;
 }

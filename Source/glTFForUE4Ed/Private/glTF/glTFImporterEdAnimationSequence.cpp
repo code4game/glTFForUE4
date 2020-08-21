@@ -37,9 +37,10 @@ FglTFImporterEdAnimationSequence::~FglTFImporterEdAnimationSequence()
 }
 
 UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF
-    , const TArray<FTransform>& InNodeRelativeTransforms, const TArray<FTransform>& InNodeAbsoluteTransforms, const FglTFBuffers& InBuffers, const TMap<int32, FString>& InNodeIndexToBoneNames
+    , const FglTFBuffers& InBuffers, const TMap<int32, FString>& InNodeIndexToBoneNames
     , USkeletalMesh* InSkeletalMesh, USkeleton* InSkeleton
-    , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
+    , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper
+    , FglTFImporterCollection& InOutglTFImporterCollection) const
 {
     if (!InglTF || InglTF->animations.empty() || InglTF->skins.empty() || !InSkeleton) return nullptr;
 
@@ -93,7 +94,7 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
         {
             for (FglTFAnimationSequenceKeyData& SequenceKeyData : SequenceData.KeyDatas)
             {
-                SequenceKeyData.Transform *= InNodeRelativeTransforms[SequenceData.NodeIndex].Inverse();
+                SequenceKeyData.Transform *= InOutglTFImporterCollection.FindNodeInfo(SequenceData.NodeIndex).RelativeTransform.Inverse();
             }
         }
     }
@@ -107,7 +108,12 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
         const FglTFAnimationSequenceDatas& glTFAnimationSequenceDatas = glTFAnimationSequenceDatasArray[i];
         for (const FglTFAnimationSequenceData& glTFAnimationSequenceData : glTFAnimationSequenceDatas.Datas)
         {
-            if (glTFAnimationSequenceData.NodeIndex < 0 || glTFAnimationSequenceData.NodeIndex >= InNodeAbsoluteTransforms.Num())
+            if (glTFAnimationSequenceData.NodeIndex < 0)
+            {
+                //WARN:
+                continue;
+            }
+            if (!InOutglTFImporterCollection.NodeInfos.Contains(glTFAnimationSequenceData.NodeIndex))
             {
                 //WARN:
                 continue;

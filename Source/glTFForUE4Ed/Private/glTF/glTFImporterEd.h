@@ -12,15 +12,6 @@ class FglTFImporterEd : public FglTFImporter
     typedef FglTFImporter Super;
 
 public:
-    struct FglTFMaterialInfo
-    {
-        explicit FglTFMaterialInfo(int32 InId, FString InPrimitiveName);
-
-        int32 Id;
-        FString PrimitiveName;
-    };
-
-public:
     static TSharedPtr<FglTFImporterEd> Get(class UFactory* InFactory, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
 
 public:
@@ -29,6 +20,12 @@ public:
 
 public:
     virtual UObject* Create(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers) const override;
+
+private:
+    UObject* CreateNodes(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::vector<std::shared_ptr<libgltf::SGlTFId>>& InNodeIdPtrs, const FglTFBuffers& InglTFBuffers
+        , struct FglTFImporterCollection& InOutglTFImporterCollection) const;
+    UObject* CreateNode(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SGlTFId>& InNodeIdPtr, const FglTFBuffers& InglTFBuffers
+        , struct FglTFImporterCollection& InOutglTFImporterCollection) const;
 
 protected:
     class UFactory* InputFactory;

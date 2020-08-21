@@ -9,6 +9,7 @@ UglTFImporterOptionsDetails::UglTFImporterOptionsDetails(const FObjectInitialize
     , bImportSkeletalMesh(true)
     , bImportMaterial(true)
     , bImportTexture(true)
+    , bUseAbsolateTransform(false)
     , MeshScaleRatio(1.0f)
     , bInvertNormal(false)
     , bUseMikkTSpace(true)
