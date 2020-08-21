@@ -435,7 +435,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
         TSharedPtr<FglTFImporterEdMaterial> glTFImporterEdMaterial = FglTFImporterEdMaterial::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext);
         for (const int32& MaterialId : MaterialIds)
         {
-            UMaterial* NewMaterial = glTFImporterEdMaterial->CreateMaterial(InglTFImporterOptions
+            UMaterialInterface* NewMaterial = glTFImporterEdMaterial->CreateMaterial(InglTFImporterOptions
                 , InGlTF, MaterialId, InBuffers, FeedbackTaskWrapper
                 , InOutglTFImporterCollection);
             if (!NewMaterial)

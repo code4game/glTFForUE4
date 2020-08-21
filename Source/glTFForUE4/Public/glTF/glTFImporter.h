@@ -38,6 +38,7 @@ namespace glTFForUE4
         virtual ~FFeedbackTaskWrapper();
 
     public:
+        FORCEINLINE class FFeedbackContext* Get() const { return FeedbackContext; }
         const FFeedbackTaskWrapper& Log(ELogVerbosity::Type InLogVerbosity, const FText& InMessge) const;
         const FFeedbackTaskWrapper& UpdateProgress(int32 InNumerator, int32 InDenominator) const;
         const FFeedbackTaskWrapper& StatusUpdate(int32 InNumerator, int32 InDenominator, const FText& InStatusText) const;
@@ -289,7 +290,7 @@ struct GLTFFORUE4_API FglTFImporterCollection
     TMap<int32, class UTexture*> Textures;
     
     UPROPERTY()
-    TMap<int32, class UMaterial*> Materials;
+    TMap<int32, class UMaterialInterface*> Materials;
     
     UPROPERTY()
     TMap<int32, class UStaticMesh*> StaticMeshes;

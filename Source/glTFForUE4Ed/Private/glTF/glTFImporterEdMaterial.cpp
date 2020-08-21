@@ -7,10 +7,13 @@
 #include "glTF/glTFImporterEdTexture.h"
 
 #include "Materials/Material.h"
+#include <Materials/MaterialInstanceConstant.h>
 #include "Materials/MaterialExpressionScalarParameter.h"
 #include "Materials/MaterialExpressionVectorParameter.h"
 #include "Materials/MaterialExpressionTextureSampleParameter.h"
 #include "AssetRegistryModule.h"
+
+#include <Factories/MaterialInstanceConstantFactoryNew.h>
 
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
@@ -54,7 +57,7 @@ FglTFImporterEdMaterial::~FglTFImporterEdMaterial()
     //
 }
 
-UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions
+UMaterialInterface* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions
     , const std::shared_ptr<libgltf::SGlTF>& InglTF, const int32_t InMaterialId, const FglTFBuffers& InBuffers, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper
     , FglTFImporterCollection& InOutglTFImporterCollection) const
 {
@@ -67,6 +70,7 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
     if (InMaterialId < 0 || InMaterialId >= static_cast<int32>(InglTF->materials.size())) return nullptr;
 
     const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
+    check(glTFImporterOptions->Details);
 
     const std::shared_ptr<libgltf::SMaterial>& glTFMaterial = InglTF->materials[InMaterialId];
     if (!glTFMaterial) return nullptr;
@@ -81,9 +85,12 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
         }
     }
 
-    const FString MaterialName = FglTFImporter::SanitizeObjectName(!glTFMaterial->name.empty()
-        ? FString::Printf(TEXT("M_%s_%d_%s"), *InputName.ToString(), InMaterialId, GLTF_GLTFSTRING_TO_TCHAR(glTFMaterial->name.c_str()))
-        : FString::Printf(TEXT("M_%s_%d"), *InputName.ToString()));
+    const FString glTFMaterialName = !glTFMaterial->name.empty()
+        ? FString::Printf(TEXT("%s_%d_%s"), *InputName.ToString(), InMaterialId, GLTF_GLTFSTRING_TO_TCHAR(glTFMaterial->name.c_str()))
+        : FString::Printf(TEXT("%s_%d"), *InputName.ToString());
+    const FString MaterialName = FglTFImporter::SanitizeObjectName(glTFImporterOptions->Details->bUseMaterialInstance
+        ? FString::Printf(TEXT("MI_%s"), *glTFMaterialName)
+        : FString::Printf(TEXT("M_%s"), *glTFMaterialName));
     const FString PackageName = FPackageName::GetLongPackagePath(InputParent->GetPathName()) / MaterialName;
 
     UPackage* MaterialPackage = FindPackage(nullptr, *PackageName);
@@ -94,8 +101,10 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
     if (!MaterialPackage) return nullptr;
     MaterialPackage->FullyLoad();
 
-    UMaterial* NewMaterial = FindObject<UMaterial>(MaterialPackage, *MaterialName);
-    if (!NewMaterial)
+    UMaterialInterface* NewMaterialInterface = FindObject<UMaterialInterface>(MaterialPackage, *MaterialName);
+    UMaterial* NewMaterial = Cast<UMaterial>(NewMaterialInterface);
+    UMaterialInstanceConstant* NewMaterialInstanceConstant = Cast<UMaterialInstanceConstant>(NewMaterialInterface);
+    if (!NewMaterialInterface)
     {
         UMaterial* glTFMaterialOrigin = nullptr;
         if (ExternalMaterialPBRSpecularGlossiness)
@@ -108,23 +117,35 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
         }
         if (!glTFMaterialOrigin) return nullptr;
 
-        NewMaterial = Cast<UMaterial>(StaticDuplicateObject(glTFMaterialOrigin, MaterialPackage, *MaterialName, InputFlags, glTFMaterialOrigin->GetClass()));
-        checkSlow(NewMaterial);
-        if (NewMaterial) FAssetRegistryModule::AssetCreated(NewMaterial);
-    }
-    if (!NewMaterial) return nullptr;
+        if (glTFImporterOptions->Details->bUseMaterialInstance)
+        {
+            UMaterialInstanceConstantFactoryNew* MaterialInstanceFactory = NewObject<UMaterialInstanceConstantFactoryNew>();
+            MaterialInstanceFactory->InitialParent = glTFMaterialOrigin;
+            NewMaterialInstanceConstant = Cast<UMaterialInstanceConstant>(MaterialInstanceFactory->FactoryCreateNew(UMaterialInstanceConstant::StaticClass(), MaterialPackage, *MaterialName, InputFlags, nullptr, InFeedbackTaskWrapper.Get()));
+            NewMaterialInterface = NewMaterialInstanceConstant;
+        }
+        else
+        {
+            NewMaterial = Cast<UMaterial>(StaticDuplicateObject(glTFMaterialOrigin, MaterialPackage, *MaterialName, InputFlags, glTFMaterialOrigin->GetClass()));
+            NewMaterialInterface = NewMaterial;
+        }
 
-    NewMaterial->PreEditChange(nullptr);
+        if (!NewMaterialInterface) return nullptr;
+        if (NewMaterialInterface) FAssetRegistryModule::AssetCreated(NewMaterialInterface);
+    }
+    if (!NewMaterialInterface) return nullptr;
+
+    NewMaterialInterface->PreEditChange(nullptr);
 
     TMap<FName, FGuid> ScalarParameterNameToGuid;
     {
         TArray<FName> ParameterNames;
         TArray<FGuid> ParameterGuids;
 #if (ENGINE_MINOR_VERSION <= 18)
-        NewMaterial->GetAllScalarParameterNames(ParameterNames, ParameterGuids);
+        NewMaterialInterface->GetAllScalarParameterNames(ParameterNames, ParameterGuids);
 #else
         TArray<FMaterialParameterInfo> ParameterInfos;
-        NewMaterial->GetAllScalarParameterInfo(ParameterInfos, ParameterGuids);
+        NewMaterialInterface->GetAllScalarParameterInfo(ParameterInfos, ParameterGuids);
         for (const FMaterialParameterInfo& ParameterInfo : ParameterInfos)
         {
             ParameterNames.Add(ParameterInfo.Name);
@@ -143,10 +164,10 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
         TArray<FName> ParameterNames;
         TArray<FGuid> ParameterGuids;
 #if (ENGINE_MINOR_VERSION <= 18)
-        NewMaterial->GetAllVectorParameterNames(ParameterNames, ParameterGuids);
+        NewMaterialInterface->GetAllVectorParameterNames(ParameterNames, ParameterGuids);
 #else
         TArray<FMaterialParameterInfo> ParameterInfos;
-        NewMaterial->GetAllVectorParameterInfo(ParameterInfos, ParameterGuids);
+        NewMaterialInterface->GetAllVectorParameterInfo(ParameterInfos, ParameterGuids);
         for (const FMaterialParameterInfo& ParameterInfo : ParameterInfos)
         {
             ParameterNames.Add(ParameterInfo.Name);
@@ -165,10 +186,10 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
         TArray<FName> ParameterNames;
         TArray<FGuid> ParameterGuids;
 #if (ENGINE_MINOR_VERSION <= 18)
-        NewMaterial->GetAllTextureParameterNames(ParameterNames, ParameterGuids);
+        NewMaterialInterface->GetAllTextureParameterNames(ParameterNames, ParameterGuids);
 #else
         TArray<FMaterialParameterInfo> ParameterInfos;
-        NewMaterial->GetAllTextureParameterInfo(ParameterInfos, ParameterGuids);
+        NewMaterialInterface->GetAllTextureParameterInfo(ParameterInfos, ParameterGuids);
         for (const FMaterialParameterInfo& ParameterInfo : ParameterInfos)
         {
             ParameterNames.Add(ParameterInfo.Name);
@@ -189,6 +210,11 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
         {
             ScalarParameter->DefaultValue = glTFMaterial->alphaCutoff;
         }
+        else if (NewMaterialInstanceConstant)
+        {
+            FMaterialParameterInfo MaterialParameterInfo(TEXT("alphaCutoff"));
+            NewMaterialInstanceConstant->SetScalarParameterValueEditorOnly(MaterialParameterInfo, glTFMaterial->alphaCutoff);
+        }
     }
     if (!!(glTFMaterial->emissiveTexture)
         && !!(glTFMaterial->emissiveTexture->index)
@@ -199,6 +225,19 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
             if (!ConstructSampleParameter(InglTFImporterOptions, InglTF, glTFMaterial->emissiveTexture, InBuffers, TEXT("emissiveTexture"), SampleParameter, false, InFeedbackTaskWrapper, InOutglTFImporterCollection))
             {
                 InFeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("FailedToConstructTheEmissiveTexture", "Failed to construct the `emissiveTexture`"));
+            }
+        }
+        else if (NewMaterialInstanceConstant)
+        {
+            UTexture* Texture = nullptr;
+            if (!ConstructTextureParameter(InglTFImporterOptions, InglTF, glTFMaterial->emissiveTexture, InBuffers, TEXT("emissiveTexture"), Texture, false, InFeedbackTaskWrapper, InOutglTFImporterCollection))
+            {
+                InFeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("FailedToConstructTheEmissiveTexture", "Failed to construct the `emissiveTexture`"));
+            }
+            else
+            {
+                FMaterialParameterInfo MaterialParameterInfo(TEXT("emissiveTexture"));
+                NewMaterialInstanceConstant->SetTextureParameterValueEditorOnly(MaterialParameterInfo, Texture);
             }
         }
     }
@@ -214,6 +253,15 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
                 VectorParameter->DefaultValue.B = ExternalMaterialPBRSpecularGlossiness->diffuseFactor[2];
                 VectorParameter->DefaultValue.A = ExternalMaterialPBRSpecularGlossiness->diffuseFactor[3];
             }
+            else if (NewMaterialInstanceConstant)
+            {
+                FMaterialParameterInfo MaterialParameterInfo(TEXT("diffuseFactor"));
+                const FLinearColor LinearColor(ExternalMaterialPBRSpecularGlossiness->diffuseFactor[0]
+                    , ExternalMaterialPBRSpecularGlossiness->diffuseFactor[1]
+                    , ExternalMaterialPBRSpecularGlossiness->diffuseFactor[2]
+                    , ExternalMaterialPBRSpecularGlossiness->diffuseFactor[3]);
+                NewMaterialInstanceConstant->SetVectorParameterValueEditorOnly(MaterialParameterInfo, LinearColor);
+            }
         }
         if (!!(ExternalMaterialPBRSpecularGlossiness->diffuseTexture)
             && TextureParameterNameToGuid.Contains(TEXT("diffuseTexture")))
@@ -223,6 +271,19 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
                 if (!ConstructSampleParameter(InglTFImporterOptions, InglTF, ExternalMaterialPBRSpecularGlossiness->diffuseTexture, InBuffers, TEXT("diffuseTexture"), SampleParameter, false, InFeedbackTaskWrapper, InOutglTFImporterCollection))
                 {
                     InFeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("FailedToConstructTheDiffuseTexture", "Failed to construct the `diffuseTexture`"));
+                }
+            }
+            else if (NewMaterialInstanceConstant)
+            {
+                UTexture* Texture = nullptr;
+                if (!ConstructTextureParameter(InglTFImporterOptions, InglTF, ExternalMaterialPBRSpecularGlossiness->diffuseTexture, InBuffers, TEXT("diffuseTexture"), Texture, false, InFeedbackTaskWrapper, InOutglTFImporterCollection))
+                {
+                    InFeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("FailedToConstructTheDiffuseTexture", "Failed to construct the `diffuseTexture`"));
+                }
+                else
+                {
+                    FMaterialParameterInfo MaterialParameterInfo(TEXT("diffuseTexture"));
+                    NewMaterialInstanceConstant->SetTextureParameterValueEditorOnly(MaterialParameterInfo, Texture);
                 }
             }
         }
@@ -236,6 +297,15 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
                 VectorParameter->DefaultValue.B = ExternalMaterialPBRSpecularGlossiness->specularFactor[2];
                 VectorParameter->DefaultValue.A = ExternalMaterialPBRSpecularGlossiness->glossinessFactor;
             }
+            else if (NewMaterialInstanceConstant)
+            {
+                FMaterialParameterInfo MaterialParameterInfo(TEXT("specularGlossinessFactor"));
+                const FLinearColor LinearColor(ExternalMaterialPBRSpecularGlossiness->specularFactor[0]
+                    , ExternalMaterialPBRSpecularGlossiness->specularFactor[1]
+                    , ExternalMaterialPBRSpecularGlossiness->specularFactor[2]
+                    , ExternalMaterialPBRSpecularGlossiness->glossinessFactor);
+                NewMaterialInstanceConstant->SetVectorParameterValueEditorOnly(MaterialParameterInfo, LinearColor);
+            }
         }
         if (!!(ExternalMaterialPBRSpecularGlossiness->specularGlossinessTexture)
             && TextureParameterNameToGuid.Contains(TEXT("specularGlossinessTexture")))
@@ -245,6 +315,19 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
                 if (!ConstructSampleParameter(InglTFImporterOptions, InglTF, ExternalMaterialPBRSpecularGlossiness->specularGlossinessTexture, InBuffers, TEXT("specularGlossinessTexture"), SampleParameter, false, InFeedbackTaskWrapper, InOutglTFImporterCollection))
                 {
                     InFeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("FailedToConstructTheSpecularGlossinessTexture", "Failed to construct the `specularGlossinessTexture`"));
+                }
+            }
+            else if (NewMaterialInstanceConstant)
+            {
+                UTexture* Texture = nullptr;
+                if (!ConstructTextureParameter(InglTFImporterOptions, InglTF, ExternalMaterialPBRSpecularGlossiness->specularGlossinessTexture, InBuffers, TEXT("specularGlossinessTexture"), Texture, false, InFeedbackTaskWrapper, InOutglTFImporterCollection))
+                {
+                    InFeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("FailedToConstructTheSpecularGlossinessTexture", "Failed to construct the `specularGlossinessTexture`"));
+                }
+                else
+                {
+                    FMaterialParameterInfo MaterialParameterInfo(TEXT("specularGlossinessTexture"));
+                    NewMaterialInstanceConstant->SetTextureParameterValueEditorOnly(MaterialParameterInfo, Texture);
                 }
             }
         }
@@ -258,6 +341,11 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
             {
                 ScalarParameter->DefaultValue = pbrMetallicRoughness->roughnessFactor;
             }
+            else if (NewMaterialInstanceConstant)
+            {
+                FMaterialParameterInfo MaterialParameterInfo(TEXT("roughnessFactor"));
+                NewMaterialInstanceConstant->SetScalarParameterValueEditorOnly(MaterialParameterInfo, pbrMetallicRoughness->roughnessFactor);
+            }
         }
         if (!!(pbrMetallicRoughness->baseColorTexture) && TextureParameterNameToGuid.Contains(TEXT("baseColorTexture")))
         {
@@ -268,12 +356,30 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
                     InFeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("FailedToConstructTheBaseColorTexture", "Failed to construct the `baseColorTexture`"));
                 }
             }
+            else if (NewMaterialInstanceConstant)
+            {
+                UTexture* Texture = nullptr;
+                if (!ConstructTextureParameter(InglTFImporterOptions, InglTF, pbrMetallicRoughness->baseColorTexture, InBuffers, TEXT("baseColorTexture"), Texture, false, InFeedbackTaskWrapper, InOutglTFImporterCollection))
+                {
+                    InFeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("FailedToConstructTheBaseColorTexture", "Failed to construct the `baseColorTexture`"));
+                }
+                else
+                {
+                    FMaterialParameterInfo MaterialParameterInfo(TEXT("baseColorTexture"));
+                    NewMaterialInstanceConstant->SetTextureParameterValueEditorOnly(MaterialParameterInfo, Texture);
+                }
+            }
         }
         if (ScalarParameterNameToGuid.Contains(TEXT("metallicFactor")))
         {
             if (UMaterialExpressionScalarParameter* ScalarParameter = glTFForUE4Ed::FindExpressionParameterByGUID<UMaterialExpressionScalarParameter>(NewMaterial, ScalarParameterNameToGuid[TEXT("metallicFactor")]))
             {
                 ScalarParameter->DefaultValue = pbrMetallicRoughness->metallicFactor;
+            }
+            else if (NewMaterialInstanceConstant)
+            {
+                FMaterialParameterInfo MaterialParameterInfo(TEXT("metallicFactor"));
+                NewMaterialInstanceConstant->SetScalarParameterValueEditorOnly(MaterialParameterInfo, pbrMetallicRoughness->metallicFactor);
             }
         }
         if (pbrMetallicRoughness->baseColorFactor.size() > 0 && VectorParameterNameToGuid.Contains(TEXT("baseColorFactor")))
@@ -285,6 +391,16 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
                 if (pbrMetallicRoughness->baseColorFactor.size() > 2) VectorParameter->DefaultValue.B = pbrMetallicRoughness->baseColorFactor[2];
                 if (pbrMetallicRoughness->baseColorFactor.size() > 3) VectorParameter->DefaultValue.A = pbrMetallicRoughness->baseColorFactor[3];
             }
+            else if (NewMaterialInstanceConstant)
+            {
+                FMaterialParameterInfo MaterialParameterInfo(TEXT("baseColorFactor"));
+                FLinearColor LinearColor;
+                if (pbrMetallicRoughness->baseColorFactor.size() > 0) LinearColor.R = pbrMetallicRoughness->baseColorFactor[0];
+                if (pbrMetallicRoughness->baseColorFactor.size() > 1) LinearColor.G = pbrMetallicRoughness->baseColorFactor[1];
+                if (pbrMetallicRoughness->baseColorFactor.size() > 2) LinearColor.B = pbrMetallicRoughness->baseColorFactor[2];
+                if (pbrMetallicRoughness->baseColorFactor.size() > 3) LinearColor.A = pbrMetallicRoughness->baseColorFactor[3];
+                NewMaterialInstanceConstant->SetVectorParameterValueEditorOnly(MaterialParameterInfo, LinearColor);
+            }
         }
         if (!!(pbrMetallicRoughness->metallicRoughnessTexture) && TextureParameterNameToGuid.Contains(TEXT("metallicRoughnessTexture")))
         {
@@ -293,6 +409,19 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
                 if (!ConstructSampleParameter(InglTFImporterOptions, InglTF, pbrMetallicRoughness->metallicRoughnessTexture, InBuffers, TEXT("metallicRoughnessTexture"), SampleParameter, false, InFeedbackTaskWrapper, InOutglTFImporterCollection))
                 {
                     InFeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("FailedToConstructTheRoughnessTexture", "Failed to construct the `metallicRoughnessTexture`"));
+                }
+            }
+            else if (NewMaterialInstanceConstant)
+            {
+                UTexture* Texture = nullptr;
+                if (!ConstructTextureParameter(InglTFImporterOptions, InglTF, pbrMetallicRoughness->metallicRoughnessTexture, InBuffers, TEXT("metallicRoughnessTexture"), Texture, false, InFeedbackTaskWrapper, InOutglTFImporterCollection))
+                {
+                    InFeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("FailedToConstructTheRoughnessTexture", "Failed to construct the `metallicRoughnessTexture`"));
+                }
+                else
+                {
+                    FMaterialParameterInfo MaterialParameterInfo(TEXT("metallicRoughnessTexture"));
+                    NewMaterialInstanceConstant->SetTextureParameterValueEditorOnly(MaterialParameterInfo, Texture);
                 }
             }
         }
@@ -309,6 +438,19 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
                     InFeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("FailedToConstructTheOcclusionTexture", "Failed to construct the `occlusionTexture`"));
                 }
             }
+            else if (NewMaterialInstanceConstant)
+            {
+                UTexture* Texture = nullptr;
+                if (!ConstructTextureParameter(InglTFImporterOptions, InglTF, glTFMaterial->occlusionTexture, InBuffers, TEXT("occlusionTexture"), Texture, false, InFeedbackTaskWrapper, InOutglTFImporterCollection))
+                {
+                    InFeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("FailedToConstructTheOcclusionTexture", "Failed to construct the `occlusionTexture`"));
+                }
+                else
+                {
+                    FMaterialParameterInfo MaterialParameterInfo(TEXT("occlusionTexture"));
+                    NewMaterialInstanceConstant->SetTextureParameterValueEditorOnly(MaterialParameterInfo, Texture);
+                }
+            }
         }
         if (ScalarParameterNameToGuid.Contains(TEXT("strength")))
         {
@@ -316,9 +458,15 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
             {
                 ScalarParameter->DefaultValue = occlusionTexture->strength;
             }
+            else if (NewMaterialInstanceConstant)
+            {
+                FMaterialParameterInfo MaterialParameterInfo(TEXT("strength"));
+                NewMaterialInstanceConstant->SetScalarParameterValueEditorOnly(MaterialParameterInfo, occlusionTexture->strength);
+            }
         }
     }
 
+    if (NewMaterial)
     {
         /// Setup the blend mode
         const FString AlphaMode = GLTF_GLTFSTRING_TO_TCHAR(glTFMaterial->alphaMode.c_str());
@@ -334,9 +482,9 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
         {
             NewMaterial->BlendMode = BLEND_Translucent;
         }
-    }
 
-    NewMaterial->TwoSided = glTFMaterial->doubleSided;
+        NewMaterial->TwoSided = glTFMaterial->doubleSided;
+    }
 
     if (!!glTFMaterial->normalTexture && TextureParameterNameToGuid.Contains(TEXT("normalTexture")))
     {
@@ -345,6 +493,19 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
             if (!ConstructSampleParameter(InglTFImporterOptions, InglTF, glTFMaterial->normalTexture, InBuffers, TEXT("normalTexture"), SampleParameter, true, InFeedbackTaskWrapper, InOutglTFImporterCollection))
             {
                 InFeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("FailedToConstructTheNormalTexture", "Failed to construct the `normalTexture`"));
+            }
+        }
+        else if (NewMaterialInstanceConstant)
+        {
+            UTexture* Texture = nullptr;
+            if (!ConstructTextureParameter(InglTFImporterOptions, InglTF, glTFMaterial->normalTexture, InBuffers, TEXT("normalTexture"), Texture, true, InFeedbackTaskWrapper, InOutglTFImporterCollection))
+            {
+                InFeedbackTaskWrapper.Log(ELogVerbosity::Warning, LOCTEXT("FailedToConstructTheNormalTexture", "Failed to construct the `normalTexture`"));
+            }
+            else
+            {
+                FMaterialParameterInfo MaterialParameterInfo(TEXT("normalTexture"));
+                NewMaterialInstanceConstant->SetTextureParameterValueEditorOnly(MaterialParameterInfo, Texture);
             }
         }
     }
@@ -358,21 +519,46 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
             if (glTFMaterial->emissiveFactor.size() > 2) VectorParameter->DefaultValue.B = glTFMaterial->emissiveFactor[2];
             if (glTFMaterial->emissiveFactor.size() > 3) VectorParameter->DefaultValue.A = glTFMaterial->emissiveFactor[3];
         }
+        else if (NewMaterialInstanceConstant)
+        {
+            FMaterialParameterInfo MaterialParameterInfo(TEXT("emissiveFactor"));
+            FLinearColor LinearColor;
+            if (glTFMaterial->emissiveFactor.size() > 0) LinearColor.R = glTFMaterial->emissiveFactor[0];
+            if (glTFMaterial->emissiveFactor.size() > 1) LinearColor.G = glTFMaterial->emissiveFactor[1];
+            if (glTFMaterial->emissiveFactor.size() > 2) LinearColor.B = glTFMaterial->emissiveFactor[2];
+            if (glTFMaterial->emissiveFactor.size() > 3) LinearColor.A = glTFMaterial->emissiveFactor[3];
+            NewMaterialInstanceConstant->SetVectorParameterValueEditorOnly(MaterialParameterInfo, LinearColor);
+        }
     }
 
-    NewMaterial->PostEditChange();
-    NewMaterial->MarkPackageDirty();
+    NewMaterialInterface->PostEditChange();
+    NewMaterialInterface->MarkPackageDirty();
 
-    InOutglTFImporterCollection.Materials.Add(InMaterialId, NewMaterial);
-    return NewMaterial;
+    InOutglTFImporterCollection.Materials.Add(InMaterialId, NewMaterialInterface);
+    return NewMaterialInterface;
 }
 
 bool FglTFImporterEdMaterial::ConstructSampleParameter(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions
     , const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STextureInfo>& InglTFTextureInfo, const FglTFBuffers& InBuffers
-    , const FString& InParameterName, UMaterialExpressionTextureSampleParameter* InSampleParameter, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper
+    , const FString& InParameterName, UMaterialExpressionTextureSampleParameter* InOutSampleParameter, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper
     , FglTFImporterCollection& InOutglTFImporterCollection) const
 {
-    if (!InglTF || !InglTFTextureInfo || !InSampleParameter) return false;
+    if (!InOutSampleParameter) return false;
+    UTexture* Texture = nullptr;
+    if (!ConstructTextureParameter(InglTFImporterOptions, InglTF, InglTFTextureInfo, InBuffers, InParameterName, Texture, InIsNormalmap, InFeedbackTaskWrapper, InOutglTFImporterCollection)) return false;
+    if (!Texture) return false;
+
+    InOutSampleParameter->Texture = Texture;
+    InOutSampleParameter->ConstCoordinate = static_cast<uint32>(InglTFTextureInfo->texCoord);
+    return true;
+}
+
+bool FglTFImporterEdMaterial::ConstructTextureParameter(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions
+    , const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STextureInfo>& InglTFTextureInfo, const FglTFBuffers& InBuffers
+    , const FString& InParameterName, UTexture*& OutTexture, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper
+    , FglTFImporterCollection& InOutglTFImporterCollection) const
+{
+    if (!InglTF || !InglTFTextureInfo) return false;
     if (!(InglTFTextureInfo->index)) return false;
 
     const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
@@ -380,14 +566,10 @@ bool FglTFImporterEdMaterial::ConstructSampleParameter(const TWeakPtr<FglTFImpor
     if (!glTFImporterOptions->Details->bImportTexture) return false;
 
     TSharedPtr<FglTFImporterEdTexture> glTFImporterEdTexture = FglTFImporterEdTexture::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext);
-    UTexture* Texture = glTFImporterEdTexture->CreateTexture(InglTFImporterOptions
+    OutTexture = glTFImporterEdTexture->CreateTexture(InglTFImporterOptions
         , InglTF, InglTFTextureInfo->index, InBuffers, InIsNormalmap, InFeedbackTaskWrapper
         , InOutglTFImporterCollection);
-    if (!Texture) return false;
-
-    InSampleParameter->Texture = Texture;
-    InSampleParameter->ConstCoordinate = static_cast<uint32>(InglTFTextureInfo->texCoord);
-    return true;
+    return (OutTexture != nullptr);
 }
 
 #undef LOCTEXT_NAMESPACE
