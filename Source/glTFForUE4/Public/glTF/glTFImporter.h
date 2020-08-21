@@ -222,10 +222,14 @@ public:
     virtual UObject* Create(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers) const;
 
 protected:
+    virtual class UWorld* GetTargetWorld() const;
+
+protected:
     UObject* InputParent;
     FName InputName;
     EObjectFlags InputFlags;
     class FFeedbackContext* FeedbackContext;
+    UWorld* TargetWorld;
 
 public:
     static bool GetStaticMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_STATIC_TEXCOORDS], bool bSwapYZ = true);
@@ -235,6 +239,8 @@ public:
     static bool GetNodeRelativeTransforms(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<FTransform>& OutRelativeTransforms, bool bSwapYZ = true);
     static bool GetNodeParentIndicesAndTransforms(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<int32>& OutParentIndices, TArray<FTransform>& OutRelativeTransforms, TArray<FTransform>& OutAbsoluteTransforms, bool bSwapYZ = true);
     static bool GetNodeInfos(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TMap<int32, struct FglTFImporterNodeInfo>& OutNodeInfos, bool bSwapYZ = true);
+    static bool SpawnStaticMeshActor(class UWorld* InWorld, const FTransform& InTransform, class UStaticMesh* InStaticMesh);
+    static bool SpawnSkeletalMeshActor(class UWorld* InWorld, const FTransform& InTransform, class USkeletalMesh* InSkeletalMesh);
 
 public:
     static FString SanitizeObjectName(const FString& InObjectName);

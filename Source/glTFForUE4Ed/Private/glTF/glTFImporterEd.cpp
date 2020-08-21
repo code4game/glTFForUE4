@@ -78,12 +78,11 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
     if (glTFImporterOptions->Details->MeshScaleRatio != 1.0f)
     {
         const FVector ScaleVector(glTFImporterOptions->Details->MeshScaleRatio);
+        const FTransform ScaleTransform(FQuat::Identity, FVector::ZeroVector, ScaleVector);
         for (TPair<int32, FglTFImporterNodeInfo>& NodeInfo : glTFImporterCollection.NodeInfos)
         {
             FglTFImporterNodeInfo& NodeInfoValue = NodeInfo.Value;
-            FTransform& NodeAbsoluteTransform = NodeInfoValue.AbsoluteTransform;
-            NodeAbsoluteTransform.MultiplyScale3D(ScaleVector);
-            NodeAbsoluteTransform.ScaleTranslation(glTFImporterOptions->Details->MeshScaleRatio);
+            NodeInfoValue.AbsoluteTransform.ScaleTranslation(ScaleVector);
         }
     }
 
@@ -95,6 +94,11 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
     }
 
     return CreatedObject;
+}
+
+UWorld* FglTFImporterEd::GetTargetWorld() const
+{
+    return GEditor ? GEditor->GetEditorWorldContext(false).World() : nullptr;
 }
 
 UObject* FglTFImporterEd::CreateNodes(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions
@@ -123,9 +127,7 @@ UObject* FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImporterOptions>& InglT
     const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
     check(glTFImporterOptions->Details);
 
-    const FTransform NodeTransform = glTFImporterOptions->Details->bApplyAbsolateTransform
-        ? InOutglTFImporterCollection.FindNodeInfo(glTFNodeId).AbsoluteTransform
-        : FTransform::Identity;
+    const FglTFImporterNodeInfo& NodeInfo = InOutglTFImporterCollection.FindNodeInfo(glTFNodeId);
 
     TArray<UObject*> CreatedObjects;
     if (!!(glTFNodePtr->mesh))
@@ -134,17 +136,25 @@ UObject* FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImporterOptions>& InglT
         {
             UStaticMesh* NewStaticMesh = FglTFImporterEdStaticMesh::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext)
                 ->CreateStaticMesh(InglTFImporterOptions, InGlTF, glTFNodePtr->mesh
-                    , NodeTransform, InglTFBuffers, InOutglTFImporterCollection);
+                    , FTransform::Identity, InglTFBuffers, InOutglTFImporterCollection);
             FglTFImporterEd::UpdateAssetImportData(NewStaticMesh, InglTFImporterOptions);
             CreatedObjects.Emplace(NewStaticMesh);
+            if (glTFImporterOptions->Details->bBuildLevel)
+            {
+                SpawnStaticMeshActor(GetTargetWorld(), NodeInfo.AbsoluteTransform, NewStaticMesh);
+            }
         }
         else
         {
-            USkeletalMesh* SkeletalMesh = FglTFImporterEdSkeletalMesh::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext)
+            USkeletalMesh* NewSkeletalMesh = FglTFImporterEdSkeletalMesh::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext)
                 ->CreateSkeletalMesh(InglTFImporterOptions, InGlTF, glTFNodePtr->mesh, glTFNodePtr->skin
-                    , NodeTransform, InglTFBuffers, InOutglTFImporterCollection);
-            FglTFImporterEd::UpdateAssetImportData(SkeletalMesh, InglTFImporterOptions);
-            CreatedObjects.Emplace(SkeletalMesh);
+                    , FTransform::Identity, InglTFBuffers, InOutglTFImporterCollection);
+            FglTFImporterEd::UpdateAssetImportData(NewSkeletalMesh, InglTFImporterOptions);
+            CreatedObjects.Emplace(NewSkeletalMesh);
+            if (glTFImporterOptions->Details->bBuildLevel)
+            {
+                SpawnSkeletalMeshActor(GetTargetWorld(), NodeInfo.AbsoluteTransform, NewSkeletalMesh);
+            }
         }
     }
     if (!!(glTFNodePtr->camera))

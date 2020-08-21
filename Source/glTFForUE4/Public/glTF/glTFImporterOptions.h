@@ -37,9 +37,6 @@ public:
     UPROPERTY(EditAnywhere, Config, Category = "Mesh")
     bool bGenerateLightmapUVs;
     
-    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
-    bool bApplyAbsolateTransform;
-
     UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
     bool bInvertNormal;
 
@@ -60,6 +57,10 @@ public:
 
     UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
     bool bUseFullPrecisionUVs;
+
+    /// material options
+    UPROPERTY(EditAnywhere, Config, Category = "Material")
+    bool bUseMaterialInstance;
 };
 
 USTRUCT()

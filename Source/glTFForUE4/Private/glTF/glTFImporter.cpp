@@ -15,6 +15,13 @@
 #endif
 #include <Misc/Paths.h>
 
+#include <Engine/StaticMesh.h>
+#include <Engine/SkeletalMesh.h>
+#include <Engine/StaticMeshActor.h>
+#include <Animation/SkeletalMeshActor.h>
+#include <Components/StaticMeshComponent.h>
+#include <Components/SkeletalMeshComponent.h>
+
 #if defined(ERROR)
 #define DRACO_MACRO_TEMP_ERROR      ERROR
 #undef ERROR
@@ -783,6 +790,7 @@ FglTFImporter::FglTFImporter()
     , InputName()
     , InputFlags(RF_NoFlags)
     , FeedbackContext(nullptr)
+    , TargetWorld(nullptr)
 {
     //
 }
@@ -825,6 +833,34 @@ UObject* FglTFImporter::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImpor
     //TODO: generate the procedural mesh
 
     return nullptr;
+}
+
+UWorld* FglTFImporter::GetTargetWorld() const
+{
+    //TODO:
+    return nullptr;
+}
+
+bool FglTFImporter::SpawnStaticMeshActor(UWorld* InWorld, const FTransform& InTransform, UStaticMesh* InStaticMesh)
+{
+    if (!InWorld) return false;
+    AStaticMeshActor* StaticMeshActor = InWorld->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(), InTransform);
+    if (!StaticMeshActor) return false;
+    UStaticMeshComponent* StaticMeshComponent = StaticMeshActor->GetStaticMeshComponent();
+    if (!StaticMeshComponent) return false;
+    StaticMeshComponent->SetStaticMesh(InStaticMesh);
+    return true;
+}
+
+bool FglTFImporter::SpawnSkeletalMeshActor(UWorld* InWorld, const FTransform& InTransform, USkeletalMesh* InSkeletalMesh)
+{
+    if (!InWorld) return false;
+    ASkeletalMeshActor* SkeletalMeshActor = InWorld->SpawnActor<ASkeletalMeshActor>(ASkeletalMeshActor::StaticClass(), InTransform);
+    if (!SkeletalMeshActor) return false;
+    USkeletalMeshComponent* SkeletalMeshComponent = SkeletalMeshActor->GetSkeletalMeshComponent();
+    if (!SkeletalMeshComponent) return false;
+    SkeletalMeshComponent->SetSkeletalMesh(InSkeletalMesh);
+    return true;
 }
 
 namespace glTFImporter
