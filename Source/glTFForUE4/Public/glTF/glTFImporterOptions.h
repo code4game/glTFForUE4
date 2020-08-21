@@ -8,20 +8,29 @@ class GLTFFORUE4_API UglTFImporterOptionsDetails : public UObject
     GENERATED_UCLASS_BODY()
 
 public:
-    /// Import options
-    UPROPERTY(EditAnywhere, Config, Category = "Import")
-    bool bImportAllScene;
+    /// common options
+    UPROPERTY(EditAnywhere, Config, Category = "Common")
+    bool bBuildLevel;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (EditCondition = bBuildLevel))
+    bool bBuildLevelByTemplate;
     
-    UPROPERTY(EditAnywhere, Config, Category = "Import")
+    UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (EditCondition = bBuildLevelByTemplate, AllowedClasses = "World"))
+    FStringAssetReference BuildLevelTemplate;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Common")
     bool bImportSkeletalMesh;
 
-    UPROPERTY(EditAnywhere, Config, Category = "Import")
+    UPROPERTY(EditAnywhere, Config, Category = "Common")
     bool bImportMaterial;
 
-    UPROPERTY(EditAnywhere, Config, Category = "Import")
+    UPROPERTY(EditAnywhere, Config, Category = "Common")
     bool bImportTexture;
 
-    /// Mesh options
+    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Common")
+    bool bImportAllScene;
+    
+    /// mesh options
     UPROPERTY(EditAnywhere, Config, Category = "Mesh")
     float MeshScaleRatio;
     
