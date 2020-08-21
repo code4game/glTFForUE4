@@ -9,8 +9,9 @@ UglTFImporterOptionsDetails::UglTFImporterOptionsDetails(const FObjectInitialize
     , bImportSkeletalMesh(true)
     , bImportMaterial(true)
     , bImportTexture(true)
-    , bUseAbsolateTransform(false)
     , MeshScaleRatio(1.0f)
+    , bGenerateLightmapUVs(true)
+    , bApplyAbsolateTransform(false)
     , bInvertNormal(false)
     , bUseMikkTSpace(true)
     , bRecomputeNormals(false)
@@ -18,7 +19,6 @@ UglTFImporterOptionsDetails::UglTFImporterOptionsDetails(const FObjectInitialize
     , bRemoveDegenerates(false)
     , bBuildAdjacencyBuffer(false)
     , bUseFullPrecisionUVs(false)
-    , bGenerateLightmapUVs(true)
 {
     //
 }

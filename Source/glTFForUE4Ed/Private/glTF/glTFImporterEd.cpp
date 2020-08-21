@@ -97,7 +97,8 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
     return CreatedObject;
 }
 
-UObject* FglTFImporterEd::CreateNodes(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::vector<std::shared_ptr<libgltf::SGlTFId>>& InNodeIdPtrs, const FglTFBuffers& InglTFBuffers
+UObject* FglTFImporterEd::CreateNodes(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions
+    , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::vector<std::shared_ptr<libgltf::SGlTFId>>& InNodeIdPtrs, const FglTFBuffers& InglTFBuffers
     , FglTFImporterCollection& InOutglTFImporterCollection) const
 {
     UObject* CreatedObject = nullptr;
@@ -109,29 +110,30 @@ UObject* FglTFImporterEd::CreateNodes(const TWeakPtr<FglTFImporterOptions>& Ingl
     return CreatedObject;
 }
 
-UObject* FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SGlTFId>& InNodeIdPtr, const FglTFBuffers& InglTFBuffers
+UObject* FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions
+    , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SGlTFId>& InNodeIdPtr, const FglTFBuffers& InglTFBuffers
     , FglTFImporterCollection& InOutglTFImporterCollection) const
 {
     if (!InNodeIdPtr) return nullptr;
-    const int32 NodeId = *InNodeIdPtr;
-    if (NodeId < 0 || NodeId >= static_cast<int32>(InGlTF->nodes.size())) return nullptr;
-    const std::shared_ptr<libgltf::SNode>& NodePtr = InGlTF->nodes[NodeId];
-    if (!NodePtr) return nullptr;
+    const int32 glTFNodeId = *InNodeIdPtr;
+    if (glTFNodeId < 0 || glTFNodeId >= static_cast<int32>(InGlTF->nodes.size())) return nullptr;
+    const std::shared_ptr<libgltf::SNode>& glTFNodePtr = InGlTF->nodes[glTFNodeId];
+    if (!glTFNodePtr) return nullptr;
 
     const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
     check(glTFImporterOptions->Details);
 
-    const FTransform NodeTransform = glTFImporterOptions->Details->bUseAbsolateTransform
-        ? InOutglTFImporterCollection.FindNodeInfo(NodeId).AbsoluteTransform
+    const FTransform NodeTransform = glTFImporterOptions->Details->bApplyAbsolateTransform
+        ? InOutglTFImporterCollection.FindNodeInfo(glTFNodeId).AbsoluteTransform
         : FTransform::Identity;
 
     TArray<UObject*> CreatedObjects;
-    if (!!(NodePtr->mesh))
+    if (!!(glTFNodePtr->mesh))
     {
-        if (!glTFImporterOptions->Details->bImportSkeletalMesh || !NodePtr->skin)
+        if (!glTFImporterOptions->Details->bImportSkeletalMesh || !glTFNodePtr->skin)
         {
             UStaticMesh* NewStaticMesh = FglTFImporterEdStaticMesh::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext)
-                ->CreateStaticMesh(InglTFImporterOptions, InGlTF, NodePtr->mesh
+                ->CreateStaticMesh(InglTFImporterOptions, InGlTF, glTFNodePtr->mesh
                     , NodeTransform, InglTFBuffers, InOutglTFImporterCollection);
             FglTFImporterEd::UpdateAssetImportData(NewStaticMesh, InglTFImporterOptions);
             CreatedObjects.Emplace(NewStaticMesh);
@@ -139,20 +141,20 @@ UObject* FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImporterOptions>& InglT
         else
         {
             USkeletalMesh* SkeletalMesh = FglTFImporterEdSkeletalMesh::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext)
-                ->CreateSkeletalMesh(InglTFImporterOptions, InGlTF, NodePtr->mesh, NodePtr->skin
+                ->CreateSkeletalMesh(InglTFImporterOptions, InGlTF, glTFNodePtr->mesh, glTFNodePtr->skin
                     , NodeTransform, InglTFBuffers, InOutglTFImporterCollection);
             FglTFImporterEd::UpdateAssetImportData(SkeletalMesh, InglTFImporterOptions);
             CreatedObjects.Emplace(SkeletalMesh);
         }
     }
-    if (!!(NodePtr->camera))
+    if (!!(glTFNodePtr->camera))
     {
         //TODO:
     }
 
-    if (!NodePtr->children.empty())
+    if (!glTFNodePtr->children.empty())
     {
-        UObject* ObjectChlid = CreateNodes(InglTFImporterOptions, InGlTF, NodePtr->children, InglTFBuffers, InOutglTFImporterCollection);
+        UObject* ObjectChlid = CreateNodes(InglTFImporterOptions, InGlTF, glTFNodePtr->children, InglTFBuffers, InOutglTFImporterCollection);
         CreatedObjects.Emplace(ObjectChlid);
     }
     return ((CreatedObjects.Num() > 0) ? CreatedObjects[0] : nullptr);

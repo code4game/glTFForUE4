@@ -23,34 +23,34 @@ public:
 
     /// Mesh options
     UPROPERTY(EditAnywhere, Config, Category = "Mesh")
-    bool bUseAbsolateTransform;
-
-    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
     float MeshScaleRatio;
-
-    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
-    bool bInvertNormal;
-
-    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
-    bool bUseMikkTSpace;
-
-    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
-    bool bRecomputeNormals;
-
-    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
-    bool bRecomputeTangents;
-
-    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
-    bool bRemoveDegenerates;
-    
-    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
-    bool bBuildAdjacencyBuffer;
-
-    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
-    bool bUseFullPrecisionUVs;
     
     UPROPERTY(EditAnywhere, Config, Category = "Mesh")
     bool bGenerateLightmapUVs;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    bool bApplyAbsolateTransform;
+
+    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    bool bInvertNormal;
+
+    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    bool bUseMikkTSpace;
+
+    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    bool bRecomputeNormals;
+
+    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    bool bRecomputeTangents;
+
+    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    bool bRemoveDegenerates;
+    
+    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    bool bBuildAdjacencyBuffer;
+
+    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    bool bUseFullPrecisionUVs;
 };
 
 USTRUCT()
