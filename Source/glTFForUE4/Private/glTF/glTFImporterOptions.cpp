@@ -3,11 +3,12 @@
 #include "glTFForUE4PrivatePCH.h"
 #include "glTF/glTFImporterOptions.h"
 
-FglTFImporterOptions::FglTFImporterOptions()
-    : FilePathInOS(TEXT(""))
-    , FilePathInEngine(TEXT(""))
-    , ImportType(EglTFImportType::StaticMesh)
+UglTFImporterOptionsDetails::UglTFImporterOptionsDetails(const FObjectInitializer& InObjectInitializer)
+    : Super(InObjectInitializer)
     , bImportAllScene(false)
+    , bImportSkeletalMesh(true)
+    , bImportMaterial(true)
+    , bImportTexture(true)
     , MeshScaleRatio(1.0f)
     , bInvertNormal(false)
     , bUseMikkTSpace(true)
@@ -17,11 +18,14 @@ FglTFImporterOptions::FglTFImporterOptions()
     , bBuildAdjacencyBuffer(false)
     , bUseFullPrecisionUVs(false)
     , bGenerateLightmapUVs(true)
-    , bImportMaterial(true)
-    , bImportTexture(true)
 {
     //
 }
 
-const FglTFImporterOptions FglTFImporterOptions::Default;
-FglTFImporterOptions FglTFImporterOptions::Current;
+FglTFImporterOptions::FglTFImporterOptions()
+    : FilePathInOS(TEXT(""))
+    , FilePathInEngine(TEXT(""))
+    , Details(nullptr)
+{
+    //
+}

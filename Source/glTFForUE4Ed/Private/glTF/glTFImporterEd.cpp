@@ -18,10 +18,10 @@ FglTFImporterEd::FglTFMaterialInfo::FglTFMaterialInfo(int32 InId, FString InPrim
     //
 }
 
-TSharedPtr<FglTFImporterEd> FglTFImporterEd::Get(UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext)
+TSharedPtr<FglTFImporterEd> FglTFImporterEd::Get(UFactory* InFactory, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext)
 {
     TSharedPtr<FglTFImporterEd> glTFImporterEd = MakeShareable(new FglTFImporterEd);
-    glTFImporterEd->Set(InClass, InParent, InName, InFlags, InFeedbackContext);
+    glTFImporterEd->Set(InParent, InName, InFlags, InFeedbackContext);
     glTFImporterEd->InputFactory = InFactory;
     return glTFImporterEd;
 }
@@ -54,11 +54,12 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
     }
 
     const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
+    check(glTFImporterOptions->Details);
 
     FlushRenderingCommands();
 
     std::vector<std::shared_ptr<libgltf::SScene>> Scenes;
-    if (!glTFImporterOptions->bImportAllScene && InGlTF->scene)
+    if (!glTFImporterOptions->Details->bImportAllScene && InGlTF->scene)
     {
         Scenes.push_back(InGlTF->scenes[(int32)(*InGlTF->scene)]);
     }
@@ -107,7 +108,7 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
             {
                 if (!NodePtr->skin)
                 {
-                    UStaticMesh* NewStaticMesh = FglTFImporterEdStaticMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)
+                    UStaticMesh* NewStaticMesh = FglTFImporterEdStaticMesh::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext)
                         ->CreateStaticMesh(InglTFImporterOptions
                             , InGlTF, NodePtr->mesh
                             , FTransform::Identity, InglTFBuffers
@@ -125,24 +126,6 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
                 //TODO:
             }
         }
-    }
-
-    switch (glTFImporterOptions->ImportType)
-    {
-    case EglTFImportType::StaticMesh:
-        //CreatedObject = FglTFImporterEdStaticMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateStaticMesh(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
-        break;
-
-    case EglTFImportType::SkeletalMesh:
-        //CreatedObject = FglTFImporterEdSkeletalMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateSkeletalMesh(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
-        break;
-
-    case EglTFImportType::Level:
-        //CreatedObject = FglTFImporterEdLevel::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateLevel(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
-        break;
-
-    default:
-        break;
     }
 
     return CreatedObject;

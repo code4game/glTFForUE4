@@ -5,6 +5,7 @@
 
 /// From glTFForUE4 module
 #include "glTFForUE4Settings.h"
+#include "glTF/glTFImporterOptions.h"
 
 /// From glTFForUE4Ed module
 #include "glTF/glTFFactory.h"

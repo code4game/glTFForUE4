@@ -21,7 +21,7 @@ public:
     };
 
 public:
-    static TSharedPtr<FglTFImporterEd> Get(class UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
+    static TSharedPtr<FglTFImporterEd> Get(class UFactory* InFactory, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
 
 public:
     FglTFImporterEd();

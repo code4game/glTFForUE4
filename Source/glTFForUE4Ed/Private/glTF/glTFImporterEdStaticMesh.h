@@ -9,7 +9,7 @@ class FglTFImporterEdStaticMesh : public FglTFImporterEd
     typedef FglTFImporterEd Super;
 
 public:
-    static TSharedPtr<FglTFImporterEdStaticMesh> Get(class UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
+    static TSharedPtr<FglTFImporterEdStaticMesh> Get(class UFactory* InFactory, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
 
 protected:
     FglTFImporterEdStaticMesh();

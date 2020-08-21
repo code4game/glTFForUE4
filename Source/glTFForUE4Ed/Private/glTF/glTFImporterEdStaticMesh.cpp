@@ -42,10 +42,10 @@ namespace glTFForUE4Ed
     }
 }
 
-TSharedPtr<FglTFImporterEdStaticMesh> FglTFImporterEdStaticMesh::Get(UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
+TSharedPtr<FglTFImporterEdStaticMesh> FglTFImporterEdStaticMesh::Get(UFactory* InFactory, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
 {
     TSharedPtr<FglTFImporterEdStaticMesh> glTFImporterEdStaticMesh = MakeShareable(new FglTFImporterEdStaticMesh);
-    glTFImporterEdStaticMesh->Set(InClass, InParent, InName, InFlags, InFeedbackContext);
+    glTFImporterEdStaticMesh->Set(InParent, InName, InFlags, InFeedbackContext);
     glTFImporterEdStaticMesh->InputFactory = InFactory;
     return glTFImporterEdStaticMesh;
 }
@@ -89,13 +89,14 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
         checkfSlow(0, TEXT("The glTF mesh is invalid!"));
         return nullptr;
     }
-    if (!InputClass || !InputClass->IsChildOf(UStaticMesh::StaticClass()) || !InputParent || !InputName.IsValid())
+    if (!InputParent || !InputName.IsValid())
     {
         checkfSlow(0, TEXT("The input class is invalid"));
         return nullptr;
     }
 
-    TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
+    const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
+    check(glTFImporterOptions->Details);
 
     const FString MeshName = GLTF_GLTFSTRING_TO_TCHAR(MeshPtr->name.c_str());
     const FString StaticMeshName = MeshName.IsEmpty()
@@ -118,7 +119,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     if (!NewStaticMesh)
     {
         /// Create a new static mesh
-        NewStaticMesh = NewObject<UStaticMesh>(InputParent, InputClass, *StaticMeshName, InputFlags);
+        NewStaticMesh = NewObject<UStaticMesh>(InputParent, UStaticMesh::StaticClass(), *StaticMeshName, InputFlags);
         checkSlow(NewStaticMesh);
         if (NewStaticMesh) FAssetRegistryModule::AssetCreated(NewStaticMesh);
         bCreated = true;
@@ -136,7 +137,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     StaticMeshSourceModels.Empty();
     new(StaticMeshSourceModels)FStaticMeshSourceModel();
     FStaticMeshSourceModel& SourceModel = StaticMeshSourceModels[0];
-    SourceModel.BuildSettings.bUseMikkTSpace = glTFImporterOptions->bUseMikkTSpace;
+    SourceModel.BuildSettings.bUseMikkTSpace = glTFImporterOptions->Details->bUseMikkTSpace;
 
     NewStaticMesh->LightingGuid = FGuid::NewGuid();
     NewStaticMesh->LightMapResolution = 64;
@@ -153,7 +154,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
         return NewStaticMesh;
     }
 
-    if (glTFImporterOptions->bInvertNormal)
+    if (glTFImporterOptions->Details->bInvertNormal)
     {
         for (FVector& Normal : NewRawMesh.WedgeTangentZ)
         {
@@ -163,15 +164,15 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
 
     for (FVector& Position : NewRawMesh.VertexPositions)
     {
-        Position = Position * glTFImporterOptions->MeshScaleRatio;
+        Position = Position * glTFImporterOptions->Details->MeshScaleRatio;
     }
 
-    SourceModel.BuildSettings.bRecomputeNormals = (glTFImporterOptions->bRecomputeNormals || NewRawMesh.WedgeTangentZ.Num() != NewRawMesh.WedgeIndices.Num());
-    SourceModel.BuildSettings.bRecomputeTangents = (glTFImporterOptions->bRecomputeTangents || NewRawMesh.WedgeTangentX.Num() != NewRawMesh.WedgeIndices.Num() || NewRawMesh.WedgeTangentY.Num() != NewRawMesh.WedgeIndices.Num());
-    SourceModel.BuildSettings.bRemoveDegenerates = glTFImporterOptions->bRemoveDegenerates;
-    SourceModel.BuildSettings.bBuildAdjacencyBuffer = glTFImporterOptions->bBuildAdjacencyBuffer;
-    SourceModel.BuildSettings.bUseFullPrecisionUVs = glTFImporterOptions->bUseFullPrecisionUVs;
-    SourceModel.BuildSettings.bGenerateLightmapUVs = glTFImporterOptions->bGenerateLightmapUVs;
+    SourceModel.BuildSettings.bRecomputeNormals = (glTFImporterOptions->Details->bRecomputeNormals || NewRawMesh.WedgeTangentZ.Num() != NewRawMesh.WedgeIndices.Num());
+    SourceModel.BuildSettings.bRecomputeTangents = (glTFImporterOptions->Details->bRecomputeTangents || NewRawMesh.WedgeTangentX.Num() != NewRawMesh.WedgeIndices.Num() || NewRawMesh.WedgeTangentY.Num() != NewRawMesh.WedgeIndices.Num());
+    SourceModel.BuildSettings.bRemoveDegenerates = glTFImporterOptions->Details->bRemoveDegenerates;
+    SourceModel.BuildSettings.bBuildAdjacencyBuffer = glTFImporterOptions->Details->bBuildAdjacencyBuffer;
+    SourceModel.BuildSettings.bUseFullPrecisionUVs = glTFImporterOptions->Details->bUseFullPrecisionUVs;
+    SourceModel.BuildSettings.bGenerateLightmapUVs = glTFImporterOptions->Details->bGenerateLightmapUVs;
     SourceModel.RawMeshBulkData->SaveRawMesh(NewRawMesh);
 
     /// Build the static mesh
@@ -199,7 +200,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     FMeshSectionInfoMap& StaticMeshSectionInfoMap = NewStaticMesh->GetSectionInfoMap();
 #endif
 
-    TSharedPtr<FglTFImporterEdMaterial> glTFImporterEdMaterial = FglTFImporterEdMaterial::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext);
+    TSharedPtr<FglTFImporterEdMaterial> glTFImporterEdMaterial = FglTFImporterEdMaterial::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext);
     FMeshSectionInfoMap NewMap;
     static UMaterial* DefaultMaterial = UMaterial::GetDefaultMaterial(MD_Surface);
     TMap<FString, UTexture*> TextureLibrary;
@@ -208,7 +209,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     {
         const FglTFMaterialInfo& glTFMaterialInfo = glTFMaterialInfos[i];
         UMaterialInterface* NewMaterial = nullptr;
-        if (glTFImporterOptions->bImportMaterial)
+        if (glTFImporterOptions->Details->bImportMaterial)
         {
             NewMaterial = glTFImporterEdMaterial->CreateMaterial(InglTFImporterOptions, InGlTF, InBuffers, glTFMaterialInfo, TextureLibrary, FeedbackTaskWrapper);
         }

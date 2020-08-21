@@ -771,16 +771,15 @@ void FglTFAnimationSequenceDatas::FindOrAddSequenceDataAndSetScale(int32 InNodeI
     SequenceDataPtr->FindOrAddSequenceKeyDataAndSetScale(InTime, InValue, InInterpolation);
 }
 
-TSharedPtr<FglTFImporter> FglTFImporter::Get(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
+TSharedPtr<FglTFImporter> FglTFImporter::Get(UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
 {
     TSharedPtr<FglTFImporter> glTFImporter = MakeShareable(new FglTFImporter);
-    glTFImporter->Set(InClass, InParent, InName, InFlags, InFeedbackContext);
+    glTFImporter->Set(InParent, InName, InFlags, InFeedbackContext);
     return glTFImporter;
 }
 
 FglTFImporter::FglTFImporter()
-    : InputClass(nullptr)
-    , InputParent(nullptr)
+    : InputParent(nullptr)
     , InputName()
     , InputFlags(RF_NoFlags)
     , FeedbackContext(nullptr)
@@ -793,9 +792,8 @@ FglTFImporter::~FglTFImporter()
     //
 }
 
-FglTFImporter& FglTFImporter::Set(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext)
+FglTFImporter& FglTFImporter::Set(UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext)
 {
-    InputClass = InClass;
     InputParent = InParent;
     InputName = InName;
     InputFlags = InFlags;

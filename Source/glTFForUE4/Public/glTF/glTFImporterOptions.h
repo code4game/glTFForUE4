@@ -2,13 +2,52 @@
 
 #include "glTFImporterOptions.generated.h"
 
-UENUM()
-enum class EglTFImportType : uint8
+UCLASS(config = glTFForUE4Settings, defaultconfig)
+class GLTFFORUE4_API UglTFImporterOptionsDetails : public UObject
 {
-    None,
-    StaticMesh,
-    SkeletalMesh,
-    Level,
+    GENERATED_UCLASS_BODY()
+
+public:
+    /// Import options
+    UPROPERTY(EditAnywhere, Config, Category = "Import")
+    bool bImportAllScene;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Import")
+    bool bImportSkeletalMesh;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Import")
+    bool bImportMaterial;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Import")
+    bool bImportTexture;
+
+    /// Mesh options
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    float MeshScaleRatio;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    bool bInvertNormal;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    bool bUseMikkTSpace;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    bool bRecomputeNormals;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    bool bRecomputeTangents;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    bool bRemoveDegenerates;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    bool bBuildAdjacencyBuffer;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    bool bUseFullPrecisionUVs;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    bool bGenerateLightmapUVs;
 };
 
 USTRUCT()
@@ -24,48 +63,6 @@ struct GLTFFORUE4_API FglTFImporterOptions
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     FString FilePathInEngine;
 
-    /// Import options
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    EglTFImportType ImportType;
-
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bImportAllScene;
-
-    /// Mesh options
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    float MeshScaleRatio;
-
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bInvertNormal;
-
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bUseMikkTSpace;
-
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bRecomputeNormals;
-
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bRecomputeTangents;
-
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bRemoveDegenerates;
-    
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bBuildAdjacencyBuffer;
-
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bUseFullPrecisionUVs;
-    
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bGenerateLightmapUVs;
-
-    /// Material options
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bImportMaterial;
-
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bImportTexture;
-
-    static const FglTFImporterOptions Default;
-    static FglTFImporterOptions Current;
+    UglTFImporterOptionsDetails* Details;
 };

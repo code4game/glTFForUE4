@@ -35,10 +35,10 @@ namespace glTFForUE4Ed
     }
 }
 
-TSharedPtr<FglTFImporterEdMaterial> FglTFImporterEdMaterial::Get(UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
+TSharedPtr<FglTFImporterEdMaterial> FglTFImporterEdMaterial::Get(UFactory* InFactory, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
 {
     TSharedPtr<FglTFImporterEdMaterial> glTFImporterEdMaterial = MakeShareable(new FglTFImporterEdMaterial);
-    glTFImporterEdMaterial->Set(InClass, InParent, InName, InFlags, InFeedbackContext);
+    glTFImporterEdMaterial->Set(InParent, InName, InFlags, InFeedbackContext);
     glTFImporterEdMaterial->InputFactory = InFactory;
     return glTFImporterEdMaterial;
 }
@@ -378,6 +378,7 @@ bool FglTFImporterEdMaterial::ConstructSampleParameter(const TWeakPtr<FglTFImpor
     if (!glTFTexture) return false;
 
     const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
+    check(glTFImporterOptions->Details)
 
     /// optimize the number of the texture
     /// use the texture's id as key
@@ -388,9 +389,9 @@ bool FglTFImporterEdMaterial::ConstructSampleParameter(const TWeakPtr<FglTFImpor
     {
         Texture = InOutTextureLibrary[TextureName];
     }
-    else if (glTFImporterOptions->bImportTexture)
+    else if (glTFImporterOptions->Details->bImportTexture)
     {
-        TSharedPtr<FglTFImporterEdTexture> glTFImporterEdTexture = FglTFImporterEdTexture::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext);
+        TSharedPtr<FglTFImporterEdTexture> glTFImporterEdTexture = FglTFImporterEdTexture::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext);
         Texture = glTFImporterEdTexture->CreateTexture(InglTFImporterOptions, InglTF, glTFTexture, InBuffers, TextureName, InIsNormalmap, InFeedbackTaskWrapper);
         if (Texture)
         {

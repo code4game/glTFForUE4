@@ -211,18 +211,17 @@ struct GLTFFORUE4_API FglTFAnimationSequenceDatas
 class GLTFFORUE4_API FglTFImporter
 {
 public:
-    static TSharedPtr<FglTFImporter> Get(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
+    static TSharedPtr<FglTFImporter> Get(UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
 
 public:
     FglTFImporter();
     virtual ~FglTFImporter();
 
 public:
-    virtual FglTFImporter& Set(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
+    virtual FglTFImporter& Set(UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
     virtual UObject* Create(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers) const;
 
 protected:
-    UClass* InputClass;
     UObject* InputParent;
     FName InputName;
     EObjectFlags InputFlags;

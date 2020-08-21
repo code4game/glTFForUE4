@@ -9,7 +9,7 @@ class FglTFImporterEdMaterial : public FglTFImporterEd
     typedef FglTFImporterEd Super;
 
 public:
-    static TSharedPtr<FglTFImporterEdMaterial> Get(class UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
+    static TSharedPtr<FglTFImporterEdMaterial> Get(class UFactory* InFactory, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
 
 protected:
     FglTFImporterEdMaterial();

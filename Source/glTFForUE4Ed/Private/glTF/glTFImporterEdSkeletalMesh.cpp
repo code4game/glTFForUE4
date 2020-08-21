@@ -266,10 +266,10 @@ namespace glTFForUE4Ed
     }
 }
 
-TSharedPtr<FglTFImporterEdSkeletalMesh> FglTFImporterEdSkeletalMesh::Get(UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
+TSharedPtr<FglTFImporterEdSkeletalMesh> FglTFImporterEdSkeletalMesh::Get(UFactory* InFactory, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
 {
     TSharedPtr<FglTFImporterEdSkeletalMesh> glTFImporterEdSkeletalMesh = MakeShareable(new FglTFImporterEdSkeletalMesh);
-    glTFImporterEdSkeletalMesh->Set(InClass, InParent, InName, InFlags, InFeedbackContext);
+    glTFImporterEdSkeletalMesh->Set(InParent, InName, InFlags, InFeedbackContext);
     glTFImporterEdSkeletalMesh->InputFactory = InFactory;
     return glTFImporterEdSkeletalMesh;
 }
@@ -291,9 +291,10 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
 {
     if (!InglTFImporterOptions.IsValid()) return nullptr;
     if (!InGlTF || InScenes.empty()) return nullptr;
-    if (InputClass != USkeletalMesh::StaticClass() || !InputParent || !InputName.IsValid()) return nullptr;
+    if (!InputParent || !InputName.IsValid()) return nullptr;
 
-    TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
+    const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
+    check(glTFImporterOptions->Details);
 
     TArray<int32> NodeParentIndices;
     TArray<FTransform> NodeRelativeTransforms;
@@ -301,13 +302,13 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     if (!FglTFImporter::GetNodeParentIndicesAndTransforms(InGlTF, NodeParentIndices, NodeRelativeTransforms, NodeAbsoluteTransforms)) return nullptr;
 
     // scale the transform
-    if (glTFImporterOptions->MeshScaleRatio != 1.0f)
+    if (glTFImporterOptions->Details->MeshScaleRatio != 1.0f)
     {
-        const FVector ScaleVector(glTFImporterOptions->MeshScaleRatio);
+        const FVector ScaleVector(glTFImporterOptions->Details->MeshScaleRatio);
         for (FTransform& NodeAbsoluteTransform : NodeAbsoluteTransforms)
         {
             NodeAbsoluteTransform.MultiplyScale3D(ScaleVector);
-            NodeAbsoluteTransform.ScaleTranslation(glTFImporterOptions->MeshScaleRatio);
+            NodeAbsoluteTransform.ScaleTranslation(glTFImporterOptions->Details->MeshScaleRatio);
         }
     }
 
@@ -431,7 +432,8 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
         return nullptr;
     }
 
-    TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
+    const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
+    check(glTFImporterOptions->Details);
 
     /// Create new skeletal mesh
     FString MeshName = GLTF_GLTFSTRING_TO_TCHAR(InMesh->name.c_str());
@@ -444,7 +446,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     bool bCreated = false;
     if (!SkeletalMesh)
     {
-        SkeletalMesh = NewObject<USkeletalMesh>(InputParent, InputClass, SkeletalMeshName, InputFlags);
+        SkeletalMesh = NewObject<USkeletalMesh>(InputParent, USkeletalMesh::StaticClass(), SkeletalMeshName, InputFlags);
         if (SkeletalMesh) FAssetRegistryModule::AssetCreated(SkeletalMesh);
         bCreated = true;
     }
@@ -473,8 +475,8 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     TArray<int32> LODPointToRawMap;
     glTFForUE4Ed::CopyLODImportData(SkeletalMeshImportData, LODPoints, LODWedges, LODFaces, LODInfluences, LODPointToRawMap);
 
-    const bool bShouldComputeNormals = glTFImporterOptions->bRecomputeNormals || !SkeletalMeshImportData.bHasNormals;
-    const bool bShouldComputeTangents = glTFImporterOptions->bRecomputeTangents || !SkeletalMeshImportData.bHasTangents;
+    const bool bShouldComputeNormals = glTFImporterOptions->Details->bRecomputeNormals || !SkeletalMeshImportData.bHasNormals;
+    const bool bShouldComputeTangents = glTFImporterOptions->Details->bRecomputeTangents || !SkeletalMeshImportData.bHasTangents;
 
     IMeshUtilities& MeshUtilities = FModuleManager::Get().LoadModuleChecked<IMeshUtilities>("MeshUtilities");
 
@@ -527,7 +529,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     IMeshUtilities::MeshBuildOptions BuildOptions;
     BuildOptions.bComputeNormals = bShouldComputeNormals;
     BuildOptions.bComputeTangents = bShouldComputeTangents;
-    BuildOptions.bUseMikkTSpace = glTFImporterOptions->bUseMikkTSpace;
+    BuildOptions.bUseMikkTSpace = glTFImporterOptions->Details->bUseMikkTSpace;
     if (!MeshUtilities.BuildSkeletalMesh(LODModel, SkeletalMesh->RefSkeleton, LODInfluences, LODWedges, LODFaces, LODPoints, LODPointToRawMap, BuildOptions, &WarningMessages, &WarningNames))
 #endif
     {
@@ -539,10 +541,10 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     SkeletalMesh->BuildPhysicsData();
 
     /// import the material
-    if (glTFImporterOptions->bImportMaterial)
+    if (glTFImporterOptions->Details->bImportMaterial)
     {
         TMap<FString, UTexture*> TextureLibrary;
-        TSharedPtr<FglTFImporterEdMaterial> glTFImporterEdMaterial = FglTFImporterEdMaterial::Get(InputFactory, InputClass, InputParent, SkeletalMeshName, InputFlags, FeedbackContext);
+        TSharedPtr<FglTFImporterEdMaterial> glTFImporterEdMaterial = FglTFImporterEdMaterial::Get(InputFactory, InputParent, SkeletalMeshName, InputFlags, FeedbackContext);
         for (const FglTFMaterialInfo& MaterialInfo : MaterialInfos)
         {
             UMaterial* NewMaterial = glTFImporterEdMaterial->CreateMaterial(InglTFImporterOptions, InGlTF, InBuffers, MaterialInfo, TextureLibrary, FeedbackTaskWrapper);
@@ -593,7 +595,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
 
     {
         /// generate the skeleton animation
-        FglTFImporterEdAnimationSequence::Get(InputFactory, InputClass, InputParent, SkeletalMeshName, InputFlags, FeedbackContext)->CreateAnimationSequence(
+        FglTFImporterEdAnimationSequence::Get(InputFactory, InputParent, SkeletalMeshName, InputFlags, FeedbackContext)->CreateAnimationSequence(
             InglTFImporterOptions, InGlTF
             , InNodeRelativeTransforms, InNodeAbsoluteTransforms, InBuffers, NodeIndexToBoneNames
             , SkeletalMesh, Skeleton

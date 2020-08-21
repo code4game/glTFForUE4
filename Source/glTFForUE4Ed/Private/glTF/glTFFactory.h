@@ -25,7 +25,4 @@ protected:
 
 protected:
     TSharedPtr<struct FglTFImporterOptions> glTFReimporterOptions;
-
-private:
-    UClass* ImportClass;
 };

@@ -15,10 +15,10 @@
 
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
-TSharedPtr<FglTFImporterEdTexture> FglTFImporterEdTexture::Get(UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
+TSharedPtr<FglTFImporterEdTexture> FglTFImporterEdTexture::Get(UFactory* InFactory, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
 {
     TSharedPtr<FglTFImporterEdTexture> glTFImporterEdTexture = MakeShareable(new FglTFImporterEdTexture);
-    glTFImporterEdTexture->Set(InClass, InParent, InName, InFlags, InFeedbackContext);
+    glTFImporterEdTexture->Set(InParent, InName, InFlags, InFeedbackContext);
     glTFImporterEdTexture->InputFactory = InFactory;
     return glTFImporterEdTexture;
 }

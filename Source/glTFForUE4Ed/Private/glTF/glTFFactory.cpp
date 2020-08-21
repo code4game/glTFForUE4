@@ -19,7 +19,6 @@
 UglTFFactory::UglTFFactory(const FObjectInitializer& InObjectInitializer)
     : Super(InObjectInitializer)
     , glTFReimporterOptions(nullptr)
-    , ImportClass(nullptr)
 {
     if (Formats.Num() > 0) Formats.Empty();
     Formats.Add(TEXT("gltf;glTF 2.0"));
@@ -37,8 +36,7 @@ bool UglTFFactory::DoesSupportClass(UClass* InClass)
 
 UClass* UglTFFactory::ResolveSupportedClass()
 {
-    if (ImportClass == nullptr) ImportClass = UStaticMesh::StaticClass();
-    return ImportClass;
+    return UStaticMesh::StaticClass();
 }
 
 bool UglTFFactory::FactoryCanImport(const FString& InFilePathInOS)
@@ -88,31 +86,15 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
     /// Open the importer window, allow to configure some options when is not automated
     bool bCancel = false;
     TSharedPtr<FglTFImporterOptions> glTFImporterOptions = glTFReimporterOptions;
-    if (!glTFImporterOptions.IsValid())
+    if (!glTFImporterOptions)
     {
         glTFImporterOptions = IsAutomatedImport()
             ? MakeShared<FglTFImporterOptions>()
             : SglTFImporterOptionsWindowEd::Open(InContext, FilePathInOS, InParent->GetPathName(), *GlTF, bCancel);
     }
-    if (glTFImporterOptions.IsValid())
+    if (glTFImporterOptions.IsValid() && !glTFImporterOptions->Details)
     {
-        if (glTFImporterOptions->ImportType == EglTFImportType::StaticMesh)
-        {
-            ImportClass = UStaticMesh::StaticClass();
-        }
-        else if (glTFImporterOptions->ImportType == EglTFImportType::SkeletalMesh)
-        {
-            ImportClass = USkeletalMesh::StaticClass();
-        }
-        else if (glTFImporterOptions->ImportType == EglTFImportType::Level)
-        {
-            ImportClass = ULevel::StaticClass();
-        }
-        else
-        {
-            //TODO:
-            ImportClass = UStaticMesh::StaticClass();
-        }
+        glTFImporterOptions->Details = GetMutableDefault<UglTFImporterOptionsDetails>();
     }
 
     if (bCancel)
@@ -135,7 +117,7 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
     const FString FolderPathInOS = FPaths::GetPath(glTFImporterOptions->FilePathInOS);
     InglTFBuffers->Cache(FolderPathInOS, GlTF);
 
-    return FglTFImporterEd::Get(this, ImportClass, InParent, InName, InFlags, InWarn)->Create(glTFImporterOptions, GlTF, *InglTFBuffers);
+    return FglTFImporterEd::Get(this, InParent, InName, InFlags, InWarn)->Create(glTFImporterOptions, GlTF, *InglTFBuffers);
 }
 
 #undef LOCTEXT_NAMESPACE
