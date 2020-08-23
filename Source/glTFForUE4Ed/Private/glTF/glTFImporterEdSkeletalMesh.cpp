@@ -373,44 +373,17 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     SkeletalMesh->RefSkeleton = RefSkeleton;
     SkeletalMesh->RefBasesInvMatrix = RefBasesInvMatrix;
 
-#if ENGINE_MINOR_VERSION <= 18
-    FSkeletalMeshResource* ImportedResource = SkeletalMesh->GetImportedResource();
-#else
-    FSkeletalMeshModel* ImportedResource = SkeletalMesh->GetImportedModel();
-#endif
-
-    /// Clean old data
-    {
-        ImportedResource->LODModels.Empty();
-#if ENGINE_MINOR_VERSION <= 18
-        new(ImportedResource->LODModels)FStaticLODModel();
-#elif ENGINE_MINOR_VERSION <= 20
-        new(ImportedResource->LODModels)FSkeletalMeshLODModel();
-#else
-        ImportedResource->LODModels.Add(new FSkeletalMeshLODModel);
-#endif
-
-#if ENGINE_MINOR_VERSION <= 19
-        TArray<FSkeletalMeshLODInfo>& SkeletalMeshLODInfo = SkeletalMesh->LODInfo;
-#else
-        TArray<FSkeletalMeshLODInfo>& SkeletalMeshLODInfo = SkeletalMesh->GetLODInfoArray();
-#endif
-        SkeletalMeshLODInfo.Empty();
-        SkeletalMeshLODInfo.Add(FSkeletalMeshLODInfo());
-        SkeletalMeshLODInfo[0].LODHysteresis = 0.02f;
-    }
-
-#if ENGINE_MINOR_VERSION <= 18
-    FStaticLODModel& LODModel = ImportedResource->LODModels[0];
-#else
-    FSkeletalMeshLODModel& LODModel = ImportedResource->LODModels[0];
-#endif
-    LODModel.NumTexCoords = FMath::Max<uint32>(1, SkeletalMeshImportData.NumTexCoords);
+    IMeshUtilities& MeshUtilities = FModuleManager::Get().LoadModuleChecked<IMeshUtilities>("MeshUtilities");
 
     const bool bShouldComputeNormals = glTFImporterOptions->Details->bRecomputeNormals || !SkeletalMeshImportData.bHasNormals;
     const bool bShouldComputeTangents = glTFImporterOptions->Details->bRecomputeTangents || !SkeletalMeshImportData.bHasTangents;
 
-    IMeshUtilities& MeshUtilities = FModuleManager::Get().LoadModuleChecked<IMeshUtilities>("MeshUtilities");
+#if ENGINE_MINOR_VERSION <= 18
+    FStaticLODModel LODModel;
+#else
+    FSkeletalMeshLODModel LODModel;
+#endif
+    LODModel.NumTexCoords = FMath::Max<uint32>(1, SkeletalMeshImportData.NumTexCoords);
 
     TArray<FText> WarningMessages;
     TArray<FName> WarningNames;
@@ -427,6 +400,35 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
         //TODO:
         return nullptr;
     }
+
+    /// Clean old data
+    {
+#if ENGINE_MINOR_VERSION <= 18
+        FSkeletalMeshResource* ImportedResource = SkeletalMesh->GetImportedResource();
+#else
+        FSkeletalMeshModel* ImportedResource = SkeletalMesh->GetImportedModel();
+#endif
+
+        ImportedResource->LODModels.Empty();
+#if ENGINE_MINOR_VERSION <= 18
+        new(ImportedResource->LODModels)FStaticLODModel();
+#elif ENGINE_MINOR_VERSION <= 20
+        new(ImportedResource->LODModels)FSkeletalMeshLODModel();
+#else
+        ImportedResource->LODModels.Add(new FSkeletalMeshLODModel);
+#endif
+        ImportedResource->LODModels[0] = LODModel;
+
+#if ENGINE_MINOR_VERSION <= 19
+        TArray<FSkeletalMeshLODInfo>& SkeletalMeshLODInfo = SkeletalMesh->LODInfo;
+#else
+        TArray<FSkeletalMeshLODInfo>& SkeletalMeshLODInfo = SkeletalMesh->GetLODInfoArray();
+#endif
+        SkeletalMeshLODInfo.Empty();
+        SkeletalMeshLODInfo.Add(FSkeletalMeshLODInfo());
+        SkeletalMeshLODInfo[0].LODHysteresis = 0.02f;
+    }
+
     SkeletalMesh->BuildPhysicsData();
 
     /// import the material
