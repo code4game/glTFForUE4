@@ -228,7 +228,7 @@ namespace glTFForUE4Ed
 
             if (OutReferenceSkeleton.FindBoneIndex(BoneInfo.Name) != INDEX_NONE)
             {
-                InFeedbackTaskWrapper.Log(ELogVerbosity::Error, LOCTEXT("ProcessSkeletonTheNameOfBoneIsRepeated", "The name of bone is repeated!"));
+                InFeedbackTaskWrapper.Log(ELogVerbosity::Error, FText::Format(LOCTEXT("ProcessSkeletonTheNameOfBoneIsRepeated", "The name of bone - '{0}' is repeated!"), FText::FromName(BoneInfo.Name)));
                 return false;
             }
 
