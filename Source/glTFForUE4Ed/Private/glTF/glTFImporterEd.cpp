@@ -74,24 +74,21 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
     }
 
     /// make sure the target world
-    if (glTFImporterOptions->Details->bBuildLevel)
+    if (glTFImporterOptions->Details->bImportLevel)
     {
-        if (glTFImporterOptions->Details->bBuildLevelByTemplate)
+        if (glTFImporterOptions->Details->ImportLevelTemplate.IsValid())
         {
-            if (glTFImporterOptions->Details->BuildLevelTemplate.IsValid())
+            /// create a world by a template
+            UPackage* NewAssetPackage = FindPackage(nullptr, *glTFImporterOptions->FilePathInEngine);
+            if (!NewAssetPackage) NewAssetPackage = CreatePackage(nullptr, *glTFImporterOptions->FilePathInEngine);
+            checkSlow(NewAssetPackage);
+            if (NewAssetPackage)
             {
-                /// create a world by a template
-                UPackage* NewAssetPackage = FindPackage(nullptr, *glTFImporterOptions->FilePathInEngine);
-                if (!NewAssetPackage) NewAssetPackage = CreatePackage(nullptr, *glTFImporterOptions->FilePathInEngine);
-                checkSlow(NewAssetPackage);
-                if (NewAssetPackage)
-                {
-                    glTFImporterCollection.TargetWorld = Cast<UWorld>(StaticDuplicateObject(glTFImporterOptions->Details->BuildLevelTemplate.TryLoad(), NewAssetPackage, InputName, InputFlags, UWorld::StaticClass()));
-                }
-                else
-                {
-                    glTFImporterOptions->Details->bBuildLevel = false;
-                }
+                glTFImporterCollection.TargetWorld = Cast<UWorld>(StaticDuplicateObject(glTFImporterOptions->Details->ImportLevelTemplate.TryLoad(), NewAssetPackage, InputName, InputFlags, UWorld::StaticClass()));
+            }
+            else
+            {
+                glTFImporterOptions->Details->bImportLevel = false;
             }
         }
         else
@@ -164,7 +161,7 @@ UObject* FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImporterOptions>& InglT
                     , FTransform::Identity, InglTFBuffers, InOutglTFImporterCollection);
             FglTFImporterEd::UpdateAssetImportData(NewStaticMesh, InglTFImporterOptions);
             CreatedObjects.Emplace(NewStaticMesh);
-            if (glTFImporterOptions->Details->bBuildLevel)
+            if (glTFImporterOptions->Details->bImportLevel)
             {
                 SpawnStaticMeshActor(InOutglTFImporterCollection.TargetWorld, NodeInfo.AbsoluteTransform, NewStaticMesh);
             }
@@ -176,7 +173,7 @@ UObject* FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImporterOptions>& InglT
                     , FTransform::Identity, InglTFBuffers, InOutglTFImporterCollection);
             FglTFImporterEd::UpdateAssetImportData(NewSkeletalMesh, InglTFImporterOptions);
             CreatedObjects.Emplace(NewSkeletalMesh);
-            if (glTFImporterOptions->Details->bBuildLevel)
+            if (glTFImporterOptions->Details->bImportLevel)
             {
                 SpawnSkeletalMeshActor(InOutglTFImporterCollection.TargetWorld, NodeInfo.AbsoluteTransform, NewSkeletalMesh);
             }

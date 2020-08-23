@@ -1,3 +1,4 @@
+// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
 #pragma once
 
 #include "glTFImporterOptions.generated.h"
@@ -9,16 +10,7 @@ class GLTFFORUE4_API UglTFImporterOptionsDetails : public UObject
 
 public:
     /// common options
-    UPROPERTY(EditAnywhere, Config, Category = "Common")
-    bool bBuildLevel;
-
-    UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (EditCondition = bBuildLevel))
-    bool bBuildLevelByTemplate;
-    
-    UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (EditCondition = bBuildLevelByTemplate, AllowedClasses = "World"))
-    FStringAssetReference BuildLevelTemplate;
-
-    UPROPERTY(EditAnywhere, Config, Category = "Common")
+    UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (ToolTip = "Construct the skeletal mesh when node has skin"))
     bool bImportSkeletalMesh;
 
     UPROPERTY(EditAnywhere, Config, Category = "Common")
@@ -30,8 +22,14 @@ public:
     UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Common")
     bool bImportAllScene;
     
+    UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (ToolTip = "Construct the scene in the current level or new level"))
+    bool bImportLevel;
+
+    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Common", meta = (EditCondition = bImportLevel, AllowedClasses = "World", ToolTip = "Import a new level that create by the template"))
+    FStringAssetReference ImportLevelTemplate;
+
     /// mesh options
-    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", meta = (ClampMin = 0.0001, ClampMax = 100000.0f))
     float MeshScaleRatio;
     
     UPROPERTY(EditAnywhere, Config, Category = "Mesh")
@@ -59,7 +57,7 @@ public:
     bool bUseFullPrecisionUVs;
 
     /// material options
-    UPROPERTY(EditAnywhere, Config, Category = "Material")
+    UPROPERTY(EditAnywhere, Config, Category = "Material", meta = (EditCondition = bImportMaterial))
     bool bUseMaterialInstance;
 };
 
