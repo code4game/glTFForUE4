@@ -19,18 +19,14 @@ public:
 
 public:
     /// import a static mesh
-    class UStaticMesh* CreateStaticMesh(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SGlTFId>& InMeshId
-        , const FTransform& InNodeAbsoluteTransform, const class FglTFBuffers& InBuffers, struct FglTFImporterCollection& InOutglTFImporterCollection) const;
+    class UStaticMesh* CreateStaticMesh(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SGlTFId>& InMeshId, const class FglTFBuffers& InBuffers
+        , const FTransform& InNodeAbsoluteTransform, struct FglTFImporterCollection& InOutglTFImporterCollection) const;
 
 private:
-    bool GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMesh>& InMesh
-        , const FTransform& InNodeAbsoluteTransform, const class FglTFBuffers& InBuffers
-        , struct FRawMesh& OutRawMesh, TArray<int32>& InOutglTFMaterialIds
-        , FglTFImporterCollection& InOutglTFImporterCollection
-        , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const;
-    bool GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive
-        , const FTransform& InNodeAbsoluteTransform, const class FglTFBuffers& InBuffers
-        , struct FRawMesh& OutRawMesh, int32 InMaterialIndex
-        , FglTFImporterCollection& InOutglTFImporterCollection
-        , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const;
+    bool GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMesh>& InMesh, const class FglTFBuffers& InBuffers
+        , const FTransform& InNodeAbsoluteTransform, struct FRawMesh& OutRawMesh, TArray<int32>& InOutglTFMaterialIds
+        , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper, FglTFImporterCollection& InOutglTFImporterCollection) const;
+    bool GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const class FglTFBuffers& InBuffers
+        , const FTransform& InNodeAbsoluteTransform, struct FRawMesh& OutRawMesh, int32 InMaterialIndex
+        , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper, FglTFImporterCollection& InOutglTFImporterCollection) const;
 };

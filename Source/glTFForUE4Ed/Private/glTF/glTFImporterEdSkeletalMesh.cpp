@@ -199,7 +199,7 @@ namespace glTFForUE4Ed
         return BoneName;
     }
 
-    bool ProcessImportMeshSkeleton(const FSkeletalMeshImportData& InImportData, FReferenceSkeleton& OutReferenceSkeleton, int32& OutSkeletalDepth)
+    bool ProcessImportMeshSkeleton(const FSkeletalMeshImportData& InImportData, FReferenceSkeleton& OutReferenceSkeleton, int32& OutSkeletalDepth, glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper)
     {
 #if ENGINE_MINOR_VERSION <= 20
         const TArray<VBone>& RefBonesBinary = InImportData.RefBonesBinary;
@@ -228,6 +228,7 @@ namespace glTFForUE4Ed
 
             if (OutReferenceSkeleton.FindBoneIndex(BoneInfo.Name) != INDEX_NONE)
             {
+                InFeedbackTaskWrapper.Log(ELogVerbosity::Error, LOCTEXT("ProcessSkeletonTheNameOfBoneIsRepeated", "The name of bone is repeated!"));
                 return false;
             }
 
@@ -286,9 +287,8 @@ FglTFImporterEdSkeletalMesh::~FglTFImporterEdSkeletalMesh()
 }
 
 USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions
-    , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SGlTFId>& InMeshId, const std::shared_ptr<libgltf::SGlTFId>& InSkinId
-    , const FTransform& InNodeAbsoluteTransform, const class FglTFBuffers& InBuffers
-    , FglTFImporterCollection& InOutglTFImporterCollection) const
+    , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SGlTFId>& InMeshId, const std::shared_ptr<libgltf::SGlTFId>& InSkinId, const class FglTFBuffers& InBuffers
+    , const FTransform& InNodeAbsoluteTransform, FglTFImporterCollection& InOutglTFImporterCollection) const
 {
     if (!InglTFImporterOptions.IsValid()) return nullptr;
     if (!InGlTF || !InMeshId || !InSkinId) return nullptr;
@@ -322,13 +322,33 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     TArray<FMatrix> RefBasesInvMatrix;
     TMap<int32, FString> NodeIndexToBoneNames;
     TArray<int32> MaterialIds;
-    if (!GenerateSkeletalMeshImportData(InGlTF, glTFMeshPtr, glTFSkinPtr, InNodeAbsoluteTransform, InBuffers
-        , SkeletalMeshImportData, RefBasesInvMatrix, NodeIndexToBoneNames, MaterialIds, FeedbackTaskWrapper
-        , InOutglTFImporterCollection))
+    if (!GenerateSkeletalMeshImportData(InGlTF, glTFMeshPtr, glTFSkinPtr, InBuffers
+        , SkeletalMeshImportData, RefBasesInvMatrix, NodeIndexToBoneNames, MaterialIds
+        , FeedbackTaskWrapper, InOutglTFImporterCollection))
     {
-        checkSlow(0);
+        FeedbackTaskWrapper.Log(ELogVerbosity::Error, LOCTEXT("CreateSkeletalMeshFailedToGeneateTheFSkeletalMeshImportData", "Failed to generate the `FSkeletalMeshImportData`!"));
         return nullptr;
     }
+
+    /*if (glTFImporterOptions->Details->MeshScaleRatio != 1.0f)
+    {
+        const FVector VectorScale(glTFImporterOptions->Details->MeshScaleRatio);
+        const FTransform TransformScale(FQuat::Identity, FVector::ZeroVector, VectorScale);
+        for (FVector& Point : SkeletalMeshImportData.Points)
+        {
+            //Point *= glTFImporterOptions->Details->MeshScaleRatio;
+        }
+#if ENGINE_MINOR_VERSION <= 20
+        for (VBone& Bone : SkeletalMeshImportData.RefBonesBinary)
+#else
+        for (SkeletalMeshImportData::FBone& Bone : SkeletalMeshImportData.RefBonesBinary)
+#endif
+        {
+            //Bone.BonePos.Transform.SetScale3D(VectorScale);
+            //Bone.BonePos.Transform.ScaleTranslation(VectorScale);
+            Bone.BonePos.Transform *= TransformScale;
+        }
+    }*/
 
     TArray<FVector> LODPoints;
 #if ENGINE_MINOR_VERSION <= 20
@@ -345,33 +365,11 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
 
     FReferenceSkeleton RefSkeleton;
     int32 SkeletalDepth = 0;
-    if (!glTFForUE4Ed::ProcessImportMeshSkeleton(SkeletalMeshImportData, RefSkeleton, SkeletalDepth))
+    if (!glTFForUE4Ed::ProcessImportMeshSkeleton(SkeletalMeshImportData, RefSkeleton, SkeletalDepth, FeedbackTaskWrapper))
     {
-        //TODO:
+        FeedbackTaskWrapper.Log(ELogVerbosity::Error, LOCTEXT("CreateSkeletalMeshFailedToProcessTheFSkeletalMeshImportDataAndFRefSkeleton", "Failed to process the `FSkeletalMeshImportData` and `FRefSkeleton`!"));
         return nullptr;
     }
-
-    /// Create new skeletal mesh
-    USkeletalMesh* SkeletalMesh = FindObject<USkeletalMesh>(InputParent, *SkeletalMeshName);
-    bool bCreated = false;
-    if (!SkeletalMesh)
-    {
-        SkeletalMesh = NewObject<USkeletalMesh>(InputParent, USkeletalMesh::StaticClass(), *SkeletalMeshName, InputFlags);
-        if (SkeletalMesh) FAssetRegistryModule::AssetCreated(SkeletalMesh);
-        bCreated = true;
-    }
-    else
-    {
-        SkeletalMesh->ResetLODInfo();
-        SkeletalMesh->Materials.Empty();
-    }
-    checkSlow(SkeletalMesh);
-    if (!SkeletalMesh) return nullptr;
-
-    SkeletalMesh->PreEditChange(nullptr);
-
-    SkeletalMesh->RefSkeleton = RefSkeleton;
-    SkeletalMesh->RefBasesInvMatrix = RefBasesInvMatrix;
 
     IMeshUtilities& MeshUtilities = FModuleManager::Get().LoadModuleChecked<IMeshUtilities>("MeshUtilities");
 
@@ -388,18 +386,38 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     TArray<FText> WarningMessages;
     TArray<FName> WarningNames;
 #if ENGINE_MINOR_VERSION <= 10
-    if (!MeshUtilities.BuildSkeletalMesh(LODModel, SkeletalMesh->RefSkeleton, LODInfluences, LODWedges, LODFaces, LODPoints, LODPointToRawMap, false/*ImportOptions->bKeepOverlappingVertices*/, bShouldComputeNormals, bShouldComputeTangents, &WarningMessages, &WarningNames))
+    if (!MeshUtilities.BuildSkeletalMesh(LODModel, RefSkeleton, LODInfluences, LODWedges, LODFaces, LODPoints, LODPointToRawMap, false/*ImportOptions->bKeepOverlappingVertices*/, bShouldComputeNormals, bShouldComputeTangents, &WarningMessages, &WarningNames))
 #else
     IMeshUtilities::MeshBuildOptions BuildOptions;
     BuildOptions.bComputeNormals = bShouldComputeNormals;
     BuildOptions.bComputeTangents = bShouldComputeTangents;
     BuildOptions.bUseMikkTSpace = glTFImporterOptions->Details->bUseMikkTSpace;
-    if (!MeshUtilities.BuildSkeletalMesh(LODModel, SkeletalMesh->RefSkeleton, LODInfluences, LODWedges, LODFaces, LODPoints, LODPointToRawMap, BuildOptions, &WarningMessages, &WarningNames))
+    if (!MeshUtilities.BuildSkeletalMesh(LODModel, RefSkeleton, LODInfluences, LODWedges, LODFaces, LODPoints, LODPointToRawMap, BuildOptions, &WarningMessages, &WarningNames))
 #endif
     {
-        //TODO:
+        FeedbackTaskWrapper.Log(ELogVerbosity::Error, LOCTEXT("CreateSkeletalMeshFailedToBuildTheSkeletalMesh", "Failed to build the skeletal mesh!"));
         return nullptr;
     }
+
+    /// Create new skeletal mesh
+    USkeletalMesh* SkeletalMesh = FindObject<USkeletalMesh>(InputParent, *SkeletalMeshName);
+    if (!SkeletalMesh)
+    {
+        SkeletalMesh = NewObject<USkeletalMesh>(InputParent, USkeletalMesh::StaticClass(), *SkeletalMeshName, InputFlags);
+        if (SkeletalMesh) FAssetRegistryModule::AssetCreated(SkeletalMesh);
+    }
+    else
+    {
+        SkeletalMesh->ResetLODInfo();
+        SkeletalMesh->Materials.Empty();
+    }
+    checkSlow(SkeletalMesh);
+    if (!SkeletalMesh) return nullptr;
+
+    SkeletalMesh->PreEditChange(nullptr);
+
+    SkeletalMesh->RefSkeleton = RefSkeleton;
+    SkeletalMesh->RefBasesInvMatrix = RefBasesInvMatrix;
 
     /// Clean old data
     {
@@ -503,11 +521,9 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     return SkeletalMesh;
 }
 
-bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMesh>& InMesh, const std::shared_ptr<libgltf::SSkin>& InSkin
-    , const FTransform& InNodeTransform, const FglTFBuffers& InBuffers
+bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMesh>& InMesh, const std::shared_ptr<libgltf::SSkin>& InSkin, const FglTFBuffers& InBuffers
     , FSkeletalMeshImportData& OutSkeletalMeshImportData, TArray<FMatrix>& OutInverseBindMatrices, TMap<int32, FString>& OutNodeIndexToBoneNames, TArray<int32>& InOutMaterialIds
-    , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper
-    , FglTFImporterCollection& InOutglTFImporterCollection) const
+    , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper, FglTFImporterCollection& InOutglTFImporterCollection) const
 {
     for (int32 i = 0; i < static_cast<int32>(InMesh->primitives.size()); ++i)
     {
@@ -520,11 +536,9 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
         {
             MaterialId = (*Primitive->material);
         }
-        if (!GenerateSkeletalMeshImportData(InGlTF, Primitive, InSkin
-            , InNodeTransform, InBuffers
+        if (!GenerateSkeletalMeshImportData(InGlTF, Primitive, InSkin, InBuffers
             , NewSkeletalMeshImportData, NewInverseBindMatrices, NewNodeIndexToBoneNames
-            , InFeedbackTaskWrapper
-            , InOutglTFImporterCollection))
+            , InFeedbackTaskWrapper, InOutglTFImporterCollection))
         {
             checkSlow(0);
             continue;
@@ -540,11 +554,9 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
     return true;
 }
 
-bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const std::shared_ptr<libgltf::SSkin>& InSkin
-    , const FTransform& InNodeTransform, const FglTFBuffers& InBuffers
+bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const std::shared_ptr<libgltf::SSkin>& InSkin, const FglTFBuffers& InBuffers
     , FSkeletalMeshImportData& OutSkeletalMeshImportData, TArray<FMatrix>& OutInverseBindMatrices, TMap<int32, FString>& OutNodeIndexToBoneNames
-    , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper
-    , FglTFImporterCollection& InOutglTFImporterCollection) const
+    , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper, FglTFImporterCollection& InOutglTFImporterCollection) const
 {
     if (!InMeshPrimitive || !InSkin)
     {
@@ -624,24 +636,6 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
         OutSkeletalMeshImportData.RefBonesBinary.Emplace(Bone);
 
         OutNodeIndexToBoneNames.Add(JointId, Bone.Name);
-    }
-
-    if (InNodeTransform.ToMatrixWithScale() != FTransform::Identity.ToMatrixWithScale())
-    {
-        FTransform RootTransform = InNodeTransform;
-        for (FVector& Point : Points)
-        {
-            Point = RootTransform.TransformPosition(Point);
-        }
-        RootTransform.SetTranslation(FVector::ZeroVector);
-        for (FVector& Normal : Normals)
-        {
-            Normal = RootTransform.TransformVectorNoScale(Normal);
-        }
-        for (FVector4& Tangent : Tangents)
-        {
-            Tangent = RootTransform.TransformVectorNoScale(Tangent);
-        }
     }
 
     /// revise parent index to bone index

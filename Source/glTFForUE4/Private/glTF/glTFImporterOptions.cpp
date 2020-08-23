@@ -12,6 +12,7 @@ UglTFImporterOptionsDetails::UglTFImporterOptionsDetails(const FObjectInitialize
     , bImportLevel(false)
     , ImportLevelTemplate()
     , MeshScaleRatio(1.0f)
+    , bApplyAbsoluteTransform(false)
     , bGenerateLightmapUVs(true)
     , bInvertNormal(false)
     , bUseMikkTSpace(true)

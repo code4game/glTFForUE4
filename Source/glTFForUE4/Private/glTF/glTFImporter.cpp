@@ -808,7 +808,9 @@ FglTFImporter& FglTFImporter::Set(UObject* InParent, FName InName, EObjectFlags 
     return *this;
 }
 
-UObject* FglTFImporter::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers) const
+UObject* FglTFImporter::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions
+    , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers
+    , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
 {
     if (!InGlTF)
     {

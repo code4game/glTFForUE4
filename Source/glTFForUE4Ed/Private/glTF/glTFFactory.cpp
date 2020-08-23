@@ -66,15 +66,15 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
 {
     const FString& FilePathInOS = UFactory::GetCurrentFilename();
 
+    const FText TaskName = FText::Format(LOCTEXT("ImportAglTFFile", "Import a glTF file - {0}"), FText::FromName(InName));
+    glTFForUE4::FFeedbackTaskWrapper FeedbackTaskWrapper(InWarn, TaskName, true);
+
     /// Parse and check the buffer
     std::shared_ptr<libgltf::SGlTF> GlTF;
     const GLTFString GlTFString = GLTF_TCHAR_TO_GLTFSTRING(*InglTFJson);
     if (!(GlTF << GlTFString))
     {
-        if (InWarn)
-        {
-            InWarn->Log(ELogVerbosity::Error, FText::Format(NSLOCTEXT("glTFForUE4Ed", "FailedToParseTheglTFFile", "Failed to parse the glTF file {0}"), FText::FromName(InName)).ToString());
-        }
+        FeedbackTaskWrapper.Log(ELogVerbosity::Error, FText::Format(LOCTEXT("FailedToParseTheglTFFile", "Failed to parse the glTF file {0}"), FText::FromName(InName)));
         return nullptr;
     }
 
@@ -112,7 +112,7 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
     const FString FolderPathInOS = FPaths::GetPath(glTFImporterOptions->FilePathInOS);
     InglTFBuffers->Cache(FolderPathInOS, GlTF);
 
-    return FglTFImporterEd::Get(this, InParent, InName, InFlags, InWarn)->Create(glTFImporterOptions, GlTF, *InglTFBuffers);
+    return FglTFImporterEd::Get(this, InParent, InName, InFlags, InWarn)->Create(glTFImporterOptions, GlTF, *InglTFBuffers, FeedbackTaskWrapper);
 }
 
 #undef LOCTEXT_NAMESPACE

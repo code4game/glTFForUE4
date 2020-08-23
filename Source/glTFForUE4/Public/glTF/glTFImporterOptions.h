@@ -31,6 +31,9 @@ public:
     /// mesh options
     UPROPERTY(EditAnywhere, Config, Category = "Mesh", meta = (ClampMin = 0.0001, ClampMax = 100000.0f))
     float MeshScaleRatio;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    bool bApplyAbsoluteTransform;
     
     UPROPERTY(EditAnywhere, Config, Category = "Mesh")
     bool bGenerateLightmapUVs;

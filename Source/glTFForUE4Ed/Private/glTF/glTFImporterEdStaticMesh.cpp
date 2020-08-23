@@ -62,9 +62,8 @@ FglTFImporterEdStaticMesh::~FglTFImporterEdStaticMesh()
 }
 
 UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions
-    , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SGlTFId>& InMeshId
-    , const FTransform& InNodeAbsoluteTransform, const FglTFBuffers& InBuffers
-    , FglTFImporterCollection& InOutglTFImporterCollection) const
+    , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SGlTFId>& InMeshId, const FglTFBuffers& InBuffers
+    , const FTransform& InNodeAbsoluteTransform, FglTFImporterCollection& InOutglTFImporterCollection) const
 {
     if (!InGlTF || !InMeshId)
     {
@@ -108,8 +107,9 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
 
     FRawMesh NewRawMesh;
     TArray<int32> glTFMaterialIds;
-    if (!GenerateRawMesh(InGlTF, MeshPtr, InNodeAbsoluteTransform, InBuffers
-        , NewRawMesh, glTFMaterialIds, InOutglTFImporterCollection, FeedbackTaskWrapper))
+    if (!GenerateRawMesh(InGlTF, MeshPtr, InBuffers
+        , InNodeAbsoluteTransform, NewRawMesh, glTFMaterialIds
+        , FeedbackTaskWrapper, InOutglTFImporterCollection))
     {
         checkSlow(0);
         return nullptr;
@@ -161,11 +161,6 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
         {
             Normal *= -1.0f;
         }
-    }
-
-    for (FVector& Position : NewRawMesh.VertexPositions)
-    {
-        Position = Position * glTFImporterOptions->Details->MeshScaleRatio;
     }
 
     SourceModel.BuildSettings.bRecomputeNormals = (glTFImporterOptions->Details->bRecomputeNormals || NewRawMesh.WedgeTangentZ.Num() != NewRawMesh.WedgeIndices.Num());
@@ -238,14 +233,9 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     return NewStaticMesh;
 }
 
-bool FglTFImporterEdStaticMesh::GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InGlTF
-    , const std::shared_ptr<libgltf::SMesh>& InMesh
-    , const FTransform& InNodeAbsoluteTransform
-    , const FglTFBuffers& InBuffers
-    , FRawMesh& OutRawMesh
-    , TArray<int32>& InOutglTFMaterialIds
-    , FglTFImporterCollection& InOutglTFImporterCollection
-    , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
+bool FglTFImporterEdStaticMesh::GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMesh>& InMesh, const FglTFBuffers& InBuffers
+    , const FTransform& InNodeAbsoluteTransform, FRawMesh& OutRawMesh, TArray<int32>& InOutglTFMaterialIds
+    , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper, FglTFImporterCollection& InOutglTFImporterCollection) const
 {
     if (!InMesh) return false;
 
@@ -259,7 +249,7 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const std::shared_ptr<libgltf::S
         {
             MaterialId = (*Primitive->material);
         }
-        if (!GenerateRawMesh(InGlTF, Primitive, InNodeAbsoluteTransform, InBuffers, NewRawMesh, InOutglTFMaterialIds.Num(), InOutglTFImporterCollection, InFeedbackTaskWrapper))
+        if (!GenerateRawMesh(InGlTF, Primitive, InBuffers, InNodeAbsoluteTransform, NewRawMesh, InOutglTFMaterialIds.Num(), InFeedbackTaskWrapper, InOutglTFImporterCollection))
         {
             checkSlow(0);
             continue;
@@ -275,14 +265,9 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const std::shared_ptr<libgltf::S
     return true;
 }
 
-bool FglTFImporterEdStaticMesh::GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InGlTF
-    , const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive
-    , const FTransform& InNodeAbsoluteTransform
-    , const FglTFBuffers& InBuffers
-    , FRawMesh& OutRawMesh
-    , int32 InMaterialIndex
-    , FglTFImporterCollection& InOutglTFImporterCollection
-    , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
+bool FglTFImporterEdStaticMesh::GenerateRawMesh(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers
+    , const FTransform& InNodeAbsoluteTransform, FRawMesh& OutRawMesh, int32 InMaterialIndex
+    , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper, FglTFImporterCollection& InOutglTFImporterCollection) const
 {
     if (!InMeshPrimitive)
     {
@@ -306,17 +291,24 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const std::shared_ptr<libgltf::S
 
     OutRawMesh.WedgeIndices.Append(TriangleIndices);
 
-    for (FVector& Point : Points)
+    const bool bNodeAbsoluteTransformIsIdentity = InNodeAbsoluteTransform.Equals(FTransform::Identity);
+    if (!bNodeAbsoluteTransformIsIdentity)
     {
-        Point = InNodeAbsoluteTransform.TransformPosition(Point);
+        for (FVector& Point : Points)
+        {
+            Point = InNodeAbsoluteTransform.TransformPosition(Point);
+        }
     }
     OutRawMesh.VertexPositions.Append(Points);
 
     if (Normals.Num() == Points.Num())
     {
-        for (FVector& Normal : Normals)
+        if (!bNodeAbsoluteTransformIsIdentity)
         {
-            Normal = InNodeAbsoluteTransform.GetRotation().RotateVector(Normal);
+            for (FVector& Normal : Normals)
+            {
+                Normal = InNodeAbsoluteTransform.GetRotation().RotateVector(Normal);
+            }
         }
     }
     else
@@ -333,7 +325,10 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const std::shared_ptr<libgltf::S
             const FVector4& Tangent = Tangents[i];
 
             FVector WedgeTangentX(Tangent.X, Tangent.Y, Tangent.Z);
-            WedgeTangentX = InNodeAbsoluteTransform.GetRotation().RotateVector(WedgeTangentX);
+            if (!bNodeAbsoluteTransformIsIdentity)
+            {
+                WedgeTangentX = InNodeAbsoluteTransform.GetRotation().RotateVector(WedgeTangentX);
+            }
             WedgeTangentXs.Add(WedgeTangentX);
 
             const FVector& Normal = Normals[i];
