@@ -330,6 +330,27 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
         return nullptr;
     }
 
+    TArray<FVector> LODPoints;
+#if ENGINE_MINOR_VERSION <= 20
+    TArray<FMeshWedge> LODWedges;
+    TArray<FMeshFace> LODFaces;
+    TArray<FVertInfluence> LODInfluences;
+#else
+    TArray<SkeletalMeshImportData::FMeshWedge> LODWedges;
+    TArray<SkeletalMeshImportData::FMeshFace> LODFaces;
+    TArray<SkeletalMeshImportData::FVertInfluence> LODInfluences;
+#endif
+    TArray<int32> LODPointToRawMap;
+    glTFForUE4Ed::CopyLODImportData(SkeletalMeshImportData, LODPoints, LODWedges, LODFaces, LODInfluences, LODPointToRawMap);
+
+    FReferenceSkeleton RefSkeleton;
+    int32 SkeletalDepth = 0;
+    if (!glTFForUE4Ed::ProcessImportMeshSkeleton(SkeletalMeshImportData, RefSkeleton, SkeletalDepth))
+    {
+        //TODO:
+        return nullptr;
+    }
+
     /// Create new skeletal mesh
     USkeletalMesh* SkeletalMesh = FindObject<USkeletalMesh>(InputParent, *SkeletalMeshName);
     bool bCreated = false;
@@ -349,25 +370,8 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
 
     SkeletalMesh->PreEditChange(nullptr);
 
+    SkeletalMesh->RefSkeleton = RefSkeleton;
     SkeletalMesh->RefBasesInvMatrix = RefBasesInvMatrix;
-
-    TArray<FVector> LODPoints;
-#if ENGINE_MINOR_VERSION <= 20
-    TArray<FMeshWedge> LODWedges;
-    TArray<FMeshFace> LODFaces;
-    TArray<FVertInfluence> LODInfluences;
-#else
-    TArray<SkeletalMeshImportData::FMeshWedge> LODWedges;
-    TArray<SkeletalMeshImportData::FMeshFace> LODFaces;
-    TArray<SkeletalMeshImportData::FVertInfluence> LODInfluences;
-#endif
-    TArray<int32> LODPointToRawMap;
-    glTFForUE4Ed::CopyLODImportData(SkeletalMeshImportData, LODPoints, LODWedges, LODFaces, LODInfluences, LODPointToRawMap);
-
-    const bool bShouldComputeNormals = glTFImporterOptions->Details->bRecomputeNormals || !SkeletalMeshImportData.bHasNormals;
-    const bool bShouldComputeTangents = glTFImporterOptions->Details->bRecomputeTangents || !SkeletalMeshImportData.bHasTangents;
-
-    IMeshUtilities& MeshUtilities = FModuleManager::Get().LoadModuleChecked<IMeshUtilities>("MeshUtilities");
 
 #if ENGINE_MINOR_VERSION <= 18
     FSkeletalMeshResource* ImportedResource = SkeletalMesh->GetImportedResource();
@@ -376,23 +380,25 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
 #endif
 
     /// Clean old data
-    ImportedResource->LODModels.Empty();
+    {
+        ImportedResource->LODModels.Empty();
 #if ENGINE_MINOR_VERSION <= 18
-    new(ImportedResource->LODModels)FStaticLODModel();
+        new(ImportedResource->LODModels)FStaticLODModel();
 #elif ENGINE_MINOR_VERSION <= 20
-    new(ImportedResource->LODModels)FSkeletalMeshLODModel();
+        new(ImportedResource->LODModels)FSkeletalMeshLODModel();
 #else
-    ImportedResource->LODModels.Add(new FSkeletalMeshLODModel);
+        ImportedResource->LODModels.Add(new FSkeletalMeshLODModel);
 #endif
 
 #if ENGINE_MINOR_VERSION <= 19
-    TArray<FSkeletalMeshLODInfo>& SkeletalMeshLODInfo = SkeletalMesh->LODInfo;
+        TArray<FSkeletalMeshLODInfo>& SkeletalMeshLODInfo = SkeletalMesh->LODInfo;
 #else
-    TArray<FSkeletalMeshLODInfo>& SkeletalMeshLODInfo = SkeletalMesh->GetLODInfoArray();
+        TArray<FSkeletalMeshLODInfo>& SkeletalMeshLODInfo = SkeletalMesh->GetLODInfoArray();
 #endif
-    SkeletalMeshLODInfo.Empty();
-    SkeletalMeshLODInfo.Add(FSkeletalMeshLODInfo());
-    SkeletalMeshLODInfo[0].LODHysteresis = 0.02f;
+        SkeletalMeshLODInfo.Empty();
+        SkeletalMeshLODInfo.Add(FSkeletalMeshLODInfo());
+        SkeletalMeshLODInfo[0].LODHysteresis = 0.02f;
+    }
 
 #if ENGINE_MINOR_VERSION <= 18
     FStaticLODModel& LODModel = ImportedResource->LODModels[0];
@@ -401,14 +407,10 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
 #endif
     LODModel.NumTexCoords = FMath::Max<uint32>(1, SkeletalMeshImportData.NumTexCoords);
 
-    int32 SkeletalDepth = 0;
-    if (!glTFForUE4Ed::ProcessImportMeshSkeleton(SkeletalMeshImportData, SkeletalMesh->RefSkeleton, SkeletalDepth))
-    {
-        SkeletalMesh->ClearFlags(RF_Standalone);
-        SkeletalMesh->Rename(nullptr, GetTransientPackage());
-        SkeletalMesh->MarkPendingKill();
-        return nullptr;
-    }
+    const bool bShouldComputeNormals = glTFImporterOptions->Details->bRecomputeNormals || !SkeletalMeshImportData.bHasNormals;
+    const bool bShouldComputeTangents = glTFImporterOptions->Details->bRecomputeTangents || !SkeletalMeshImportData.bHasTangents;
+
+    IMeshUtilities& MeshUtilities = FModuleManager::Get().LoadModuleChecked<IMeshUtilities>("MeshUtilities");
 
     TArray<FText> WarningMessages;
     TArray<FName> WarningNames;
@@ -422,9 +424,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     if (!MeshUtilities.BuildSkeletalMesh(LODModel, SkeletalMesh->RefSkeleton, LODInfluences, LODWedges, LODFaces, LODPoints, LODPointToRawMap, BuildOptions, &WarningMessages, &WarningNames))
 #endif
     {
-        SkeletalMesh->ClearFlags(RF_Standalone);
-        SkeletalMesh->Rename(nullptr, GetTransientPackage());
-        SkeletalMesh->MarkPendingKill();
+        //TODO:
         return nullptr;
     }
     SkeletalMesh->BuildPhysicsData();
