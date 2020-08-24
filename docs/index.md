@@ -15,7 +15,7 @@ This is a **[glTF][glTF]** tool for **[UE4][UE4](Unreal Engine 4)**. It can help
 
 ## More powerfull features in the future
 
-You can [visit all in trello][Trello].
+You can [visit all in github][Github].
 
 ## License
 
@@ -23,4 +23,4 @@ MIT License
 
 [glTF]: https://github.com/KhronosGroup/glTF "glTF"
 [UE4]: https://unrealengine.com "Unreal Engine 4"
-[Trello]: https://trello.com/b/omtMIw06 "Trello"
+[Github]: https://github.com/code4game/glTFForUE4/milestones "Github"

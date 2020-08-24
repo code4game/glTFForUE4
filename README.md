@@ -2,7 +2,7 @@
 
 [![glTF status](https://img.shields.io/badge/glTF-2%2E0-green.svg?style=flat)](https://github.com/KhronosGroup/glTF)
 [![Manual](https://img.shields.io/badge/read-manual-green.svg?style=flat)](https://gltf-for-ue4.readthedocs.io/)
-[![Roadmap](https://img.shields.io/badge/visit-roadmap-blue.svg?style=flat)](https://trello.com/b/omtMIw06)
+[![Roadmap](https://img.shields.io/badge/visit-roadmap-blue.svg?style=flat)](https://github.com/code4game/glTFForUE4/milestones)
 
 > If you are interesting, you can star or fork or post an issue.
 
