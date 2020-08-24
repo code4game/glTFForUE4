@@ -21,7 +21,7 @@ public:
     /// Import a skeletal mesh
     class USkeletalMesh* CreateSkeletalMesh(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions
         , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SGlTFId>& InMeshId, const std::shared_ptr<libgltf::SGlTFId>& InSkinId, const class FglTFBuffers& InBuffers
-        , const FTransform& InNodeAbsoluteTransform, struct FglTFImporterCollection& InOutglTFImporterCollection) const;
+        , const FTransform& InNodeTransform, struct FglTFImporterCollection& InOutglTFImporterCollection) const;
 
 private:
     bool GenerateSkeletalMeshImportData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMesh>& InMesh, const std::shared_ptr<libgltf::SSkin>& InSkin, const class FglTFBuffers& InBuffers

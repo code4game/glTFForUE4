@@ -21,7 +21,7 @@ UglTFImporterOptionsDetails::UglTFImporterOptionsDetails(const FObjectInitialize
     , bRemoveDegenerates(false)
     , bBuildAdjacencyBuffer(false)
     , bUseFullPrecisionUVs(false)
-    , bUseMaterialInstance(false)
+    , bUseMaterialInstance(true)
 {
     //
 }

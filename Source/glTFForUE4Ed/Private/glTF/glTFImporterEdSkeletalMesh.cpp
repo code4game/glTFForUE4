@@ -287,7 +287,7 @@ FglTFImporterEdSkeletalMesh::~FglTFImporterEdSkeletalMesh()
 
 USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions
     , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SGlTFId>& InMeshId, const std::shared_ptr<libgltf::SGlTFId>& InSkinId, const class FglTFBuffers& InBuffers
-    , const FTransform& InNodeAbsoluteTransform, FglTFImporterCollection& InOutglTFImporterCollection) const
+    , const FTransform& InNodeTransform, FglTFImporterCollection& InOutglTFImporterCollection) const
 {
     if (!InglTFImporterOptions.IsValid()) return nullptr;
     if (!InGlTF || !InMeshId || !InSkinId) return nullptr;
@@ -329,25 +329,18 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
         return nullptr;
     }
 
-    /*if (glTFImporterOptions->Details->MeshScaleRatio != 1.0f)
+    if (!InNodeTransform.Equals(FTransform::Identity))
     {
-        const FVector VectorScale(glTFImporterOptions->Details->MeshScaleRatio);
-        const FTransform TransformScale(FQuat::Identity, FVector::ZeroVector, VectorScale);
-        for (FVector& Point : SkeletalMeshImportData.Points)
-        {
-            //Point *= glTFImporterOptions->Details->MeshScaleRatio;
-        }
 #if ENGINE_MINOR_VERSION <= 20
         for (VBone& Bone : SkeletalMeshImportData.RefBonesBinary)
 #else
         for (SkeletalMeshImportData::FBone& Bone : SkeletalMeshImportData.RefBonesBinary)
 #endif
         {
-            //Bone.BonePos.Transform.SetScale3D(VectorScale);
-            //Bone.BonePos.Transform.ScaleTranslation(VectorScale);
-            Bone.BonePos.Transform *= TransformScale;
+            if (Bone.ParentIndex != INDEX_NONE) continue;
+            Bone.BonePos.Transform *= InNodeTransform;
         }
-    }*/
+    }
 
     FReferenceSkeleton RefSkeleton;
     int32 SkeletalDepth = 0;
