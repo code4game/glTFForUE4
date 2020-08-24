@@ -116,7 +116,7 @@ public:
     bool bUseFullPrecisionUVs;
 
     /// material options
-    UPROPERTY(VisibleAnywhere, Config, Category = "Material", meta = (EditCondition = bImportMaterial))
+    UPROPERTY(EditAnywhere, Config, Category = "Material", meta = (EditCondition = bImportMaterial))
     bool bUseMaterialInstance;
 
     void Get(FglTFImporterOptionsDetailsStored& OutDetailsStored) const;
