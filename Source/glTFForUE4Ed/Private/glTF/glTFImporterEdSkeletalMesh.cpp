@@ -25,8 +25,8 @@
 
 namespace glTFForUE4Ed
 {
-    bool CheckAndMerge(const FSkeletalMeshImportData& InImportData, const TArray<FMatrix>& InInverseBindMatrix, const TMap<int32, FString>& InNodeIndexToBoneNames
-        , FSkeletalMeshImportData& OutImportData, TArray<FMatrix>& OutInverseBindMatrix, TMap<int32, FString>& OutNodeIndexToBoneNames)
+    bool CheckAndMerge(const FSkeletalMeshImportData& InImportData, const TMap<int32, FString>& InNodeIndexToBoneNames
+        , FSkeletalMeshImportData& OutImportData, TMap<int32, FString>& OutNodeIndexToBoneNames)
     {
         int32 MaterialsStartIndex = OutImportData.Materials.Num();
         int32 PointsStartIndex = OutImportData.Points.Num();
@@ -97,7 +97,6 @@ namespace glTFForUE4Ed
             Bone.ParentIndex += RefBonesBinaryStartIndex;
             OutImportData.RefBonesBinary.Emplace(Bone);
         }
-        OutInverseBindMatrix.Append(InInverseBindMatrix);
 
         for (const TPair<int32, FString>& NodeIndexToBoneName : InNodeIndexToBoneNames)
         {
@@ -350,19 +349,6 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
         }
     }*/
 
-    TArray<FVector> LODPoints;
-#if ENGINE_MINOR_VERSION <= 20
-    TArray<FMeshWedge> LODWedges;
-    TArray<FMeshFace> LODFaces;
-    TArray<FVertInfluence> LODInfluences;
-#else
-    TArray<SkeletalMeshImportData::FMeshWedge> LODWedges;
-    TArray<SkeletalMeshImportData::FMeshFace> LODFaces;
-    TArray<SkeletalMeshImportData::FVertInfluence> LODInfluences;
-#endif
-    TArray<int32> LODPointToRawMap;
-    glTFForUE4Ed::CopyLODImportData(SkeletalMeshImportData, LODPoints, LODWedges, LODFaces, LODInfluences, LODPointToRawMap);
-
     FReferenceSkeleton RefSkeleton;
     int32 SkeletalDepth = 0;
     if (!glTFForUE4Ed::ProcessImportMeshSkeleton(SkeletalMeshImportData, RefSkeleton, SkeletalDepth, FeedbackTaskWrapper))
@@ -375,6 +361,19 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
 
     const bool bShouldComputeNormals = glTFImporterOptions->Details->bRecomputeNormals || !SkeletalMeshImportData.bHasNormals;
     const bool bShouldComputeTangents = glTFImporterOptions->Details->bRecomputeTangents || !SkeletalMeshImportData.bHasTangents;
+
+    TArray<FVector> LODPoints;
+#if ENGINE_MINOR_VERSION <= 20
+    TArray<FMeshWedge> LODWedges;
+    TArray<FMeshFace> LODFaces;
+    TArray<FVertInfluence> LODInfluences;
+#else
+    TArray<SkeletalMeshImportData::FMeshWedge> LODWedges;
+    TArray<SkeletalMeshImportData::FMeshFace> LODFaces;
+    TArray<SkeletalMeshImportData::FVertInfluence> LODInfluences;
+#endif
+    TArray<int32> LODPointToRawMap;
+    glTFForUE4Ed::CopyLODImportData(SkeletalMeshImportData, LODPoints, LODWedges, LODFaces, LODInfluences, LODPointToRawMap);
 
 #if ENGINE_MINOR_VERSION <= 18
     FStaticLODModel LODModel;
@@ -389,6 +388,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     if (!MeshUtilities.BuildSkeletalMesh(LODModel, RefSkeleton, LODInfluences, LODWedges, LODFaces, LODPoints, LODPointToRawMap, false/*ImportOptions->bKeepOverlappingVertices*/, bShouldComputeNormals, bShouldComputeTangents, &WarningMessages, &WarningNames))
 #else
     IMeshUtilities::MeshBuildOptions BuildOptions;
+    BuildOptions.bRemoveDegenerateTriangles = glTFImporterOptions->Details->bRemoveDegenerates;
     BuildOptions.bComputeNormals = bShouldComputeNormals;
     BuildOptions.bComputeTangents = bShouldComputeTangents;
     BuildOptions.bUseMikkTSpace = glTFImporterOptions->Details->bUseMikkTSpace;
@@ -529,36 +529,39 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
     {
         const auto& Primitive = InMesh->primitives[i];
         FSkeletalMeshImportData NewSkeletalMeshImportData;
-        TArray<FMatrix> NewInverseBindMatrices;
         TMap<int32, FString> NewNodeIndexToBoneNames;
         int32 MaterialId = INDEX_NONE;
         if (!!Primitive->material)
         {
             MaterialId = (*Primitive->material);
         }
-        if (!GenerateSkeletalMeshImportData(InGlTF, Primitive, InSkin, InBuffers
-            , NewSkeletalMeshImportData, NewInverseBindMatrices, NewNodeIndexToBoneNames
+        if (!GenerateSkeletalMeshImportData(InGlTF, Primitive, InBuffers
+            , NewSkeletalMeshImportData, NewNodeIndexToBoneNames
             , InFeedbackTaskWrapper, InOutglTFImporterCollection))
         {
             checkSlow(0);
             continue;
         }
-        if (glTFForUE4Ed::CheckAndMerge(NewSkeletalMeshImportData, NewInverseBindMatrices, NewNodeIndexToBoneNames
-            , OutSkeletalMeshImportData, OutInverseBindMatrices, OutNodeIndexToBoneNames))
+        if (glTFForUE4Ed::CheckAndMerge(NewSkeletalMeshImportData, NewNodeIndexToBoneNames
+            , OutSkeletalMeshImportData, OutNodeIndexToBoneNames))
         {
             checkSlow(0);
         }
 
         InOutMaterialIds.Emplace(MaterialId);
     }
-    return true;
+
+    // generate the skeletal data
+    return GenerateSkeletalMeshImportData(InGlTF, InSkin, InBuffers
+        , OutSkeletalMeshImportData, OutInverseBindMatrices, OutNodeIndexToBoneNames
+        , InFeedbackTaskWrapper, InOutglTFImporterCollection);
 }
 
-bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const std::shared_ptr<libgltf::SSkin>& InSkin, const FglTFBuffers& InBuffers
-    , FSkeletalMeshImportData& OutSkeletalMeshImportData, TArray<FMatrix>& OutInverseBindMatrices, TMap<int32, FString>& OutNodeIndexToBoneNames
+bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers
+    , FSkeletalMeshImportData& OutSkeletalMeshImportData, TMap<int32, FString>& OutNodeIndexToBoneNames
     , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper, FglTFImporterCollection& InOutglTFImporterCollection) const
 {
-    if (!InMeshPrimitive || !InSkin)
+    if (!InMeshPrimitive)
     {
         checkSlow(0);
         return false;
@@ -569,88 +572,14 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
     TArray<FVector> Normals;
     TArray<FVector4> Tangents;
     TArray<FVector2D> TextureCoords[MAX_TEXCOORDS];
-    TArray<FMatrix> InverseBindMatrices;
     TArray<FVector4> JointsIndeies[GLTF_JOINT_LAYERS_NUM_MAX];
     TArray<FVector4> JointsWeights[GLTF_JOINT_LAYERS_NUM_MAX];
-    if (!FglTFImporter::GetSkeletalMeshData(InGlTF, InMeshPrimitive, InSkin, InBuffers, TriangleIndices, Points, Normals, Tangents, TextureCoords, InverseBindMatrices, JointsIndeies, JointsWeights))
+    if (!FglTFImporter::GetSkeletalMeshData(InGlTF, InMeshPrimitive, InBuffers, TriangleIndices, Points, Normals, Tangents, TextureCoords, JointsIndeies, JointsWeights))
     {
         return false;
     }
 
-    if (Points.Num() <= 0 || InverseBindMatrices.Num() < static_cast<int32>(InSkin->joints.size())) return false;
-
-    /// collect the joint id
-    TArray<int32> JointIds;
-    for (const std::shared_ptr<libgltf::SGlTFId>& JointIdPtr : InSkin->joints)
-    {
-        if (!JointIdPtr) return false;
-        JointIds.Emplace(*JointIdPtr);
-    }
-
-    OutInverseBindMatrices = InverseBindMatrices;
-
-    for (int32 i = 0; i < JointIds.Num(); ++i)
-    {
-        const int32 JointId = JointIds[i];
-
-        checkSlow(JointId >= 0 && JointId < static_cast<int32>(InGlTF->nodes.size()));
-        if (JointId < 0 || JointId >= static_cast<int32>(InGlTF->nodes.size())) return false;
-
-#if ENGINE_MINOR_VERSION <= 20
-        VBone Bone;
-#else
-        SkeletalMeshImportData::FBone Bone;
-#endif
-        Bone.BonePos.Transform.SetIdentity();
-
-        const std::shared_ptr<libgltf::SNode>& NodePtr = InGlTF->nodes[JointId];
-        if (!NodePtr || NodePtr->name.empty())
-        {
-            Bone.Name = FString::Printf(TEXT("Bone_%s_%d"), InSkin->name.c_str(), JointId);
-        }
-        else
-        {
-            Bone.Name = FString::Printf(TEXT("Bone_%s_%d_%s"), InSkin->name.c_str(), JointId, NodePtr->name.c_str());
-        }
-        Bone.Flags = 0;
-        Bone.NumChildren = static_cast<int32>(InGlTF->nodes[JointId]->children.size());
-
-        const FglTFImporterNodeInfo& NodeInfo = InOutglTFImporterCollection.FindNodeInfo(JointId);
-
-        /// it is a root if the id is not contained in the joints
-        Bone.ParentIndex = NodeInfo.ParentIndex;
-        if (!JointIds.Contains(Bone.ParentIndex))
-        {
-            Bone.ParentIndex = INDEX_NONE;
-        }
-
-        // uset the relative transform to set the transform of the bone
-        Bone.BonePos.Transform = NodeInfo.RelativeTransform;
-
-        //TODO:
-        Bone.BonePos.Length = 1.0f;
-        Bone.BonePos.XSize = 100.0f;
-        Bone.BonePos.YSize = 100.0f;
-        Bone.BonePos.ZSize = 100.0f;
-
-        OutSkeletalMeshImportData.RefBonesBinary.Emplace(Bone);
-
-        OutNodeIndexToBoneNames.Add(JointId, Bone.Name);
-    }
-
-    /// revise parent index to bone index
-    for (int32 i = 0; i < OutSkeletalMeshImportData.RefBonesBinary.Num(); ++i)
-    {
-#if ENGINE_MINOR_VERSION <= 20
-        VBone& Bone = OutSkeletalMeshImportData.RefBonesBinary[i];
-#else
-        SkeletalMeshImportData::FBone& Bone = OutSkeletalMeshImportData.RefBonesBinary[i];
-#endif
-        if (Bone.ParentIndex == INDEX_NONE) continue;
-        int32 ParentBoneIndex = INDEX_NONE;
-        if (!JointIds.Find(Bone.ParentIndex, ParentBoneIndex)) return false;
-        Bone.ParentIndex = ParentBoneIndex;
-    }
+    if (Points.Num() <= 0) return false;
 
     const TArray<FVector4>& JointIndeies0 = JointsIndeies[0];
     const TArray<FVector4>& JointWeights0 = JointsWeights[0];
@@ -769,6 +698,106 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
     OutSkeletalMeshImportData.bHasVertexColors = false;
     OutSkeletalMeshImportData.bHasNormals = (Normals.Num() == Points.Num());
     OutSkeletalMeshImportData.bHasTangents = (Tangents.Num() == Points.Num());
+
+    return true;
+}
+
+bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SSkin>& InSkin, const class FglTFBuffers& InBuffers
+    , class FSkeletalMeshImportData& OutSkeletalMeshImportData, TArray<FMatrix>& OutInverseBindMatrices, TMap<int32, FString>& OutNodeIndexToBoneNames
+    , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper, struct FglTFImporterCollection& InOutglTFImporterCollection) const
+{
+    if (!InSkin)
+    {
+        checkSlow(0);
+        return false;
+    }
+
+    if (!FglTFImporter::GetInverseBindMatrices(InGlTF, InSkin, InBuffers, OutInverseBindMatrices))
+    {
+        checkSlow(0);
+        //TODO:
+        return false;
+    }
+
+    if (OutInverseBindMatrices.Num() != static_cast<int32>(InSkin->joints.size()))
+    {
+        checkSlow(0);
+        //TODO:
+        return false;
+    }
+
+    /// collect the joint id
+    TArray<int32> JointIds;
+    for (const std::shared_ptr<libgltf::SGlTFId>& JointIdPtr : InSkin->joints)
+    {
+        if (!JointIdPtr) return false;
+
+        const int32 JointId = *JointIdPtr;
+
+        checkSlow(JointId >= 0 && JointId < static_cast<int32>(InGlTF->nodes.size()));
+        if (JointId < 0 || JointId >= static_cast<int32>(InGlTF->nodes.size()))
+        {
+            checkSlow(0);
+            //TODO:
+            return false;
+        }
+
+        JointIds.Emplace(JointId);
+
+#if ENGINE_MINOR_VERSION <= 20
+        VBone Bone;
+#else
+        SkeletalMeshImportData::FBone Bone;
+#endif
+        Bone.BonePos.Transform.SetIdentity();
+
+        const std::shared_ptr<libgltf::SNode>& NodePtr = InGlTF->nodes[JointId];
+        if (!NodePtr || NodePtr->name.empty())
+        {
+            Bone.Name = FString::Printf(TEXT("Bone_%s_%d"), InSkin->name.c_str(), JointId);
+        }
+        else
+        {
+            Bone.Name = FString::Printf(TEXT("Bone_%s_%d_%s"), InSkin->name.c_str(), JointId, NodePtr->name.c_str());
+        }
+        Bone.Flags = 0;
+        Bone.NumChildren = static_cast<int32>(InGlTF->nodes[JointId]->children.size());
+
+        const FglTFImporterNodeInfo& NodeInfo = InOutglTFImporterCollection.FindNodeInfo(JointId);
+
+        /// it is a root if the id is not contained in the joints
+        Bone.ParentIndex = NodeInfo.ParentIndex;
+        if (!JointIds.Contains(Bone.ParentIndex))
+        {
+            Bone.ParentIndex = INDEX_NONE;
+        }
+
+        // uset the relative transform to set the transform of the bone
+        Bone.BonePos.Transform = NodeInfo.RelativeTransform;
+
+        //TODO:
+        Bone.BonePos.Length = 1.0f;
+        Bone.BonePos.XSize = 100.0f;
+        Bone.BonePos.YSize = 100.0f;
+        Bone.BonePos.ZSize = 100.0f;
+
+        OutSkeletalMeshImportData.RefBonesBinary.Emplace(Bone);
+
+        OutNodeIndexToBoneNames.Add(JointId, Bone.Name);
+    }
+
+    /// revise parent index to bone index
+#if ENGINE_MINOR_VERSION <= 20
+    for (VBone& Bone : OutSkeletalMeshImportData.RefBonesBinary)
+#else
+    for (SkeletalMeshImportData::FBone& Bone : OutSkeletalMeshImportData.RefBonesBinary)
+#endif
+    {
+        if (Bone.ParentIndex == INDEX_NONE) continue;
+        int32 ParentBoneIndex = INDEX_NONE;
+        if (!JointIds.Find(Bone.ParentIndex, ParentBoneIndex)) return false;
+        Bone.ParentIndex = ParentBoneIndex;
+    }
 
     return true;
 }

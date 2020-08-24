@@ -611,7 +611,7 @@ public:
     }
 
     template<uint32 TexCoordNumber, uint32 JointNumber, bool bSwapYZ, bool bInverseX>
-    static bool Decode(const FglTFBuffers& InBuffers, const libgltf::SKHR_draco_mesh_compressionextension* InExtensionDraco, const TArray<uint8>& InEncodedBuffer, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[TexCoordNumber], TArray<FMatrix>& OutInverseBindMatrices, TArray<FVector4> OutJointsIndices[JointNumber + 1], TArray<FVector4> OutJointWeights[JointNumber + 1])
+    static bool Decode(const FglTFBuffers& InBuffers, const libgltf::SKHR_draco_mesh_compressionextension* InExtensionDraco, const TArray<uint8>& InEncodedBuffer, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[TexCoordNumber], TArray<FVector4> OutJointsIndices[JointNumber + 1], TArray<FVector4> OutJointWeights[JointNumber + 1])
     {
         if (!InExtensionDraco) return false;
 
@@ -1230,49 +1230,49 @@ namespace glTFImporter
     }
 
     template<bool bSwapYZ>
-    bool GetTriangleIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices)
+    bool GetTriangleIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers, TArray<uint32>& OutTriangleIndices)
     {
         if (!InGlTF || !InMeshPrimitive) return false;
 
         const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->indices)];
-        return GetAccessorData<uint32, bSwapYZ, false>(InGlTF, InBufferFiles, Accessor, OutTriangleIndices);
+        return GetAccessorData<uint32, bSwapYZ, false>(InGlTF, InBuffers, Accessor, OutTriangleIndices);
     }
 
     template<bool bSwapYZ, bool bInverseX>
-    bool GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector>& OutVertexPositions)
+    bool GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers, TArray<FVector>& OutVertexPositions)
     {
         if (!InGlTF || !InMeshPrimitive) return false;
         const GLTFString get_key = GLTF_TCHAR_TO_GLTFSTRING(TEXT("POSITION"));
         if (InMeshPrimitive->attributes.find(get_key) == InMeshPrimitive->attributes.cend()) return true;
 
         const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[get_key])];
-        return GetAccessorData<FVector, bSwapYZ, bInverseX>(InGlTF, InBufferFiles, Accessor, OutVertexPositions);
+        return GetAccessorData<FVector, bSwapYZ, bInverseX>(InGlTF, InBuffers, Accessor, OutVertexPositions);
     }
 
     template<bool bSwapYZ, bool bInverseX>
-    bool GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector>& OutVertexNormals)
+    bool GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers, TArray<FVector>& OutVertexNormals)
     {
         if (!InGlTF || !InMeshPrimitive) return false;
         const GLTFString get_key = GLTF_TCHAR_TO_GLTFSTRING(TEXT("NORMAL"));
         if (InMeshPrimitive->attributes.find(get_key) == InMeshPrimitive->attributes.cend()) return true;
 
         const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[get_key])];
-        return GetAccessorData<FVector, bSwapYZ, bInverseX>(InGlTF, InBufferFiles, Accessor, OutVertexNormals);
+        return GetAccessorData<FVector, bSwapYZ, bInverseX>(InGlTF, InBuffers, Accessor, OutVertexNormals);
     }
 
     template<bool bSwapYZ, bool bInverseX>
-    bool GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector4>& OutVertexTangents)
+    bool GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers, TArray<FVector4>& OutVertexTangents)
     {
         if (!InGlTF || !InMeshPrimitive) return false;
         const GLTFString get_key = GLTF_TCHAR_TO_GLTFSTRING(TEXT("TANGENT"));
         if (InMeshPrimitive->attributes.find(get_key) == InMeshPrimitive->attributes.cend()) return true;
 
         const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[get_key])];
-        return GetAccessorData<FVector4, bSwapYZ, bInverseX>(InGlTF, InBufferFiles, Accessor, OutVertexTangents);
+        return GetAccessorData<FVector4, bSwapYZ, bInverseX>(InGlTF, InBuffers, Accessor, OutVertexTangents);
     }
 
     template<int32 TexCoordNumber>
-    bool GetVertexTexcoords(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<FVector2D> OutVertexTexcoords[TexCoordNumber])
+    bool GetVertexTexcoords(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers, TArray<FVector2D> OutVertexTexcoords[TexCoordNumber])
     {
         if (!InGlTF || !InMeshPrimitive) return false;
 
@@ -1288,7 +1288,7 @@ namespace glTFImporter
             }
 
             const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[primitive_attribute])];
-            if (GetAccessorData<FVector2D, false, false>(InGlTF, InBufferFiles, Accessor, OutVertexTexcoords[i]))
+            if (GetAccessorData<FVector2D, false, false>(InGlTF, InBuffers, Accessor, OutVertexTexcoords[i]))
             {
                 continue;
             }
@@ -1306,28 +1306,28 @@ namespace glTFImporter
         return GetAccessorData<FMatrix, bSwapYZ, bInverseX>(InGlTF, InBuffers, Accessor, OutInverseBindMatrices);
     }
 
-    bool GetJointIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, int32 InIndex, const FglTFBuffers& InBufferFiles, TArray<FVector4>& OutJointIndices)
+    bool GetJointIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, int32 InIndex, const FglTFBuffers& InBuffers, TArray<FVector4>& OutJointIndices)
     {
         if (!InGlTF || !InMeshPrimitive) return false;
         const GLTFString JointName = GLTF_TCHAR_TO_GLTFSTRING(*FString::Printf(TEXT("JOINTS_%d"), InIndex));
         if (InMeshPrimitive->attributes.find(JointName) == InMeshPrimitive->attributes.cend()) return true;
 
         const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[JointName])];
-        return GetAccessorData<FVector4, false, false>(InGlTF, InBufferFiles, Accessor, OutJointIndices);
+        return GetAccessorData<FVector4, false, false>(InGlTF, InBuffers, Accessor, OutJointIndices);
     }
 
-    bool GetJointWeights(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, int32 InIndex, const FglTFBuffers& InBufferFiles, TArray<FVector4>& OutJointWeights)
+    bool GetJointWeights(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, int32 InIndex, const FglTFBuffers& InBuffers, TArray<FVector4>& OutJointWeights)
     {
         if (!InGlTF || !InMeshPrimitive) return false;
         const GLTFString JointName = GLTF_TCHAR_TO_GLTFSTRING(*FString::Printf(TEXT("WEIGHTS_%d"), InIndex));
         if (InMeshPrimitive->attributes.find(JointName) == InMeshPrimitive->attributes.cend()) return true;
 
         const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[JointName])];
-        return GetAccessorData<FVector4, false, false>(InGlTF, InBufferFiles, Accessor, OutJointWeights);
+        return GetAccessorData<FVector4, false, false>(InGlTF, InBuffers, Accessor, OutJointWeights);
     }
 
     template<int32 TexCoordNumber, int32 JointNumber, bool bSwapYZ, bool bInverseX>
-    bool GetMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const std::shared_ptr<libgltf::SSkin>& InSkin, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[TexCoordNumber], TArray<FMatrix>& OutInverseBindMatrices, TArray<FVector4> OutJointsIndices[JointNumber + 1], TArray<FVector4> OutJointWeights[JointNumber + 1])
+    bool GetMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[TexCoordNumber], TArray<FVector4> OutJointsIndices[JointNumber + 1], TArray<FVector4> OutJointWeights[JointNumber + 1])
     {
         OutTriangleIndices.Empty();
         OutVertexPositions.Empty();
@@ -1337,7 +1337,6 @@ namespace glTFImporter
         {
             OutVertexTexcoords[i].Empty();
         }
-        OutInverseBindMatrices.Empty();
         for (uint32 i = 0; i < JointNumber; ++i)
         {
             OutJointsIndices[i].Empty();
@@ -1361,75 +1360,79 @@ namespace glTFImporter
             int32 BufferViewIndex = *(ExtensionDraco->bufferView);
             TArray<uint8> EncodeBuffer;
             FString BufferFilePath;
-            if (!InBufferFiles.GetBufferViewData(InGlTF, BufferViewIndex, EncodeBuffer, BufferFilePath)
-                || !FglTFBufferDecoder::Decode<TexCoordNumber, JointNumber, bSwapYZ, bInverseX>(InBufferFiles, ExtensionDraco, EncodeBuffer, OutTriangleIndices, OutVertexPositions, OutVertexNormals, OutVertexTangents, OutVertexTexcoords, OutInverseBindMatrices, OutJointsIndices, OutJointWeights))
+            if (!InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, EncodeBuffer, BufferFilePath)
+                || !FglTFBufferDecoder::Decode<TexCoordNumber, JointNumber, bSwapYZ, bInverseX>(InBuffers, ExtensionDraco, EncodeBuffer, OutTriangleIndices, OutVertexPositions, OutVertexNormals, OutVertexTangents, OutVertexTexcoords, OutJointsIndices, OutJointWeights))
             {
                 return false;
             }
         }
         else
         {
-            if (!GetTriangleIndices<bSwapYZ>(InGlTF, InMeshPrimitive, InBufferFiles, OutTriangleIndices))
+            if (!GetTriangleIndices<bSwapYZ>(InGlTF, InMeshPrimitive, InBuffers, OutTriangleIndices))
             {
                 return false;
             }
 
-            if (!GetVertexPositions<bSwapYZ, bInverseX>(InGlTF, InMeshPrimitive, InBufferFiles, OutVertexPositions))
+            if (!GetVertexPositions<bSwapYZ, bInverseX>(InGlTF, InMeshPrimitive, InBuffers, OutVertexPositions))
             {
                 return false;
             }
 
-            if (!GetVertexNormals<bSwapYZ, bInverseX>(InGlTF, InMeshPrimitive, InBufferFiles, OutVertexNormals))
+            if (!GetVertexNormals<bSwapYZ, bInverseX>(InGlTF, InMeshPrimitive, InBuffers, OutVertexNormals))
             {
                 return false;
             }
 
-            if (!GetVertexTangents<bSwapYZ, bInverseX>(InGlTF, InMeshPrimitive, InBufferFiles, OutVertexTangents))
+            if (!GetVertexTangents<bSwapYZ, bInverseX>(InGlTF, InMeshPrimitive, InBuffers, OutVertexTangents))
             {
                 return false;
             }
 
-            if (!GetVertexTexcoords<TexCoordNumber>(InGlTF, InMeshPrimitive, InBufferFiles, OutVertexTexcoords))
+            if (!GetVertexTexcoords<TexCoordNumber>(InGlTF, InMeshPrimitive, InBuffers, OutVertexTexcoords))
             {
                 return false;
             }
 
             for (int32 i = 0; i < JointNumber; ++i)
             {
-                GetJointIndices(InGlTF, InMeshPrimitive, i, InBufferFiles, OutJointsIndices[i]);
+                GetJointIndices(InGlTF, InMeshPrimitive, i, InBuffers, OutJointsIndices[i]);
             }
 
             for (int32 i = 0; i < JointNumber; ++i)
             {
-                GetJointWeights(InGlTF, InMeshPrimitive, i, InBufferFiles, OutJointWeights[i]);
+                GetJointWeights(InGlTF, InMeshPrimitive, i, InBuffers, OutJointWeights[i]);
             }
         }
-
-        GetInverseBindMatrices<bSwapYZ, bInverseX>(InGlTF, InSkin, InBufferFiles, OutInverseBindMatrices);
         return true;
     }
 }
 
-bool FglTFImporter::GetStaticMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_STATIC_TEXCOORDS], bool bSwapYZ /*= true*/)
+bool FglTFImporter::GetStaticMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers
+    , TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_TEXCOORDS], bool bSwapYZ /*= true*/)
 {
-    std::shared_ptr<libgltf::SSkin> Skin = nullptr;
-    TArray<FMatrix> InverseBindMatrices;
     TArray<FVector4> JointsIndices[1];
     TArray<FVector4> JointsWeights[1];
     return bSwapYZ
-        ? glTFImporter::GetMeshData<MAX_TEXCOORDS, 0, true, false>(InGlTF, InMeshPrimitive, Skin, InBufferFiles, OutTriangleIndices, OutVertexPositions, OutVertexNormals, OutVertexTangents, OutVertexTexcoords, InverseBindMatrices, JointsIndices, JointsWeights)
-        : glTFImporter::GetMeshData<MAX_TEXCOORDS, 0, false, true>(InGlTF, InMeshPrimitive, Skin, InBufferFiles, OutTriangleIndices, OutVertexPositions, OutVertexNormals, OutVertexTangents, OutVertexTexcoords, InverseBindMatrices, JointsIndices, JointsWeights);
+        ? glTFImporter::GetMeshData<MAX_TEXCOORDS, 0, true, false>(InGlTF, InMeshPrimitive, InBuffers, OutTriangleIndices, OutVertexPositions, OutVertexNormals, OutVertexTangents, OutVertexTexcoords, JointsIndices, JointsWeights)
+        : glTFImporter::GetMeshData<MAX_TEXCOORDS, 0, false, true>(InGlTF, InMeshPrimitive, InBuffers, OutTriangleIndices, OutVertexPositions, OutVertexNormals, OutVertexTangents, OutVertexTexcoords, JointsIndices, JointsWeights);
 }
 
-bool FglTFImporter::GetSkeletalMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const std::shared_ptr<libgltf::SSkin>& InSkin, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_TEXCOORDS], TArray<FMatrix>& OutInverseBindMatrices, TArray<FVector4> OutJointsIndices[GLTF_JOINT_LAYERS_NUM_MAX], TArray<FVector4> OutJointsWeights[GLTF_JOINT_LAYERS_NUM_MAX], bool bSwapYZ /*= true*/)
+bool FglTFImporter::GetSkeletalMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers
+    , TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_TEXCOORDS], TArray<FVector4> OutJointsIndices[GLTF_JOINT_LAYERS_NUM_MAX], TArray<FVector4> OutJointsWeights[GLTF_JOINT_LAYERS_NUM_MAX], bool bSwapYZ /*= true*/)
 {
     return bSwapYZ
-        ? glTFImporter::GetMeshData<MAX_TEXCOORDS, GLTF_JOINT_LAYERS_NUM_MAX, true, false>(InGlTF, InMeshPrimitive, InSkin, InBufferFiles, OutTriangleIndices, OutVertexPositions, OutVertexNormals, OutVertexTangents, OutVertexTexcoords, OutInverseBindMatrices, OutJointsIndices, OutJointsWeights)
-        : glTFImporter::GetMeshData<MAX_TEXCOORDS, GLTF_JOINT_LAYERS_NUM_MAX, false, true>(InGlTF, InMeshPrimitive, InSkin, InBufferFiles, OutTriangleIndices, OutVertexPositions, OutVertexNormals, OutVertexTangents, OutVertexTexcoords, OutInverseBindMatrices, OutJointsIndices, OutJointsWeights);
+        ? glTFImporter::GetMeshData<MAX_TEXCOORDS, GLTF_JOINT_LAYERS_NUM_MAX, true, false>(InGlTF, InMeshPrimitive, InBuffers, OutTriangleIndices, OutVertexPositions, OutVertexNormals, OutVertexTangents, OutVertexTexcoords, OutJointsIndices, OutJointsWeights)
+        : glTFImporter::GetMeshData<MAX_TEXCOORDS, GLTF_JOINT_LAYERS_NUM_MAX, false, true>(InGlTF, InMeshPrimitive, InBuffers, OutTriangleIndices, OutVertexPositions, OutVertexNormals, OutVertexTangents, OutVertexTexcoords, OutJointsIndices, OutJointsWeights);
 }
 
-bool FglTFImporter::GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SAnimation>& InglTFAnimation
-    , const FglTFBuffers& InBufferFiles
+bool FglTFImporter::GetInverseBindMatrices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SSkin>& InSkin, const FglTFBuffers& InBuffers, TArray<FMatrix>& OutInverseBindMatrices, bool bSwapYZ /*= true*/)
+{
+    return bSwapYZ
+        ? glTFImporter::GetInverseBindMatrices<true, false>(InGlTF, InSkin, InBuffers, OutInverseBindMatrices)
+        : glTFImporter::GetInverseBindMatrices<false, true>(InGlTF, InSkin, InBuffers, OutInverseBindMatrices);
+}
+
+bool FglTFImporter::GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SAnimation>& InglTFAnimation, const FglTFBuffers& InBuffers
     , FglTFAnimationSequenceDatas& OutAnimationSequenceDatas, bool bSwapYZ /*= true*/)
 {
     if (!InGlTF || !InglTFAnimation) return false;
@@ -1470,7 +1473,7 @@ bool FglTFImporter::GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlT
         if (!glTFOutputAccessorPtr) continue;
 
         TArray<float> Times;
-        if (!glTFImporter::GetAccessorData<float, false, false>(InGlTF, InBufferFiles, glTFInputAccessorPtr, Times)) continue;
+        if (!glTFImporter::GetAccessorData<float, false, false>(InGlTF, InBuffers, glTFInputAccessorPtr, Times)) continue;
 
         const FString glTFAnimationSamplerInterpolation = GLTF_GLTFSTRING_TO_TCHAR(glTFAnimationSamplerPtr->interpolation.c_str());
         ERichCurveInterpMode Interpolation = StringToRichCurveInterpMode(glTFAnimationSamplerInterpolation);
@@ -1483,33 +1486,33 @@ bool FglTFImporter::GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlT
         {
             if (bSwapYZ)
             {
-                if (!glTFImporter::GetAccessorData<FVector, true, false>(InGlTF, InBufferFiles, glTFOutputAccessorPtr, Translations)) continue;
+                if (!glTFImporter::GetAccessorData<FVector, true, false>(InGlTF, InBuffers, glTFOutputAccessorPtr, Translations)) continue;
             }
             else
             {
-                if (!glTFImporter::GetAccessorData<FVector, false, false>(InGlTF, InBufferFiles, glTFOutputAccessorPtr, Translations)) continue;
+                if (!glTFImporter::GetAccessorData<FVector, false, false>(InGlTF, InBuffers, glTFOutputAccessorPtr, Translations)) continue;
             }
         }
         else if (glTFAnimationChannelTargetPath.Equals(TEXT("rotation"), ESearchCase::IgnoreCase))
         {
             if (bSwapYZ)
             {
-                if (!glTFImporter::GetAccessorData<FQuat, true, false>(InGlTF, InBufferFiles, glTFOutputAccessorPtr, Rotations)) continue;
+                if (!glTFImporter::GetAccessorData<FQuat, true, false>(InGlTF, InBuffers, glTFOutputAccessorPtr, Rotations)) continue;
             }
             else
             {
-                if (!glTFImporter::GetAccessorData<FQuat, false, false>(InGlTF, InBufferFiles, glTFOutputAccessorPtr, Rotations)) continue;
+                if (!glTFImporter::GetAccessorData<FQuat, false, false>(InGlTF, InBuffers, glTFOutputAccessorPtr, Rotations)) continue;
             }
         }
         else if (glTFAnimationChannelTargetPath.Equals(TEXT("scale"), ESearchCase::IgnoreCase))
         {
             if (bSwapYZ)
             {
-                if (!glTFImporter::GetAccessorData<FVector, true, false>(InGlTF, InBufferFiles, glTFOutputAccessorPtr, Scales)) continue;
+                if (!glTFImporter::GetAccessorData<FVector, true, false>(InGlTF, InBuffers, glTFOutputAccessorPtr, Scales)) continue;
             }
             else
             {
-                if (!glTFImporter::GetAccessorData<FVector, false, false>(InGlTF, InBufferFiles, glTFOutputAccessorPtr, Scales)) continue;
+                if (!glTFImporter::GetAccessorData<FVector, false, false>(InGlTF, InBuffers, glTFOutputAccessorPtr, Scales)) continue;
             }
         }
 

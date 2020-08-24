@@ -27,7 +27,10 @@ private:
     bool GenerateSkeletalMeshImportData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMesh>& InMesh, const std::shared_ptr<libgltf::SSkin>& InSkin, const class FglTFBuffers& InBuffers
         , class FSkeletalMeshImportData& OutSkeletalMeshImportData, TArray<FMatrix>& OutInverseBindMatrices, TMap<int32, FString>& OutNodeIndexToBoneNames, TArray<int32>& InOutMaterialIds
         , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper, struct FglTFImporterCollection& InOutglTFImporterCollection) const;
-    bool GenerateSkeletalMeshImportData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const std::shared_ptr<libgltf::SSkin>& InSkin, const class FglTFBuffers& InBuffers
+    bool GenerateSkeletalMeshImportData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const class FglTFBuffers& InBuffers
+        , class FSkeletalMeshImportData& OutSkeletalMeshImportData, TMap<int32, FString>& OutNodeIndexToBoneNames
+        , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper, struct FglTFImporterCollection& InOutglTFImporterCollection) const;
+    bool GenerateSkeletalMeshImportData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SSkin>& InSkin, const class FglTFBuffers& InBuffers
         , class FSkeletalMeshImportData& OutSkeletalMeshImportData, TArray<FMatrix>& OutInverseBindMatrices, TMap<int32, FString>& OutNodeIndexToBoneNames
         , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper, struct FglTFImporterCollection& InOutglTFImporterCollection) const;
 };
