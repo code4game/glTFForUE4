@@ -91,6 +91,16 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
     {
         glTFImporterOptions->Details = GetMutableDefault<UglTFImporterOptionsDetails>();
     }
+    if (!glTFReimporterOptions.IsValid())
+    {
+        // store the details when importing
+        glTFImporterOptions->Details->Get(glTFImporterOptions->DetailsStored);
+    }
+    else
+    {
+        // restore the details when reimporting
+        glTFImporterOptions->Details->Set(glTFImporterOptions->DetailsStored);
+    }
 
     if (bCancel)
     {

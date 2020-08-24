@@ -3,6 +3,62 @@
 
 #include "glTFImporterOptions.generated.h"
 
+USTRUCT()
+struct GLTFFORUE4_API FglTFImporterOptionsDetailsStored
+{
+    GENERATED_USTRUCT_BODY()
+
+    FglTFImporterOptionsDetailsStored();
+
+    /// common options
+    UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (ToolTip = "Construct the skeletal mesh when node has skin"))
+    bool bImportSkeletalMesh;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Common")
+    bool bImportMaterial;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Common")
+    bool bImportTexture;
+    
+    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Common")
+    bool bImportAllScene;
+    
+    /// mesh options
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", meta = (ClampMin = 0.0001, ClampMax = 100000.0f))
+    float MeshScaleRatio;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    bool bApplyAbsoluteTransform;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    bool bGenerateLightmapUVs;
+    
+    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    bool bInvertNormal;
+
+    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    bool bUseMikkTSpace;
+
+    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    bool bRecomputeNormals;
+
+    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    bool bRecomputeTangents;
+
+    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    bool bRemoveDegenerates;
+    
+    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    bool bBuildAdjacencyBuffer;
+
+    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    bool bUseFullPrecisionUVs;
+
+    /// material options
+    UPROPERTY(EditAnywhere, Config, Category = "Material", meta = (EditCondition = bImportMaterial))
+    bool bUseMaterialInstance;
+};
+
 UCLASS(config = glTFForUE4Settings, defaultconfig)
 class GLTFFORUE4_API UglTFImporterOptionsDetails : public UObject
 {
@@ -60,8 +116,11 @@ public:
     bool bUseFullPrecisionUVs;
 
     /// material options
-    UPROPERTY(EditAnywhere, Config, Category = "Material", meta = (EditCondition = bImportMaterial))
+    UPROPERTY(VisibleAnywhere, Config, Category = "Material", meta = (EditCondition = bImportMaterial))
     bool bUseMaterialInstance;
+
+    void Get(FglTFImporterOptionsDetailsStored& OutDetailsStored) const;
+    void Set(const FglTFImporterOptionsDetailsStored& InDetailsStored);
 };
 
 USTRUCT()
@@ -78,5 +137,8 @@ struct GLTFFORUE4_API FglTFImporterOptions
     FString FilePathInEngine;
 
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
+    FglTFImporterOptionsDetailsStored DetailsStored;
+
+    UPROPERTY()
     UglTFImporterOptionsDetails* Details;
 };
