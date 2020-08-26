@@ -13,7 +13,9 @@
 
 #include <SkelImport.h>
 #include <MeshUtilities.h>
+#include <PhysicsAssetUtils.h>
 #include <AssetRegistryModule.h>
+#include <AssetNotifications.h>
 
 #if ENGINE_MINOR_VERSION <= 18
 #else
@@ -198,7 +200,7 @@ namespace glTFForUE4Ed
         return BoneName;
     }
 
-    bool ProcessImportMeshSkeleton(const FSkeletalMeshImportData& InImportData, FReferenceSkeleton& OutReferenceSkeleton, int32& OutSkeletalDepth, glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper)
+    bool ProcessImportMeshSkeleton(const FSkeletalMeshImportData& InImportData, const USkeleton* InSkeleton, FReferenceSkeleton& OutReferenceSkeleton, int32& OutSkeletalDepth, glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper)
     {
 #if ENGINE_MINOR_VERSION <= 20
         const TArray<VBone>& RefBonesBinary = InImportData.RefBonesBinary;
@@ -209,6 +211,11 @@ namespace glTFForUE4Ed
         // Setup skeletal hierarchy + names structure.
         OutReferenceSkeleton.Empty();
 
+#if ENGINE_MINOR_VERSION <= 13
+#else
+        FReferenceSkeletonModifier ReferenceSkeletonModifier(OutReferenceSkeleton, InSkeleton);
+#endif
+
         // Digest bones to the serializable format.
         for (int32 b = 0; b < RefBonesBinary.Num(); b++)
         {
@@ -217,25 +224,23 @@ namespace glTFForUE4Ed
 #else
             const SkeletalMeshImportData::FBone& BinaryBone = RefBonesBinary[b];
 #endif
-            const FString BoneName = FixupBoneName(BinaryBone.Name);
+            const FString BoneNameString = FixupBoneName(BinaryBone.Name);
 #if ENGINE_MINOR_VERSION <= 11
-            const FMeshBoneInfo BoneInfo(FName(*BoneName, FNAME_Add, true), BinaryBone.Name, BinaryBone.ParentIndex);
+            const FName BoneName(*BoneNameString, FNAME_Add, true);
 #else
-            const FMeshBoneInfo BoneInfo(FName(*BoneName), BinaryBone.Name, BinaryBone.ParentIndex);
+            const FName BoneName(*BoneNameString);
 #endif
-            const FTransform BoneTransform(BinaryBone.BonePos.Transform);
-
-            if (OutReferenceSkeleton.FindBoneIndex(BoneInfo.Name) != INDEX_NONE)
+            if (OutReferenceSkeleton.FindBoneIndex(BoneName) != INDEX_NONE)
             {
-                InFeedbackTaskWrapper.Log(ELogVerbosity::Error, FText::Format(LOCTEXT("ProcessSkeletonTheNameOfBoneIsRepeated", "The name of bone - '{0}' is repeated!"), FText::FromName(BoneInfo.Name)));
+                InFeedbackTaskWrapper.Log(ELogVerbosity::Error, FText::Format(LOCTEXT("ProcessSkeletonTheNameOfBoneIsRepeated", "The name of bone - '{0}' is repeated!"), FText::FromName(BoneName)));
                 return false;
             }
 
+            const FMeshBoneInfo BoneInfo(BoneName, BinaryBone.Name, BinaryBone.ParentIndex);
 #if ENGINE_MINOR_VERSION <= 13
-            OutReferenceSkeleton.Add(BoneInfo, BoneTransform);
+            OutReferenceSkeleton.Add(BoneInfo, BinaryBone.BonePos.Transform);
 #else
-            FReferenceSkeletonModifier ReferenceSkeletonModifier(OutReferenceSkeleton, nullptr);
-            ReferenceSkeletonModifier.Add(BoneInfo, BoneTransform);
+            ReferenceSkeletonModifier.Add(BoneInfo, BinaryBone.BonePos.Transform);
 #endif
         }
 
@@ -322,29 +327,16 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     TMap<int32, FString> NodeIndexToBoneNames;
     TArray<int32> MaterialIds;
     if (!GenerateSkeletalMeshImportData(InGlTF, glTFMeshPtr, glTFSkinPtr, InBuffers
-        , SkeletalMeshImportData, RefBasesInvMatrix, NodeIndexToBoneNames, MaterialIds
+        , InNodeTransform, SkeletalMeshImportData, RefBasesInvMatrix, NodeIndexToBoneNames, MaterialIds
         , FeedbackTaskWrapper, InOutglTFImporterCollection))
     {
         FeedbackTaskWrapper.Log(ELogVerbosity::Error, LOCTEXT("CreateSkeletalMeshFailedToGeneateTheFSkeletalMeshImportData", "Failed to generate the `FSkeletalMeshImportData`!"));
         return nullptr;
     }
 
-    if (!InNodeTransform.Equals(FTransform::Identity))
-    {
-#if ENGINE_MINOR_VERSION <= 20
-        for (VBone& Bone : SkeletalMeshImportData.RefBonesBinary)
-#else
-        for (SkeletalMeshImportData::FBone& Bone : SkeletalMeshImportData.RefBonesBinary)
-#endif
-        {
-            if (Bone.ParentIndex != INDEX_NONE) continue;
-            Bone.BonePos.Transform *= InNodeTransform;
-        }
-    }
-
     FReferenceSkeleton RefSkeleton;
     int32 SkeletalDepth = 0;
-    if (!glTFForUE4Ed::ProcessImportMeshSkeleton(SkeletalMeshImportData, RefSkeleton, SkeletalDepth, FeedbackTaskWrapper))
+    if (!glTFForUE4Ed::ProcessImportMeshSkeleton(SkeletalMeshImportData, nullptr, RefSkeleton, SkeletalDepth, FeedbackTaskWrapper))
     {
         FeedbackTaskWrapper.Log(ELogVerbosity::Error, LOCTEXT("CreateSkeletalMeshFailedToProcessTheFSkeletalMeshImportDataAndFRefSkeleton", "Failed to process the `FSkeletalMeshImportData` and `FRefSkeleton`!"));
         return nullptr;
@@ -366,7 +358,12 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     TArray<SkeletalMeshImportData::FVertInfluence> LODInfluences;
 #endif
     TArray<int32> LODPointToRawMap;
+    //TODO: check the version that can't call `CopyLODImportData`
+#if ENGINE_MINOR_VERSION <= 22
     glTFForUE4Ed::CopyLODImportData(SkeletalMeshImportData, LODPoints, LODWedges, LODFaces, LODInfluences, LODPointToRawMap);
+#else
+    SkeletalMeshImportData.CopyLODImportData(LODPoints, LODWedges, LODFaces, LODInfluences, LODPointToRawMap);
+#endif
 
 #if ENGINE_MINOR_VERSION <= 18
     FStaticLODModel LODModel;
@@ -388,6 +385,10 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     if (!MeshUtilities.BuildSkeletalMesh(LODModel, RefSkeleton, LODInfluences, LODWedges, LODFaces, LODPoints, LODPointToRawMap, BuildOptions, &WarningMessages, &WarningNames))
 #endif
     {
+        for (const FText& WarningMessage : WarningMessages)
+        {
+            FeedbackTaskWrapper.Log(ELogVerbosity::Warning, WarningMessage);
+        }
         FeedbackTaskWrapper.Log(ELogVerbosity::Error, LOCTEXT("CreateSkeletalMeshFailedToBuildTheSkeletalMesh", "Failed to build the skeletal mesh!"));
         return nullptr;
     }
@@ -399,26 +400,30 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
         SkeletalMesh = NewObject<USkeletalMesh>(InputParent, USkeletalMesh::StaticClass(), *SkeletalMeshName, InputFlags);
         if (SkeletalMesh) FAssetRegistryModule::AssetCreated(SkeletalMesh);
     }
-    else
-    {
-        SkeletalMesh->ResetLODInfo();
-        SkeletalMesh->Materials.Empty();
-    }
     checkSlow(SkeletalMesh);
     if (!SkeletalMesh) return nullptr;
 
     SkeletalMesh->PreEditChange(nullptr);
 
-    SkeletalMesh->RefSkeleton = RefSkeleton;
-    SkeletalMesh->RefBasesInvMatrix = RefBasesInvMatrix;
-
-    /// Clean old data
-    {
 #if ENGINE_MINOR_VERSION <= 18
-        FSkeletalMeshResource* ImportedResource = SkeletalMesh->GetImportedResource();
+    FSkeletalMeshResource* ImportedResource = SkeletalMesh->GetImportedResource();
 #else
-        FSkeletalMeshModel* ImportedResource = SkeletalMesh->GetImportedModel();
+    FSkeletalMeshModel* ImportedResource = SkeletalMesh->GetImportedModel();
 #endif
+    check(ImportedResource);
+
+    /// clean old data
+    {
+        SkeletalMesh->RefBasesInvMatrix.Empty();
+
+#if ENGINE_MINOR_VERSION <= 19
+        TArray<FSkeletalMeshLODInfo>& SkeletalMeshLODInfos = SkeletalMesh->LODInfo;
+#else
+        TArray<FSkeletalMeshLODInfo>& SkeletalMeshLODInfos = SkeletalMesh->GetLODInfoArray();
+#endif
+        SkeletalMeshLODInfos.Empty();
+        SkeletalMeshLODInfos.Add(FSkeletalMeshLODInfo());
+        SkeletalMeshLODInfos[0].LODHysteresis = 0.02f;
 
         ImportedResource->LODModels.Empty();
 #if ENGINE_MINOR_VERSION <= 18
@@ -428,19 +433,13 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
 #else
         ImportedResource->LODModels.Add(new FSkeletalMeshLODModel);
 #endif
-        ImportedResource->LODModels[0] = LODModel;
 
-#if ENGINE_MINOR_VERSION <= 19
-        TArray<FSkeletalMeshLODInfo>& SkeletalMeshLODInfo = SkeletalMesh->LODInfo;
-#else
-        TArray<FSkeletalMeshLODInfo>& SkeletalMeshLODInfo = SkeletalMesh->GetLODInfoArray();
-#endif
-        SkeletalMeshLODInfo.Empty();
-        SkeletalMeshLODInfo.Add(FSkeletalMeshLODInfo());
-        SkeletalMeshLODInfo[0].LODHysteresis = 0.02f;
+        SkeletalMesh->Materials.Empty();
     }
 
-    SkeletalMesh->BuildPhysicsData();
+    ImportedResource->LODModels[0] = LODModel;
+    SkeletalMesh->RefSkeleton = RefSkeleton;
+    SkeletalMesh->CalculateInvRefMatrices();
 
     /// import the material
     if (glTFImporterOptions->Details->bImportMaterial)
@@ -471,6 +470,9 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
         }
     }
 
+    SkeletalMesh->PostEditChange();
+    SkeletalMesh->MarkPackageDirty();
+
     /// generate the skeleton object
     FString SkeletonObjectName = FString::Printf(TEXT("%s_Skeleton"), *SkeletalMeshName);
     USkeleton* Skeleton = SkeletalMesh->Skeleton;
@@ -486,16 +488,50 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     checkSlow(Skeleton);
     if (Skeleton)
     {
-        Skeleton->MergeAllBonesToBoneTree(SkeletalMesh);
-
         if (SkeletalMesh->Skeleton != Skeleton)
         {
             SkeletalMesh->Skeleton = Skeleton;
         }
 
+        Skeleton->MergeAllBonesToBoneTree(SkeletalMesh);
+
+        FAssetNotifications::SkeletonNeedsToBeSaved(Skeleton);
+
         Skeleton->MarkPackageDirty();
     }
 
+    /// generate the physics object
+    if (glTFImporterOptions->Details->bCreatePhysicsAsset)
+    {
+        FString PhysicsObjectName = FString::Printf(TEXT("%s_Physics"), *SkeletalMeshName);
+        UPhysicsAsset* PhysicsAsset = SkeletalMesh->PhysicsAsset;
+        if (!PhysicsAsset)
+        {
+            PhysicsAsset = FindObject<UPhysicsAsset>(InputParent, *PhysicsObjectName);
+        }
+        if (!PhysicsAsset)
+        {
+            PhysicsAsset = NewObject<UPhysicsAsset>(InputParent, UPhysicsAsset::StaticClass(), *PhysicsObjectName, InputFlags);
+            if (PhysicsAsset) FAssetRegistryModule::AssetCreated(PhysicsAsset);
+        }
+        if (PhysicsAsset)
+        {
+            FPhysAssetCreateParams NewBodyData;
+            FText CreationErrorMessage;
+            if (!FPhysicsAssetUtils::CreateFromSkeletalMesh(PhysicsAsset, SkeletalMesh, NewBodyData, CreationErrorMessage))
+            {
+                checkSlow(0);
+                FeedbackTaskWrapper.Log(ELogVerbosity::Error, CreationErrorMessage);
+
+                TArray<UObject*> ObjectsToDelete;
+                ObjectsToDelete.Add(PhysicsAsset);
+                ObjectTools::DeleteObjects(ObjectsToDelete, false);
+            }
+        }
+    }
+
+    /// import the animation
+    if (glTFImporterOptions->Details->bImportAnimation)
     {
         /// generate the skeleton animation
         FglTFImporterEdAnimationSequence::Get(InputFactory, InputParent, *SkeletalMeshName, InputFlags, FeedbackContext)
@@ -506,16 +542,12 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
                 , InOutglTFImporterCollection);
     }
 
-    SkeletalMesh->CalculateInvRefMatrices();
-    SkeletalMesh->PostEditChange();
-    SkeletalMesh->MarkPackageDirty();
-
     InOutglTFImporterCollection.SkeletalMeshes.Add(glTFMeshId, SkeletalMesh);
     return SkeletalMesh;
 }
 
 bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMesh>& InMesh, const std::shared_ptr<libgltf::SSkin>& InSkin, const FglTFBuffers& InBuffers
-    , FSkeletalMeshImportData& OutSkeletalMeshImportData, TArray<FMatrix>& OutInverseBindMatrices, TMap<int32, FString>& OutNodeIndexToBoneNames, TArray<int32>& InOutMaterialIds
+    , const FTransform& InNodeTransform, FSkeletalMeshImportData& OutSkeletalMeshImportData, TArray<FMatrix>& OutInverseBindMatrices, TMap<int32, FString>& OutNodeIndexToBoneNames, TArray<int32>& InOutMaterialIds
     , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper, FglTFImporterCollection& InOutglTFImporterCollection) const
 {
     for (int32 i = 0; i < static_cast<int32>(InMesh->primitives.size()); ++i)
@@ -546,7 +578,7 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
 
     // generate the skeletal data
     return GenerateSkeletalMeshImportData(InGlTF, InSkin, InBuffers
-        , OutSkeletalMeshImportData, OutInverseBindMatrices, OutNodeIndexToBoneNames
+        , InNodeTransform, OutSkeletalMeshImportData, OutInverseBindMatrices, OutNodeIndexToBoneNames
         , InFeedbackTaskWrapper, InOutglTFImporterCollection);
 }
 
@@ -696,8 +728,8 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
 }
 
 bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SSkin>& InSkin, const class FglTFBuffers& InBuffers
-    , class FSkeletalMeshImportData& OutSkeletalMeshImportData, TArray<FMatrix>& OutInverseBindMatrices, TMap<int32, FString>& OutNodeIndexToBoneNames
-    , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper, struct FglTFImporterCollection& InOutglTFImporterCollection) const
+    , const FTransform& InNodeTransform, FSkeletalMeshImportData& OutSkeletalMeshImportData, TArray<FMatrix>& OutInverseBindMatrices, TMap<int32, FString>& OutNodeIndexToBoneNames
+    , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper, FglTFImporterCollection& InOutglTFImporterCollection) const
 {
     if (!InSkin)
     {
@@ -719,10 +751,13 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
         return false;
     }
 
+    FTransform RootNodeAbsoluteTransform = FTransform::Identity;
+
     /// collect the joint id
     TArray<int32> JointIds;
-    for (const std::shared_ptr<libgltf::SGlTFId>& JointIdPtr : InSkin->joints)
+    for (int32 i = 0, ic = static_cast<int32>(InSkin->joints.size()); i < ic; ++i)
     {
+        const std::shared_ptr<libgltf::SGlTFId>& JointIdPtr = InSkin->joints[i];
         if (!JointIdPtr) return false;
 
         const int32 JointId = *JointIdPtr;
@@ -763,10 +798,13 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
         if (!JointIds.Contains(Bone.ParentIndex))
         {
             Bone.ParentIndex = INDEX_NONE;
+            Bone.BonePos.Transform.SetFromMatrix(OutInverseBindMatrices[i]);
+            Bone.BonePos.Transform = Bone.BonePos.Transform.Inverse() * InNodeTransform;
         }
-
-        // uset the relative transform to set the transform of the bone
-        Bone.BonePos.Transform = NodeInfo.RelativeTransform;
+        else
+        {
+            Bone.BonePos.Transform = NodeInfo.RelativeTransform;
+        }
 
         //TODO:
         Bone.BonePos.Length = 1.0f;
@@ -779,7 +817,7 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
         OutNodeIndexToBoneNames.Add(JointId, Bone.Name);
     }
 
-    /// revise parent index to bone index
+    /// convert the parent index from the inde of the joint list to the index of the bone list
 #if ENGINE_MINOR_VERSION <= 20
     for (VBone& Bone : OutSkeletalMeshImportData.RefBonesBinary)
 #else
@@ -790,6 +828,27 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
         int32 ParentBoneIndex = INDEX_NONE;
         if (!JointIds.Find(Bone.ParentIndex, ParentBoneIndex)) return false;
         Bone.ParentIndex = ParentBoneIndex;
+    }
+
+    /// transform the point and tangent
+    if (!InNodeTransform.Equals(FTransform::Identity))
+    {
+        for (FVector& Point : OutSkeletalMeshImportData.Points)
+        {
+            Point = InNodeTransform.TransformPosition(Point);
+        }
+        for (SkeletalMeshImportData::FTriangle& Triangle : OutSkeletalMeshImportData.Faces)
+        {
+            for (int32 i = 0; i < 3; ++i)
+            {
+                FVector& TangentX = Triangle.TangentX[i];
+                TangentX = InNodeTransform.TransformVectorNoScale(TangentX);
+                FVector& TangentY = Triangle.TangentY[i];
+                TangentY = InNodeTransform.TransformVectorNoScale(TangentY);
+                FVector& TangentZ = Triangle.TangentZ[i];
+                TangentZ = InNodeTransform.TransformVectorNoScale(TangentZ);
+            }
+        }
     }
 
     return true;

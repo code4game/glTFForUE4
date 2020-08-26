@@ -9,18 +9,21 @@ struct GLTFFORUE4_API FglTFImporterOptionsDetailsStored
     GENERATED_USTRUCT_BODY()
 
     FglTFImporterOptionsDetailsStored();
-
+    
     /// common options
     UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (ToolTip = "Construct the skeletal mesh when node has skin"))
     bool bImportSkeletalMesh;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay, meta = (EditCondition = bImportSkeletalMesh))
+    bool bImportAnimation;
 
     UPROPERTY(EditAnywhere, Config, Category = "Common")
     bool bImportMaterial;
 
-    UPROPERTY(EditAnywhere, Config, Category = "Common")
+    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay, meta = (EditCondition = bImportMaterial))
     bool bImportTexture;
     
-    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Common")
+    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay)
     bool bImportAllScene;
     
     /// mesh options
@@ -33,26 +36,29 @@ struct GLTFFORUE4_API FglTFImporterOptionsDetailsStored
     UPROPERTY(EditAnywhere, Config, Category = "Mesh")
     bool bGenerateLightmapUVs;
     
-    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
     bool bInvertNormal;
 
-    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
     bool bUseMikkTSpace;
 
-    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
     bool bRecomputeNormals;
 
-    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
     bool bRecomputeTangents;
 
-    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
     bool bRemoveDegenerates;
     
-    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
     bool bBuildAdjacencyBuffer;
 
-    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
     bool bUseFullPrecisionUVs;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay, meta = (EditCondition = bImportSkeletalMesh))
+    bool bCreatePhysicsAsset;
 
     /// material options
     UPROPERTY(EditAnywhere, Config, Category = "Material", meta = (EditCondition = bImportMaterial))
@@ -68,20 +74,23 @@ public:
     /// common options
     UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (ToolTip = "Construct the skeletal mesh when node has skin"))
     bool bImportSkeletalMesh;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay, meta = (EditCondition = bImportSkeletalMesh))
+    bool bImportAnimation;
 
     UPROPERTY(EditAnywhere, Config, Category = "Common")
     bool bImportMaterial;
 
-    UPROPERTY(EditAnywhere, Config, Category = "Common")
+    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay, meta = (EditCondition = bImportMaterial))
     bool bImportTexture;
-
-    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Common")
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay)
     bool bImportAllScene;
     
     UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (ToolTip = "Construct the scene in the current level or new level"))
     bool bImportLevel;
 
-    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Common", meta = (EditCondition = bImportLevel, AllowedClasses = "World", ToolTip = "Import a new level that create by the template"))
+    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay, meta = (EditCondition = bImportLevel, AllowedClasses = "World", ToolTip = "Import a new level that create by the template"))
     FStringAssetReference ImportLevelTemplate;
 
     /// mesh options
@@ -94,26 +103,29 @@ public:
     UPROPERTY(EditAnywhere, Config, Category = "Mesh")
     bool bGenerateLightmapUVs;
     
-    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
     bool bInvertNormal;
 
-    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
     bool bUseMikkTSpace;
 
-    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
     bool bRecomputeNormals;
 
-    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
     bool bRecomputeTangents;
 
-    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
     bool bRemoveDegenerates;
     
-    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
     bool bBuildAdjacencyBuffer;
 
-    UPROPERTY(EditAnywhere, Config, AdvancedDisplay, Category = "Mesh")
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
     bool bUseFullPrecisionUVs;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay, meta = (EditCondition = bImportSkeletalMesh))
+    bool bCreatePhysicsAsset;
 
     /// material options
     UPROPERTY(EditAnywhere, Config, Category = "Material", meta = (EditCondition = bImportMaterial))

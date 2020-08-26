@@ -5,6 +5,7 @@
 
 FglTFImporterOptionsDetailsStored::FglTFImporterOptionsDetailsStored()
     : bImportSkeletalMesh(true)
+    , bImportAnimation(true)
     , bImportMaterial(true)
     , bImportTexture(true)
     , bImportAllScene(false)
@@ -18,6 +19,7 @@ FglTFImporterOptionsDetailsStored::FglTFImporterOptionsDetailsStored()
     , bRemoveDegenerates(false)
     , bBuildAdjacencyBuffer(false)
     , bUseFullPrecisionUVs(false)
+    , bCreatePhysicsAsset(true)
     , bUseMaterialInstance(true)
 {
     //
@@ -26,6 +28,7 @@ FglTFImporterOptionsDetailsStored::FglTFImporterOptionsDetailsStored()
 UglTFImporterOptionsDetails::UglTFImporterOptionsDetails(const FObjectInitializer& InObjectInitializer)
     : Super(InObjectInitializer)
     , bImportSkeletalMesh(true)
+    , bImportAnimation(true)
     , bImportMaterial(true)
     , bImportTexture(true)
     , bImportAllScene(false)
@@ -41,6 +44,7 @@ UglTFImporterOptionsDetails::UglTFImporterOptionsDetails(const FObjectInitialize
     , bRemoveDegenerates(false)
     , bBuildAdjacencyBuffer(false)
     , bUseFullPrecisionUVs(false)
+    , bCreatePhysicsAsset(true)
     , bUseMaterialInstance(true)
 {
     //
@@ -49,6 +53,7 @@ UglTFImporterOptionsDetails::UglTFImporterOptionsDetails(const FObjectInitialize
 void UglTFImporterOptionsDetails::Get(FglTFImporterOptionsDetailsStored& OutDetailsStored) const
 {
     OutDetailsStored.bImportSkeletalMesh = bImportSkeletalMesh;
+    OutDetailsStored.bImportAnimation = bImportAnimation;
     OutDetailsStored.bImportMaterial = bImportMaterial;
     OutDetailsStored.bImportTexture = bImportTexture;
     OutDetailsStored.bImportAllScene = bImportAllScene;
@@ -62,12 +67,14 @@ void UglTFImporterOptionsDetails::Get(FglTFImporterOptionsDetailsStored& OutDeta
     OutDetailsStored.bRemoveDegenerates = bRemoveDegenerates;
     OutDetailsStored.bBuildAdjacencyBuffer = bBuildAdjacencyBuffer;
     OutDetailsStored.bUseFullPrecisionUVs = bUseFullPrecisionUVs;
+    OutDetailsStored.bCreatePhysicsAsset = bCreatePhysicsAsset;
     OutDetailsStored.bUseMaterialInstance = bUseMaterialInstance;
 }
 
 void UglTFImporterOptionsDetails::Set(const FglTFImporterOptionsDetailsStored& InDetailsStored)
 {
     bImportSkeletalMesh = InDetailsStored.bImportSkeletalMesh;
+    bImportAnimation = InDetailsStored.bImportAnimation;
     bImportMaterial = InDetailsStored.bImportMaterial;
     bImportTexture = InDetailsStored.bImportTexture;
     bImportAllScene = InDetailsStored.bImportAllScene;
@@ -81,6 +88,7 @@ void UglTFImporterOptionsDetails::Set(const FglTFImporterOptionsDetailsStored& I
     bRemoveDegenerates = InDetailsStored.bRemoveDegenerates;
     bBuildAdjacencyBuffer = InDetailsStored.bBuildAdjacencyBuffer;
     bUseFullPrecisionUVs = InDetailsStored.bUseFullPrecisionUVs;
+    bCreatePhysicsAsset = InDetailsStored.bCreatePhysicsAsset;
     bUseMaterialInstance = InDetailsStored.bUseMaterialInstance;
 }
 
