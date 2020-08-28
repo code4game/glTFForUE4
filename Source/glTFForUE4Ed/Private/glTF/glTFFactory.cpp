@@ -71,7 +71,7 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
 
     /// Parse and check the buffer
     std::shared_ptr<libgltf::SGlTF> GlTF;
-    const GLTFString GlTFString = GLTF_TCHAR_TO_GLTFSTRING(*InglTFJson);
+    const libgltf::string_t GlTFString = GLTF_TCHAR_TO_GLTFSTRING(*InglTFJson);
     if (!(GlTF << GlTFString))
     {
         FeedbackTaskWrapper.Log(ELogVerbosity::Error, FText::Format(LOCTEXT("FailedToParseTheglTFFile", "Failed to parse the glTF file {0}"), FText::FromName(InName)));

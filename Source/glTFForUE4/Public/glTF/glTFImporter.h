@@ -21,12 +21,18 @@
 #define GLTF_TRIANGLE_POINTS_NUM            3
 #define GLTF_JOINT_LAYERS_NUM_MAX           3
 
-#if defined(UNICODE)
-#define GLTF_TCHAR_TO_GLTFSTRING(a)         TCHAR_TO_WCHAR(a)
-#define GLTF_GLTFSTRING_TO_TCHAR(a)         WCHAR_TO_TCHAR(a)
+#if defined(LIBGLTF_CHARACTOR_ENCODING_IS_UTF8)
+#   define GLTF_TCHAR_TO_GLTFSTRING(a)         TCHAR_TO_UTF8(a)
+#   define GLTF_GLTFSTRING_TO_TCHAR(a)         UTF8_TO_TCHAR(a)
+#elif defined(LIBGLTF_CHARACTOR_ENCODING_IS_UTF16)
+#   error not supports the utf16
+#elif defined(LIBGLTF_CHARACTOR_ENCODING_IS_UTF32)
+#   error not supports the utf32
+#elif defined(LIBGLTF_CHARACTOR_ENCODING_IS_UNICODE)
+#   define GLTF_TCHAR_TO_GLTFSTRING(a)         TCHAR_TO_WCHAR(a)
+#   define GLTF_GLTFSTRING_TO_TCHAR(a)         WCHAR_TO_TCHAR(a)
 #else
-#define GLTF_TCHAR_TO_GLTFSTRING(a)         (a)
-#define GLTF_GLTFSTRING_TO_TCHAR(a)         (a)
+#   error not supports
 #endif
 
 namespace glTFForUE4
@@ -48,6 +54,53 @@ namespace glTFForUE4
         class FFeedbackContext* FeedbackContext;
     };
 }
+
+USTRUCT()
+struct GLTFFORUE4_API FglTFImporterNodeInfo
+{
+    GENERATED_USTRUCT_BODY()
+
+    UPROPERTY()
+    int32 ParentIndex;
+
+    UPROPERTY()
+    FTransform RelativeTransform;
+
+    UPROPERTY()
+    FTransform AbsoluteTransform;
+
+    FglTFImporterNodeInfo();
+
+    static const FglTFImporterNodeInfo Default;
+};
+
+USTRUCT()
+struct GLTFFORUE4_API FglTFImporterCollection
+{
+    GENERATED_USTRUCT_BODY()
+
+    UPROPERTY()
+    class UWorld* TargetWorld;
+    
+    UPROPERTY()
+    TMap<int32, FglTFImporterNodeInfo> NodeInfos;
+    
+    UPROPERTY()
+    TMap<int32, class UTexture*> Textures;
+    
+    UPROPERTY()
+    TMap<int32, class UMaterialInterface*> Materials;
+    
+    UPROPERTY()
+    TMap<int32, class UStaticMesh*> StaticMeshes;
+    
+    UPROPERTY()
+    TMap<int32, class USkeletalMesh*> SkeletalMeshes;
+
+    FglTFImporterCollection();
+
+    const FglTFImporterNodeInfo& FindNodeInfo(int32 InNodeId) const;
+};
 
 class GLTFFORUE4_API FglTFBufferData
 {
@@ -240,7 +293,7 @@ public:
     static bool GetNodeParentIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<int32>& OutParentIndices);
     static bool GetNodeRelativeTransforms(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<FTransform>& OutRelativeTransforms, bool bSwapYZ = true);
     static bool GetNodeParentIndicesAndTransforms(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<int32>& OutParentIndices, TArray<FTransform>& OutRelativeTransforms, TArray<FTransform>& OutAbsoluteTransforms, bool bSwapYZ = true);
-    static bool GetNodeInfos(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TMap<int32, struct FglTFImporterNodeInfo>& OutNodeInfos, bool bSwapYZ = true);
+    static bool GetNodeInfos(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TMap<int32, FglTFImporterNodeInfo>& OutNodeInfos, bool bSwapYZ = true);
     static bool SpawnStaticMeshActor(class UWorld* InWorld, const FTransform& InTransform, class UStaticMesh* InStaticMesh);
     static bool SpawnSkeletalMeshActor(class UWorld* InWorld, const FTransform& InTransform, class USkeletalMesh* InSkeletalMesh);
 
@@ -256,51 +309,4 @@ public:
     static TextureAddress WrapSToTextureAddress(int32 InValue);
     static TextureAddress WrapTToTextureAddress(int32 InValue);
     static ERichCurveInterpMode StringToRichCurveInterpMode(const FString& InInterpolation);
-};
-
-USTRUCT()
-struct GLTFFORUE4_API FglTFImporterNodeInfo
-{
-    GENERATED_USTRUCT_BODY()
-
-    FglTFImporterNodeInfo();
-
-    UPROPERTY()
-    int32 ParentIndex;
-
-    UPROPERTY()
-    FTransform RelativeTransform;
-
-    UPROPERTY()
-    FTransform AbsoluteTransform;
-
-    static const FglTFImporterNodeInfo Default;
-};
-
-USTRUCT()
-struct GLTFFORUE4_API FglTFImporterCollection
-{
-    GENERATED_USTRUCT_BODY()
-
-    FglTFImporterCollection();
-
-    UPROPERTY()
-    class UWorld* TargetWorld;
-    
-    UPROPERTY()
-    TMap<int32, FglTFImporterNodeInfo> NodeInfos;
-    
-    UPROPERTY()
-    TMap<int32, class UTexture*> Textures;
-    
-    UPROPERTY()
-    TMap<int32, class UMaterialInterface*> Materials;
-    
-    UPROPERTY()
-    TMap<int32, class UStaticMesh*> StaticMeshes;
-    
-    UPROPERTY()
-    TMap<int32, class USkeletalMesh*> SkeletalMeshes;
-
-    const FglTFImporterNodeInfo& FindNodeInfo(int32 InNodeId) const;
 };

@@ -89,6 +89,36 @@ namespace glTFForUE4
     }
 }
 
+FglTFImporterNodeInfo::FglTFImporterNodeInfo()
+    : ParentIndex(INDEX_NONE)
+    , RelativeTransform()
+    , AbsoluteTransform()
+{
+    //
+}
+
+const FglTFImporterNodeInfo FglTFImporterNodeInfo::Default;
+
+FglTFImporterCollection::FglTFImporterCollection()
+    : TargetWorld(nullptr)
+    , NodeInfos()
+    , Textures()
+    , Materials()
+    , StaticMeshes()
+    , SkeletalMeshes()
+{
+    //
+}
+
+const FglTFImporterNodeInfo& FglTFImporterCollection::FindNodeInfo(int32 InNodeId) const
+{
+    if (NodeInfos.Contains(InNodeId))
+    {
+        return NodeInfos[InNodeId];
+    }
+    return FglTFImporterNodeInfo::Default;
+}
+
 FglTFBufferData::FglTFBufferData(const TArray<uint8>& InData)
     : Data(InData)
     , FilePath(TEXT(""))
@@ -261,10 +291,10 @@ public:
         }
         if (!InExtensionDraco || !InDracoMesh) return;
 
-        typedef std::map<GLTFString, std::shared_ptr<libgltf::SGlTFId>> TAttributes;
+        typedef std::map<libgltf::string_t, std::shared_ptr<libgltf::SGlTFId>> TAttributes;
 
         {
-            const GLTFString extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(TEXT("POSITION"));
+            const libgltf::string_t extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(TEXT("POSITION"));
             TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(extension_attribute);
             if (AttributeCIt != InExtensionDraco->attributes.cend())
             {
@@ -281,7 +311,7 @@ public:
         }
 
         {
-            const GLTFString extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(TEXT("NORMAL"));
+            const libgltf::string_t extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(TEXT("NORMAL"));
             TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(extension_attribute);
             if (AttributeCIt != InExtensionDraco->attributes.cend())
             {
@@ -298,7 +328,7 @@ public:
         }
 
         {
-            const GLTFString extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(TEXT("COLOR"));
+            const libgltf::string_t extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(TEXT("COLOR"));
             TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(extension_attribute);
             if (AttributeCIt != InExtensionDraco->attributes.cend())
             {
@@ -318,7 +348,7 @@ public:
             for (int32 i = 0; i < TexCoordNumber; ++i)
             {
                 const FString ExtensionAttribute = FString::Printf(TEXT("TEXCOORD_%d"), i);
-                const GLTFString extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(*ExtensionAttribute);
+                const libgltf::string_t extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(*ExtensionAttribute);
 
                 TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(extension_attribute);
                 if (AttributeCIt != InExtensionDraco->attributes.cend())
@@ -340,7 +370,7 @@ public:
             for (int32 i = 0; i < JointNumber; ++i)
             {
                 const FString ExtensionAttribute = FString::Printf(TEXT("JOINTS_%d"), i);
-                const GLTFString extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(*ExtensionAttribute);
+                const libgltf::string_t extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(*ExtensionAttribute);
 
                 TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(extension_attribute);
                 if (AttributeCIt != InExtensionDraco->attributes.cend())
@@ -358,7 +388,7 @@ public:
             for (int32 i = 0; i < JointNumber; ++i)
             {
                 const FString ExtensionAttribute = FString::Printf(TEXT("WEIGHTS_%d"), i);
-                const GLTFString extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(*ExtensionAttribute);
+                const libgltf::string_t extension_attribute = GLTF_TCHAR_TO_GLTFSTRING(*ExtensionAttribute);
 
                 TAttributes::const_iterator AttributeCIt = InExtensionDraco->attributes.find(extension_attribute);
                 if (AttributeCIt != InExtensionDraco->attributes.cend())
@@ -1242,7 +1272,7 @@ namespace glTFImporter
     bool GetVertexPositions(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers, TArray<FVector>& OutVertexPositions)
     {
         if (!InGlTF || !InMeshPrimitive) return false;
-        const GLTFString get_key = GLTF_TCHAR_TO_GLTFSTRING(TEXT("POSITION"));
+        const libgltf::string_t get_key = GLTF_TCHAR_TO_GLTFSTRING(TEXT("POSITION"));
         if (InMeshPrimitive->attributes.find(get_key) == InMeshPrimitive->attributes.cend()) return true;
 
         const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[get_key])];
@@ -1253,7 +1283,7 @@ namespace glTFImporter
     bool GetVertexNormals(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers, TArray<FVector>& OutVertexNormals)
     {
         if (!InGlTF || !InMeshPrimitive) return false;
-        const GLTFString get_key = GLTF_TCHAR_TO_GLTFSTRING(TEXT("NORMAL"));
+        const libgltf::string_t get_key = GLTF_TCHAR_TO_GLTFSTRING(TEXT("NORMAL"));
         if (InMeshPrimitive->attributes.find(get_key) == InMeshPrimitive->attributes.cend()) return true;
 
         const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[get_key])];
@@ -1264,7 +1294,7 @@ namespace glTFImporter
     bool GetVertexTangents(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers, TArray<FVector4>& OutVertexTangents)
     {
         if (!InGlTF || !InMeshPrimitive) return false;
-        const GLTFString get_key = GLTF_TCHAR_TO_GLTFSTRING(TEXT("TANGENT"));
+        const libgltf::string_t get_key = GLTF_TCHAR_TO_GLTFSTRING(TEXT("TANGENT"));
         if (InMeshPrimitive->attributes.find(get_key) == InMeshPrimitive->attributes.cend()) return true;
 
         const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[get_key])];
@@ -1281,7 +1311,7 @@ namespace glTFImporter
             OutVertexTexcoords[i].Empty();
 
             const FString PrimitiveAttribute = FString::Printf(TEXT("TEXCOORD_%d"), i);
-            const GLTFString primitive_attribute = GLTF_TCHAR_TO_GLTFSTRING(*PrimitiveAttribute);
+            const libgltf::string_t primitive_attribute = GLTF_TCHAR_TO_GLTFSTRING(*PrimitiveAttribute);
             if (InMeshPrimitive->attributes.find(primitive_attribute) == InMeshPrimitive->attributes.cend())
             {
                 continue;
@@ -1309,7 +1339,7 @@ namespace glTFImporter
     bool GetJointIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, int32 InIndex, const FglTFBuffers& InBuffers, TArray<FVector4>& OutJointIndices)
     {
         if (!InGlTF || !InMeshPrimitive) return false;
-        const GLTFString JointName = GLTF_TCHAR_TO_GLTFSTRING(*FString::Printf(TEXT("JOINTS_%d"), InIndex));
+        const libgltf::string_t JointName = GLTF_TCHAR_TO_GLTFSTRING(*FString::Printf(TEXT("JOINTS_%d"), InIndex));
         if (InMeshPrimitive->attributes.find(JointName) == InMeshPrimitive->attributes.cend()) return true;
 
         const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[JointName])];
@@ -1319,7 +1349,7 @@ namespace glTFImporter
     bool GetJointWeights(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, int32 InIndex, const FglTFBuffers& InBuffers, TArray<FVector4>& OutJointWeights)
     {
         if (!InGlTF || !InMeshPrimitive) return false;
-        const GLTFString JointName = GLTF_TCHAR_TO_GLTFSTRING(*FString::Printf(TEXT("WEIGHTS_%d"), InIndex));
+        const libgltf::string_t JointName = GLTF_TCHAR_TO_GLTFSTRING(*FString::Printf(TEXT("WEIGHTS_%d"), InIndex));
         if (InMeshPrimitive->attributes.find(JointName) == InMeshPrimitive->attributes.cend()) return true;
 
         const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[(int32)*(InMeshPrimitive->attributes[JointName])];
@@ -1348,7 +1378,7 @@ namespace glTFImporter
         const libgltf::SKHR_draco_mesh_compressionextension* ExtensionDraco = nullptr;
         {
             const std::shared_ptr<libgltf::SExtension>& Extensions = InMeshPrimitive->extensions;
-            const GLTFString extension_property = GLTF_TCHAR_TO_GLTFSTRING(TEXT("KHR_draco_mesh_compression"));
+            const libgltf::string_t extension_property = GLTF_TCHAR_TO_GLTFSTRING(TEXT("KHR_draco_mesh_compression"));
             if (!!Extensions && (Extensions->properties.find(extension_property) != Extensions->properties.end()))
             {
                 ExtensionDraco = (const libgltf::SKHR_draco_mesh_compressionextension*)Extensions->properties[extension_property].get();
@@ -1853,34 +1883,4 @@ ERichCurveInterpMode FglTFImporter::StringToRichCurveInterpMode(const FString& I
     }
     //WARN:
     return RichCurveInterpMode;
-}
-
-FglTFImporterNodeInfo::FglTFImporterNodeInfo()
-    : ParentIndex(INDEX_NONE)
-    , RelativeTransform()
-    , AbsoluteTransform()
-{
-    //
-}
-
-const FglTFImporterNodeInfo FglTFImporterNodeInfo::Default;
-
-FglTFImporterCollection::FglTFImporterCollection()
-    : TargetWorld(nullptr)
-    , NodeInfos()
-    , Textures()
-    , Materials()
-    , StaticMeshes()
-    , SkeletalMeshes()
-{
-    //
-}
-
-const FglTFImporterNodeInfo& FglTFImporterCollection::FindNodeInfo(int32 InNodeId) const
-{
-    if (NodeInfos.Contains(InNodeId))
-    {
-        return NodeInfos[InNodeId];
-    }
-    return FglTFImporterNodeInfo::Default;
 }

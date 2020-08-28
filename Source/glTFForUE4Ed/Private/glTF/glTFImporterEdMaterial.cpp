@@ -78,7 +78,7 @@ UMaterialInterface* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTF
     const libgltf::SKHR_materials_pbrSpecularGlossinessglTFextension* ExternalMaterialPBRSpecularGlossiness = nullptr;
     {
         const std::shared_ptr<libgltf::SExtension>& Extensions = glTFMaterial->extensions;
-        const GLTFString extension_property = GLTF_TCHAR_TO_GLTFSTRING(TEXT("KHR_materials_pbrSpecularGlossiness"));
+        const libgltf::string_t extension_property = GLTF_TCHAR_TO_GLTFSTRING(TEXT("KHR_materials_pbrSpecularGlossiness"));
         if (!!Extensions && (Extensions->properties.find(extension_property) != Extensions->properties.end()))
         {
             ExternalMaterialPBRSpecularGlossiness = (const libgltf::SKHR_materials_pbrSpecularGlossinessglTFextension*)Extensions->properties[extension_property].get();
