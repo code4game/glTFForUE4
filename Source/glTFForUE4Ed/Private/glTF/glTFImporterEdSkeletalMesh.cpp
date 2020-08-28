@@ -437,7 +437,12 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
         SkeletalMesh->Materials.Empty();
     }
 
+#if ENGINE_MINOR_VERSION <= 24
     ImportedResource->LODModels[0] = LODModel;
+#else
+    FSkeletalMeshLODModel::CopyStructure(&ImportedResource->LODModels[0], &LODModel);
+#endif
+
     SkeletalMesh->RefSkeleton = RefSkeleton;
     SkeletalMesh->CalculateInvRefMatrices();
 
