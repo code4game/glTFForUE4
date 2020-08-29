@@ -6,7 +6,7 @@
 
 > If you are interesting, you can star or fork or post an issue.
 
-## Support
+## Download
 
 | UE4 | Download |
 |:---:|:--------:|
@@ -15,6 +15,10 @@
 | 4.25 | [![Download from itch.io](https://img.shields.io/badge/from-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
 
 > Now, I just maintenance the lastest three versions. It should available for UE4.10~22.
+>
+> You can pull the project from [gitlab](https://gitlab.com/c4g/gltf/glTFForUE4)
+> if you get the message `batch response: This repository is over its data quota. Account responsible for LFS bandwidth should purchase more data packs to restore access.`
+> when clone or pull form [github](https://github.com/code4game/glTFForUE4).
 
 ## License
 

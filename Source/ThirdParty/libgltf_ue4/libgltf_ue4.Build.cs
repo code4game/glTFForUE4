@@ -38,17 +38,9 @@ public class libgltf_ue4 : ModuleRules
             }
 #endif
 
-            string TargetConfiguration = "Release";
-            string TargetPostfix = "";
-            if (Target.Configuration == UnrealTargetConfiguration.Debug)
-            {
-                TargetConfiguration = "Debug";
-                TargetPostfix = "d";
-            }
+            LibPaths.Add(System.IO.Path.Combine(glTFPath, "lib", PlatformName, "vs2019", "Release"));
 
-            LibPaths.Add(System.IO.Path.Combine(glTFPath, "lib", PlatformName, "vs2019", TargetConfiguration));
-
-            LibFilePath = "libgltf" + TargetPostfix + ".lib";
+            LibFilePath = "libgltf.lib";
         }
         else if (Target.Platform == UnrealTargetPlatform.Mac)
         {
