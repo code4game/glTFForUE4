@@ -44,9 +44,10 @@ public class libgltf_ue4 : ModuleRules
         }
         else if (Target.Platform == UnrealTargetPlatform.Mac)
         {
-            LibPaths.Add(System.IO.Path.Combine(glTFPath, "lib", "macos"));
+            string LibPath = System.IO.Path.Combine(glTFPath, "lib", "macos");
+            LibPaths.Add(LibPath);
 
-            LibFilePath = "libgltf.a";
+            LibFilePath = System.IO.Path.Combine(LibPath, "libgltf.a");
         }
 
         PublicIncludePaths.Add(IncludePath);

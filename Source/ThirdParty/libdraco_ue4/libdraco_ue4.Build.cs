@@ -45,10 +45,11 @@ public class libdraco_ue4 : ModuleRules
         }
         else if (Target.Platform == UnrealTargetPlatform.Mac)
         {
-            LibPaths.Add(System.IO.Path.Combine(DracoPath, "lib", "macos"));
+            string LibPath = System.IO.Path.Combine(DracoPath, "lib", "macos");
+            LibPaths.Add(LibPath);
 
-            LibFilePaths.Add("libdracodec.a");
-            LibFilePaths.Add("libdracoenc.a");
+            LibFilePaths.Add(System.IO.Path.Combine(LibPath, "dracodec.a"));
+            LibFilePaths.Add(System.IO.Path.Combine(LibPath, "dracoenc.a"));
         }
 
         PublicIncludePaths.Add(IncludePath);
