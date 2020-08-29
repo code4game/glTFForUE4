@@ -48,8 +48,8 @@ public class libdraco_ue4 : ModuleRules
             string LibPath = System.IO.Path.Combine(DracoPath, "lib", "macos");
             LibPaths.Add(LibPath);
 
-            LibFilePaths.Add(System.IO.Path.Combine(LibPath, "dracodec.a"));
-            LibFilePaths.Add(System.IO.Path.Combine(LibPath, "dracoenc.a"));
+            LibFilePaths.Add(System.IO.Path.Combine(LibPath, "libdracodec.a"));
+            LibFilePaths.Add(System.IO.Path.Combine(LibPath, "libdracoenc.a"));
         }
 
         PublicIncludePaths.Add(IncludePath);
