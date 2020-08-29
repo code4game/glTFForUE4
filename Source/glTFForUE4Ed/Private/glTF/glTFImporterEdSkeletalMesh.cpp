@@ -756,8 +756,6 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
         return false;
     }
 
-    FTransform RootNodeAbsoluteTransform = FTransform::Identity;
-
     /// collect the joint id
     TArray<int32> JointIds;
     for (int32 i = 0, ic = static_cast<int32>(InSkin->joints.size()); i < ic; ++i)
@@ -803,8 +801,8 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
         if (!JointIds.Contains(Bone.ParentIndex))
         {
             Bone.ParentIndex = INDEX_NONE;
-            Bone.BonePos.Transform.SetFromMatrix(OutInverseBindMatrices[i]);
-            Bone.BonePos.Transform = Bone.BonePos.Transform.Inverse() * InNodeTransform;
+            Bone.BonePos.Transform.SetFromMatrix(OutInverseBindMatrices[i].Inverse());
+            Bone.BonePos.Transform *= InNodeTransform;
         }
         else
         {
