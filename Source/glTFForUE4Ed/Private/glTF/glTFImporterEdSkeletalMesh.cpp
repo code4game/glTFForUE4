@@ -13,6 +13,10 @@
 
 #include <SkelImport.h>
 #include <MeshUtilities.h>
+#if ENGINE_MINOR_VERSION <= 24
+#else
+#include <IMeshBuilderModule.h>
+#endif
 #include <PhysicsAssetUtils.h>
 #include <AssetRegistryModule.h>
 #include <AssetNotifications.h>
@@ -376,13 +380,15 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     TArray<FName> WarningNames;
 #if ENGINE_MINOR_VERSION <= 10
     if (!MeshUtilities.BuildSkeletalMesh(LODModel, RefSkeleton, LODInfluences, LODWedges, LODFaces, LODPoints, LODPointToRawMap, false/*ImportOptions->bKeepOverlappingVertices*/, bShouldComputeNormals, bShouldComputeTangents, &WarningMessages, &WarningNames))
-#else
+#elif ENGINE_MINOR_VERSION <= 24
     IMeshUtilities::MeshBuildOptions BuildOptions;
     BuildOptions.bRemoveDegenerateTriangles = glTFImporterOptions->Details->bRemoveDegenerates;
     BuildOptions.bComputeNormals = bShouldComputeNormals;
     BuildOptions.bComputeTangents = bShouldComputeTangents;
     BuildOptions.bUseMikkTSpace = glTFImporterOptions->Details->bUseMikkTSpace;
     if (!MeshUtilities.BuildSkeletalMesh(LODModel, RefSkeleton, LODInfluences, LODWedges, LODFaces, LODPoints, LODPointToRawMap, BuildOptions, &WarningMessages, &WarningNames))
+#else
+    if (false)
 #endif
     {
         for (const FText& WarningMessage : WarningMessages)
@@ -394,11 +400,13 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     }
 
     /// Create new skeletal mesh
+    bool bCreated = false;
     USkeletalMesh* SkeletalMesh = FindObject<USkeletalMesh>(InputParent, *SkeletalMeshName);
     if (!SkeletalMesh)
     {
         SkeletalMesh = NewObject<USkeletalMesh>(InputParent, USkeletalMesh::StaticClass(), *SkeletalMeshName, InputFlags);
         if (SkeletalMesh) FAssetRegistryModule::AssetCreated(SkeletalMesh);
+        bCreated = true;
     }
     checkSlow(SkeletalMesh);
     if (!SkeletalMesh) return nullptr;
@@ -440,7 +448,24 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
 #if ENGINE_MINOR_VERSION <= 24
     ImportedResource->LODModels[0] = LODModel;
 #else
-    FSkeletalMeshLODModel::CopyStructure(&ImportedResource->LODModels[0], &LODModel);
+    FSkeletalMeshBuildSettings BuildOptions;
+    BuildOptions.bRemoveDegenerates = glTFImporterOptions->Details->bRemoveDegenerates;
+    BuildOptions.bRecomputeNormals = bShouldComputeNormals;
+    BuildOptions.bRecomputeTangents = bShouldComputeTangents;
+    BuildOptions.bUseMikkTSpace = glTFImporterOptions->Details->bUseMikkTSpace;
+    SkeletalMesh->SaveLODImportedData(0, SkeletalMeshImportData);
+    check(SkeletalMesh->GetLODInfo(0) != nullptr);
+    SkeletalMesh->GetLODInfo(0)->BuildSettings = BuildOptions;
+    IMeshBuilderModule& MeshBuilderModule = IMeshBuilderModule::GetForRunningPlatform();
+    if (!MeshBuilderModule.BuildSkeletalMesh(SkeletalMesh, 0, false))
+    {
+        if (bCreated)
+        {
+            SkeletalMesh->MarkPendingKill();
+        }
+        FeedbackTaskWrapper.Log(ELogVerbosity::Error, LOCTEXT("CreateSkeletalMeshFailedToBuildTheSkeletalMesh", "Failed to build the skeletal mesh!"));
+        return nullptr;
+    }
 #endif
 
     SkeletalMesh->RefSkeleton = RefSkeleton;
@@ -505,6 +530,18 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
         Skeleton->MarkPackageDirty();
     }
 
+    /// import the animation
+    if (glTFImporterOptions->Details->bImportAnimation)
+    {
+        /// generate the skeleton animation
+        FglTFImporterEdAnimationSequence::Get(InputFactory, InputParent, *SkeletalMeshName, InputFlags, FeedbackContext)
+            ->CreateAnimationSequence(InglTFImporterOptions, InGlTF
+                , InBuffers, NodeIndexToBoneNames
+                , SkeletalMesh, Skeleton
+                , FeedbackTaskWrapper
+                , InOutglTFImporterCollection);
+    }
+
     /// generate the physics object
     if (glTFImporterOptions->Details->bCreatePhysicsAsset)
     {
@@ -519,9 +556,17 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
             PhysicsAsset = NewObject<UPhysicsAsset>(InputParent, UPhysicsAsset::StaticClass(), *PhysicsObjectName, InputFlags);
             if (PhysicsAsset) FAssetRegistryModule::AssetCreated(PhysicsAsset);
         }
+        else
+        {
+#if ENGINE_MINOR_VERSION <= 24
+#else
+            PhysicsAsset->InvalidateAllPhysicsMeshes();
+#endif
+        }
         if (PhysicsAsset)
         {
             FPhysAssetCreateParams NewBodyData;
+            NewBodyData.MinBoneSize = SkeletalMeshImportData.RefBonesBinary.Num();
             FText CreationErrorMessage;
             if (!FPhysicsAssetUtils::CreateFromSkeletalMesh(PhysicsAsset, SkeletalMesh, NewBodyData, CreationErrorMessage))
             {
@@ -533,18 +578,6 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
                 ObjectTools::DeleteObjects(ObjectsToDelete, false);
             }
         }
-    }
-
-    /// import the animation
-    if (glTFImporterOptions->Details->bImportAnimation)
-    {
-        /// generate the skeleton animation
-        FglTFImporterEdAnimationSequence::Get(InputFactory, InputParent, *SkeletalMeshName, InputFlags, FeedbackContext)
-            ->CreateAnimationSequence(InglTFImporterOptions, InGlTF
-                , InBuffers, NodeIndexToBoneNames
-                , SkeletalMesh, Skeleton
-                , FeedbackTaskWrapper
-                , InOutglTFImporterCollection);
     }
 
     InOutglTFImporterCollection.SkeletalMeshes.Add(glTFMeshId, SkeletalMesh);
@@ -756,6 +789,8 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
         return false;
     }
 
+    const FString SkinName = GLTF_GLTFSTRING_TO_TCHAR(InSkin->name.c_str());
+
     /// collect the joint id
     TArray<int32> JointIds;
     for (int32 i = 0, ic = static_cast<int32>(InSkin->joints.size()); i < ic; ++i)
@@ -785,11 +820,12 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
         const std::shared_ptr<libgltf::SNode>& NodePtr = InGlTF->nodes[JointId];
         if (!NodePtr || NodePtr->name.empty())
         {
-            Bone.Name = FString::Printf(TEXT("Bone_%s_%d"), InSkin->name.c_str(), JointId);
+            Bone.Name = FString::Printf(TEXT("Bone_%s_%d"), *SkinName, JointId);
         }
         else
         {
-            Bone.Name = FString::Printf(TEXT("Bone_%s_%d_%s"), InSkin->name.c_str(), JointId, NodePtr->name.c_str());
+            FString NodeName = GLTF_GLTFSTRING_TO_TCHAR(NodePtr->name.c_str());
+            Bone.Name = FString::Printf(TEXT("Bone_%s_%d_%s"), *SkinName, JointId, *NodeName);
         }
         Bone.Flags = 0;
         Bone.NumChildren = static_cast<int32>(InGlTF->nodes[JointId]->children.size());

@@ -1220,7 +1220,7 @@ namespace glTFImporter
         }
         else
         {
-            const FString AccessorType = WCHAR_TO_TCHAR(InAccessor->type.c_str());
+            const FString AccessorType = GLTF_GLTFSTRING_TO_TCHAR(InAccessor->type.c_str());
             UE_LOG(LogglTFForUE4, Error, TEXT("Not supports the accessor's type(%s)!"), *AccessorType);
             return false;
         }
