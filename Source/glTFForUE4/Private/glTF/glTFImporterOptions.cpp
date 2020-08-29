@@ -95,8 +95,8 @@ void UglTFImporterOptionsDetails::Set(const FglTFImporterOptionsDetailsStored& I
 FglTFImporterOptions::FglTFImporterOptions()
     : FilePathInOS(TEXT(""))
     , FilePathInEngine(TEXT(""))
-    , Details(nullptr)
     , DetailsStored()
+    , Details(nullptr)
 {
     //
 }
