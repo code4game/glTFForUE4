@@ -686,6 +686,7 @@ FglTFAnimationSequenceKeyData* FglTFAnimationSequenceData::FindOrAddSequenceKeyD
     if (!KeyDataPtr)
     {
         FglTFAnimationSequenceKeyData KeyData;
+        KeyData.Time = InTime;
         KeyDatas.Add(KeyData);
         KeyDataPtr = &(KeyDatas.Last());
     }
@@ -698,7 +699,6 @@ void FglTFAnimationSequenceData::FindOrAddSequenceKeyDataAndSetTranslation(float
     checkSlow(KeyDataPtr);
     if (!KeyDataPtr) return;
 
-    KeyDataPtr->Time = InTime;
     FVector NewValue = KeyDataPtr->Transform.GetTranslation() + InValue;
     KeyDataPtr->Transform.SetTranslation(NewValue);
     KeyDataPtr->TranslationInterpolation = InInterpolation;
@@ -710,10 +710,9 @@ void FglTFAnimationSequenceData::FindOrAddSequenceKeyDataAndSetRotation(float In
     checkSlow(KeyDataPtr);
     if (!KeyDataPtr) return;
 
-    KeyDataPtr->Time = InTime;
     FQuat NewValue = KeyDataPtr->Transform.GetRotation() * InValue;
     KeyDataPtr->Transform.SetRotation(NewValue);
-    KeyDataPtr->TranslationInterpolation = InInterpolation;
+    KeyDataPtr->RotationInterpolation = InInterpolation;
 }
 
 void FglTFAnimationSequenceData::FindOrAddSequenceKeyDataAndSetScale(float InTime, const FVector& InValue, ERichCurveInterpMode InInterpolation)
@@ -722,10 +721,9 @@ void FglTFAnimationSequenceData::FindOrAddSequenceKeyDataAndSetScale(float InTim
     checkSlow(KeyDataPtr);
     if (!KeyDataPtr) return;
 
-    KeyDataPtr->Time = InTime;
     FVector NewValue = KeyDataPtr->Transform.GetScale3D() * InValue;
     KeyDataPtr->Transform.SetScale3D(NewValue);
-    KeyDataPtr->TranslationInterpolation = InInterpolation;
+    KeyDataPtr->ScaleInterpolation = InInterpolation;
 }
 
 FglTFAnimationSequenceDatas::FglTFAnimationSequenceDatas()
@@ -742,10 +740,10 @@ FglTFAnimationSequenceData* FglTFAnimationSequenceDatas::FindOrAddSequenceData(i
     if (!SequenceDataPtr)
     {
         FglTFAnimationSequenceData SequenceData;
+        SequenceData.NodeIndex = InNodeIndex;
         Datas.Add(SequenceData);
         SequenceDataPtr = &(Datas.Last());
     }
-    SequenceDataPtr->NodeIndex = InNodeIndex;
     return SequenceDataPtr;
 }
 
@@ -1465,23 +1463,14 @@ bool FglTFImporter::GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlT
         }
         else if (glTFAnimationChannelTargetPath.Equals(TEXT("rotation"), ESearchCase::IgnoreCase))
         {
-            //TArray<FVector4> RotationV4s;
             if (bSwapYZ)
             {
                 if (!glTFImporter::GetAccessorData<FQuat, true, false>(InGlTF, InBufferFiles, glTFOutputAccessorPtr, Rotations)) continue;
-                /*for (FVector4& RotationV4 : RotationV4s)
-                {
-                    RotationV4.W *= -1.0f;
-                }*/
             }
             else
             {
                 if (!glTFImporter::GetAccessorData<FQuat, false, false>(InGlTF, InBufferFiles, glTFOutputAccessorPtr, Rotations)) continue;
             }
-            /*for (const FVector4& RotationV4 : RotationV4s)
-            {
-                Rotations.Add(FQuat(RotationV4.X, RotationV4.Y, RotationV4.Z, RotationV4.W));
-            }*/
         }
         else if (glTFAnimationChannelTargetPath.Equals(TEXT("scale"), ESearchCase::IgnoreCase))
         {
@@ -1730,13 +1719,6 @@ FTransform& FglTFImporter::ConvertToUnrealSpace(FTransform& InOutValue, bool bSw
 {
     if (!bSwapYZ && !bInverseX) return InOutValue;
     FTransform Convert(FglTFImporter::GetglTFSpaceToUnrealSpace(bSwapYZ, bInverseX));
-    if (bSwapYZ)
-    {
-        FQuat Rotation = InOutValue.GetRotation();
-        Rotation.Y *= -1.0f;
-        Rotation.Z *= -1.0f;
-        InOutValue.SetRotation(Rotation);
-    }
     InOutValue = Convert * InOutValue * Convert;
     return InOutValue;
 }

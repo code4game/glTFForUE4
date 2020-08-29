@@ -7,6 +7,8 @@
 #include "glTF/glTFImporter.h"
 
 #include <AssetRegistryModule.h>
+#include <ComponentReregisterContext.h>
+#include <AnimationBlueprintLibrary.h>
 
 #if ENGINE_MINOR_VERSION <= 12
 #else
@@ -24,6 +26,7 @@ TSharedPtr<FglTFImporterEdAnimationSequence> FglTFImporterEdAnimationSequence::G
 }
 
 FglTFImporterEdAnimationSequence::FglTFImporterEdAnimationSequence()
+    : Super()
 {
     //
 }
@@ -45,12 +48,17 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
 
     FString AnimationObjectName = FString::Printf(TEXT("%s_AnimationSequence"), *InputName.ToString());
 
-    UAnimSequence* AnimSequence = LoadObject<UAnimSequence>(InputParent, *AnimationObjectName);
+    UAnimSequence* AnimSequence = FindObject<UAnimSequence>(InputParent, *AnimationObjectName);
     if (!AnimSequence)
     {
         AnimSequence = NewObject<UAnimSequence>(InputParent, UAnimSequence::StaticClass(), *AnimationObjectName, InputFlags);
         checkSlow(AnimSequence);
         if (AnimSequence) FAssetRegistryModule::AssetCreated(AnimSequence);
+    }
+    else
+    {
+        UAnimationBlueprintLibrary::RemoveAllCurveData(AnimSequence);
+        AnimSequence->CleanAnimSequenceForImport();
     }
     //WARN:
     if (!AnimSequence) return nullptr;
@@ -142,8 +150,11 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
             FSmartName NewSmartName;
             if (!InSkeleton->AddSmartNameAndModify(USkeleton::AnimTrackCurveMappingName, CurveName, NewSmartName))
             {
-                //WARN:
-                continue;
+                if (!InSkeleton->GetSmartNameByName(USkeleton::AnimTrackCurveMappingName, CurveName, NewSmartName))
+                {
+                    //WARN:
+                    continue;
+                }
             }
             CurveUID = NewSmartName.UID;
 #endif
@@ -151,23 +162,27 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
             for (const FglTFAnimationSequenceKeyData& KeyData : glTFAnimationSequenceData.KeyDatas)
             {
                 AnimSequence->AddKeyToSequence(KeyData.Time, CurveName, KeyData.Transform);
+                AnimSequence->bNeedsRebake = true;
 
 #if ENGINE_MINOR_VERSION <= 15
                 FTransformCurve* TransformCurve = static_cast<FTransformCurve*>(AnimSequence->RawCurveData.GetCurveData(CurveUID, FRawCurveTracks::TransformType));
 #else
                 FTransformCurve* TransformCurve = static_cast<FTransformCurve*>(AnimSequence->RawCurveData.GetCurveData(CurveUID, ERawCurveTrackTypes::RCT_Transform));
 #endif
+                check(TransformCurve);
                 {
                     FKeyHandle KeyHandle = TransformCurve->TranslationCurve.FloatCurves->FindKey(KeyData.Time);
                     TransformCurve->TranslationCurve.FloatCurves->SetKeyInterpMode(KeyHandle, KeyData.TranslationInterpolation);
                 }
                 {
                     FKeyHandle KeyHandle = TransformCurve->RotationCurve.FloatCurves->FindKey(KeyData.Time);
-                    TransformCurve->RotationCurve.FloatCurves->SetKeyInterpMode(KeyHandle, KeyData.TranslationInterpolation);
+                    TransformCurve->RotationCurve.FloatCurves->SetKeyInterpMode(KeyHandle, KeyData.RotationInterpolation);
+                    //TransformCurve->RotationCurve.FloatCurves->SetKeyTangentMode(KeyHandle, ERichCurveTangentMode::RCTM_Auto);
+                    //TransformCurve->RotationCurve.FloatCurves->SetKeyTangentWeightMode(KeyHandle, ERichCurveTangentWeightMode::RCTWM_WeightedBoth);
                 }
                 {
                     FKeyHandle KeyHandle = TransformCurve->ScaleCurve.FloatCurves->FindKey(KeyData.Time);
-                    TransformCurve->ScaleCurve.FloatCurves->SetKeyInterpMode(KeyHandle, KeyData.TranslationInterpolation);
+                    TransformCurve->ScaleCurve.FloatCurves->SetKeyInterpMode(KeyHandle, KeyData.ScaleInterpolation);
                 }
 
                 SequenceLength = FMath::Max(SequenceLength, KeyData.Time);
@@ -179,15 +194,33 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
     }
 
     AnimSequence->SequenceLength = SequenceLength;
+    if (SequenceLength == 0)
+    {
+        NumFrames = 1;
+    }
 #if ENGINE_MINOR_VERSION <= 21
     AnimSequence->NumFrames = NumFrames;
 #else
     AnimSequence->SetRawNumberOfFrame(NumFrames);
 #endif
 
+    if (AnimSequence->HasSourceRawData())
+    {
+        AnimSequence->BakeTrackCurvesToRawAnimation();
+    }
+    else
+    {
+        AnimSequence->PostProcessSequence();
+    }
     AnimSequence->Modify(true);
-    AnimSequence->BakeTrackCurvesToRawAnimation();
     AnimSequence->MarkPackageDirty();
+    AnimSequence->MarkRawDataAsModified();
+
+    // Reregister skeletal mesh components so they reflect the updated animation
+    for (TObjectIterator<USkeletalMeshComponent> Iter; Iter; ++Iter)
+    {
+        FComponentReregisterContext ReregisterContext(*Iter);
+    }
     return AnimSequence;
 }
 

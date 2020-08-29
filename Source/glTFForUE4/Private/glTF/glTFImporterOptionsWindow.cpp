@@ -52,6 +52,9 @@ SglTFImporterOptionsWindow::SglTFImporterOptionsWindow()
     : SCompoundWidget()
     , glTFImporterOptions(nullptr)
     , WidgetWindow(nullptr)
+    , ImportTypes()
+    , bHasAnimation(false)
+    , bReimport(false)
 {
     //
 }
@@ -141,10 +144,6 @@ FText SglTFImporterOptionsWindow::GetImportTypeText(EglTFImportType InImportType
         ImportTypeText = LOCTEXT("EglTFImportType::SkeletalMesh", "SkeletalMesh");
         break;
 
-    case EglTFImportType::Actor:
-        ImportTypeText = LOCTEXT("EglTFImportType::Actor", "Actor");
-        break;
-
     case EglTFImportType::Level:
         ImportTypeText = LOCTEXT("EglTFImportType::Level", "Level");
         break;
@@ -195,22 +194,6 @@ ECheckBoxState SglTFImporterOptionsWindow::CheckHandleIntegrateAllMeshsForStatic
 void SglTFImporterOptionsWindow::HandleIntegrateAllMeshsForStaticMesh(ECheckBoxState InCheckBoxState)
 {
     glTFImporterOptions.Pin()->bIntegrateAllMeshsForStaticMesh = (InCheckBoxState == ECheckBoxState::Checked);
-}
-
-bool SglTFImporterOptionsWindow::CanHandleImportAnimationForSkeletalMesh() const
-{
-    TSharedPtr<FglTFImporterOptions> glTFImporterOptionsPtr = glTFImporterOptions.Pin();
-    return (bHasAnimation && glTFImporterOptionsPtr->ImportType == EglTFImportType::SkeletalMesh);
-}
-
-ECheckBoxState SglTFImporterOptionsWindow::CheckHandleImportAnimationForSkeleton() const
-{
-    return (glTFImporterOptions.Pin()->bImportAnimationForSkeletalMesh ? ECheckBoxState::Checked : ECheckBoxState::Unchecked);
-}
-
-void SglTFImporterOptionsWindow::HandleImportAnimationForSkeletalMesh(ECheckBoxState InCheckBoxState)
-{
-    glTFImporterOptions.Pin()->bImportAnimationForSkeletalMesh = (InCheckBoxState == ECheckBoxState::Checked);
 }
 
 void SglTFImporterOptionsWindow::HandleImportMaterial(ECheckBoxState InCheckBoxState)

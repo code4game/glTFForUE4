@@ -44,6 +44,7 @@ TSharedPtr<FglTFImporterEdMaterial> FglTFImporterEdMaterial::Get(UFactory* InFac
 }
 
 FglTFImporterEdMaterial::FglTFImporterEdMaterial()
+    : Super()
 {
     //
 }
@@ -73,17 +74,6 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
         }
     }
 
-    UMaterial* glTFMaterialOrigin = nullptr;
-    if (ExternalMaterialPBRSpecularGlossiness)
-    {
-        glTFMaterialOrigin = LoadObject<UMaterial>(nullptr, GLTF_MATERIAL_PBRSPECULARGLOSSINESS_ORIGIN);
-    }
-    else
-    {
-        glTFMaterialOrigin = LoadObject<UMaterial>(nullptr, GLTF_MATERIAL_PBRMETALLICROUGHNESS_ORIGIN);
-    }
-    if (!glTFMaterialOrigin) return nullptr;
-
     FString MaterialName;
     if (glTFMaterial->name.size() > 0)
     {
@@ -96,6 +86,7 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
 
     MaterialName = FglTFImporter::SanitizeObjectName(MaterialName);
     FString PackageName = FPackageName::GetLongPackagePath(InputParent->GetPathName()) / MaterialName;
+
     UPackage* MaterialPackage = FindPackage(nullptr, *PackageName);
     if (!MaterialPackage)
     {
@@ -104,10 +95,25 @@ UMaterial* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTFImporterO
     if (!MaterialPackage) return nullptr;
     MaterialPackage->FullyLoad();
 
-    UMaterial* NewMaterial = Cast<UMaterial>(StaticDuplicateObject(glTFMaterialOrigin, MaterialPackage, *MaterialName, InputFlags, glTFMaterialOrigin->GetClass()));
-    checkSlow(NewMaterial);
+    UMaterial* NewMaterial = FindObject<UMaterial>(MaterialPackage, *MaterialName);
+    if (!NewMaterial)
+    {
+        UMaterial* glTFMaterialOrigin = nullptr;
+        if (ExternalMaterialPBRSpecularGlossiness)
+        {
+            glTFMaterialOrigin = LoadObject<UMaterial>(nullptr, GLTF_MATERIAL_PBRSPECULARGLOSSINESS_ORIGIN);
+        }
+        else
+        {
+            glTFMaterialOrigin = LoadObject<UMaterial>(nullptr, GLTF_MATERIAL_PBRMETALLICROUGHNESS_ORIGIN);
+        }
+        if (!glTFMaterialOrigin) return nullptr;
+
+        NewMaterial = Cast<UMaterial>(StaticDuplicateObject(glTFMaterialOrigin, MaterialPackage, *MaterialName, InputFlags, glTFMaterialOrigin->GetClass()));
+        checkSlow(NewMaterial);
+        if (NewMaterial) FAssetRegistryModule::AssetCreated(NewMaterial);
+    }
     if (!NewMaterial) return nullptr;
-    FAssetRegistryModule::AssetCreated(NewMaterial);
 
     NewMaterial->PreEditChange(nullptr);
 

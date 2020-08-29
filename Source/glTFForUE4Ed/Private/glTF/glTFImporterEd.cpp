@@ -6,6 +6,9 @@
 #include "glTF/glTFImporterOptions.h"
 #include "glTF/glTFImporterEdStaticMesh.h"
 #include "glTF/glTFImporterEdSkeletalMesh.h"
+#include "glTF/glTFImporterEdLevel.h"
+
+#include <EditorFramework/AssetImportData.h>
 
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
@@ -68,20 +71,62 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
         }
     }
 
+    UObject* CreatedObject = nullptr;
     switch (glTFImporterOptions->ImportType)
     {
     case EglTFImportType::StaticMesh:
-        return FglTFImporterEdStaticMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateStaticMesh(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
+        CreatedObject = FglTFImporterEdStaticMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateStaticMesh(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
+        break;
 
     case EglTFImportType::SkeletalMesh:
-        return FglTFImporterEdSkeletalMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateSkeletalMesh(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
+        CreatedObject = FglTFImporterEdSkeletalMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateSkeletalMesh(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
+        break;
 
-    case EglTFImportType::Actor:
     case EglTFImportType::Level:
+        CreatedObject = FglTFImporterEdLevel::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateLevel(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
+        break;
+
     default:
         break;
     }
-    return nullptr;
+
+    FglTFImporterEd::UpdateAssetImportData(CreatedObject, glTFImporterOptions->FilePathInOS);
+    return CreatedObject;
+}
+
+UAssetImportData* FglTFImporterEd::GetAssetImportData(UObject* InObject)
+{
+    UAssetImportData* AssetImportData = nullptr;
+    if (UStaticMesh* StaticMesh = Cast<UStaticMesh>(InObject))
+    {
+        AssetImportData = StaticMesh->AssetImportData;
+    }
+    else if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(InObject))
+    {
+        AssetImportData = SkeletalMesh->AssetImportData;
+    }
+    else if (UTexture* Texture = Cast<UTexture>(InObject))
+    {
+        AssetImportData = Texture->AssetImportData;
+    }
+    return AssetImportData;
+}
+
+void FglTFImporterEd::UpdateAssetImportData(UObject* InObject, const FString& InFilePath)
+{
+    if (!InFilePath.IsEmpty())
+    {
+        if (UAssetImportData* AssetImportData = GetAssetImportData(InObject))
+        {
+            AssetImportData->Update(InFilePath);
+        }
+    }
+
+    if (InObject)
+    {
+        InObject->PostEditChange();
+        InObject->MarkPackageDirty();
+    }
 }
 
 #undef LOCTEXT_NAMESPACE

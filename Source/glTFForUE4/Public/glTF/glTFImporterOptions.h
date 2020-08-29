@@ -8,7 +8,6 @@ enum class EglTFImportType : uint8
     None,
     StaticMesh,
     SkeletalMesh,
-    Actor,
     Level,
 };
 
@@ -48,10 +47,6 @@ struct GLTFFORUE4_API FglTFImporterOptions
     /// Static Mesh options
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     bool bIntegrateAllMeshsForStaticMesh;
-
-    /// Skeletal Mesh options
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bImportAnimationForSkeletalMesh;
 
     /// Material options
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
