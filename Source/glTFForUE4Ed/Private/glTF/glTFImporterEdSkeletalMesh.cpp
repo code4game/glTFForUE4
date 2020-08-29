@@ -543,10 +543,13 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     }
 
     /// generate the physics object
-    if (glTFImporterOptions->Details->bCreatePhysicsAsset)
+    /// it will cause a crash when rebuild the physics asset of the skeletal mesh
+    //TODO: supports to reimport the physics asset
+    if (bCreated && glTFImporterOptions->Details->bCreatePhysicsAsset)
     {
         FString PhysicsObjectName = FString::Printf(TEXT("%s_Physics"), *SkeletalMeshName);
         UPhysicsAsset* PhysicsAsset = SkeletalMesh->PhysicsAsset;
+        SkeletalMesh->PhysicsAsset = nullptr;
         if (!PhysicsAsset)
         {
             PhysicsAsset = FindObject<UPhysicsAsset>(InputParent, *PhysicsObjectName);
