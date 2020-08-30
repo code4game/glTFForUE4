@@ -81,7 +81,7 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
         if (glTFImporterOptions->Details->ImportLevelTemplate.IsValid())
         {
             /// create a world by a template
-            UPackage* NewAssetPackage = FindPackage(nullptr, *glTFImporterOptions->FilePathInEngine);
+            UPackage* NewAssetPackage = LoadPackage(nullptr, *glTFImporterOptions->FilePathInEngine, LOAD_None);
             if (!NewAssetPackage) NewAssetPackage = CreatePackage(nullptr, *glTFImporterOptions->FilePathInEngine);
             checkSlow(NewAssetPackage);
             if (NewAssetPackage)

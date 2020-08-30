@@ -93,7 +93,7 @@ UMaterialInterface* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTF
         : FString::Printf(TEXT("M_%s"), *glTFMaterialName));
     const FString PackageName = FPackageName::GetLongPackagePath(InputParent->GetPathName()) / MaterialName;
 
-    UPackage* MaterialPackage = FindPackage(nullptr, *PackageName);
+    UPackage* MaterialPackage = LoadPackage(nullptr, *PackageName, LOAD_None);
     if (!MaterialPackage)
     {
         MaterialPackage = CreatePackage(nullptr, *PackageName);
@@ -101,7 +101,7 @@ UMaterialInterface* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTF
     if (!MaterialPackage) return nullptr;
     MaterialPackage->FullyLoad();
 
-    UMaterialInterface* NewMaterialInterface = FindObject<UMaterialInterface>(MaterialPackage, *MaterialName);
+    UMaterialInterface* NewMaterialInterface = LoadObject<UMaterialInterface>(MaterialPackage, *MaterialName);
     UMaterial* NewMaterial = Cast<UMaterial>(NewMaterialInterface);
     UMaterialInstanceConstant* NewMaterialInstanceConstant = Cast<UMaterialInstanceConstant>(NewMaterialInterface);
     if (!NewMaterialInterface)

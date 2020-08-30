@@ -115,12 +115,31 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
         return nullptr;
     }
 
+    const FString NewPackagePath = FPackageName::GetLongPackagePath(InputParent->GetPathName()) / StaticMeshName;
+    UObject* NewAssetPackage = InputParent;
+
+    /// load or create new static mesh
     bool bCreated = false;
-    UStaticMesh* NewStaticMesh = FindObject<UStaticMesh>(InputParent, *StaticMeshName);
+    UStaticMesh* NewStaticMesh = LoadObject<UStaticMesh>(NewAssetPackage, *StaticMeshName);
     if (!NewStaticMesh)
     {
-        /// Create a new static mesh
-        NewStaticMesh = NewObject<UStaticMesh>(InputParent, UStaticMesh::StaticClass(), *StaticMeshName, InputFlags);
+        NewAssetPackage = LoadPackage(nullptr, *NewPackagePath, LOAD_None);
+        if (!NewAssetPackage)
+        {
+            NewAssetPackage = CreatePackage(nullptr, *NewPackagePath);
+            checkSlow(NewAssetPackage);
+        }
+        if (!NewAssetPackage)
+        {
+            //TODO: output error
+            return nullptr;
+        }
+        NewStaticMesh = LoadObject<UStaticMesh>(NewAssetPackage, *StaticMeshName);
+    }
+    if (!NewStaticMesh)
+    {
+        /// create new static mesh
+        NewStaticMesh = NewObject<UStaticMesh>(NewAssetPackage, UStaticMesh::StaticClass(), *StaticMeshName, InputFlags);
         checkSlow(NewStaticMesh);
         if (NewStaticMesh) FAssetRegistryModule::AssetCreated(NewStaticMesh);
         bCreated = true;
