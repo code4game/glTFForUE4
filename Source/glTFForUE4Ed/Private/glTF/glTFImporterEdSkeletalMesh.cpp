@@ -318,7 +318,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
     check(glTFImporterOptions->Details);
 
-    const FString MeshName = GLTF_GLTFSTRING_TO_TCHAR(glTFMeshPtr->name.c_str());
+    const FString MeshName = FglTFImporter::SanitizeObjectName(GLTF_GLTFSTRING_TO_TCHAR(glTFMeshPtr->name.c_str()));
     const FString SkeletalMeshName = MeshName.IsEmpty()
         ? FString::Printf(TEXT("SK_%s_%d"), *InputName.ToString(), glTFMeshId)
         : FString::Printf(TEXT("SK_%s_%d_%s"), *InputName.ToString(), glTFMeshId, *MeshName);

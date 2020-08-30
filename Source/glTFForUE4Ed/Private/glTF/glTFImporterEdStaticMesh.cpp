@@ -97,7 +97,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
     check(glTFImporterOptions->Details);
 
-    const FString MeshName = GLTF_GLTFSTRING_TO_TCHAR(MeshPtr->name.c_str());
+    const FString MeshName = FglTFImporter::SanitizeObjectName(GLTF_GLTFSTRING_TO_TCHAR(MeshPtr->name.c_str()));
     const FString StaticMeshName = MeshName.IsEmpty()
         ? FString::Printf(TEXT("SM_%s_%d"), *InputName.ToString(), MeshId)
         : FString::Printf(TEXT("SM_%s_%d_%s"), *InputName.ToString(), MeshId, *MeshName);

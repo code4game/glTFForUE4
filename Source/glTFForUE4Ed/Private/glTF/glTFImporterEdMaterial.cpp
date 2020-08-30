@@ -85,12 +85,12 @@ UMaterialInterface* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTF
         }
     }
 
-    const FString glTFMaterialName = !glTFMaterial->name.empty()
-        ? FString::Printf(TEXT("%s_%d_%s"), *InputName.ToString(), InMaterialId, GLTF_GLTFSTRING_TO_TCHAR(glTFMaterial->name.c_str()))
-        : FString::Printf(TEXT("%s_%d"), *InputName.ToString());
-    const FString MaterialName = FglTFImporter::SanitizeObjectName(glTFImporterOptions->Details->bUseMaterialInstance
+    const FString glTFMaterialName = FglTFImporter::SanitizeObjectName(glTFMaterial->name.empty()
+        ? FString::Printf(TEXT("%s_%d"), *InputName.ToString(), InMaterialId)
+        : FString::Printf(TEXT("%s_%d_%s"), *InputName.ToString(), InMaterialId, GLTF_GLTFSTRING_TO_TCHAR(glTFMaterial->name.c_str())));
+    const FString MaterialName = glTFImporterOptions->Details->bUseMaterialInstance
         ? FString::Printf(TEXT("MI_%s"), *glTFMaterialName)
-        : FString::Printf(TEXT("M_%s"), *glTFMaterialName));
+        : FString::Printf(TEXT("M_%s"), *glTFMaterialName);
     const FString PackageName = FPackageName::GetLongPackagePath(InputParent->GetPathName()) / MaterialName;
 
     UPackage* MaterialPackage = LoadPackage(nullptr, *PackageName, LOAD_None);
