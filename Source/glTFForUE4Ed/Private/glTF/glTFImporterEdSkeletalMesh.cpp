@@ -413,6 +413,9 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
 
     SkeletalMesh->PreEditChange(nullptr);
 
+    SkeletalMesh->RefSkeleton = RefSkeleton;
+    SkeletalMesh->CalculateInvRefMatrices();
+
 #if ENGINE_MINOR_VERSION <= 18
     FSkeletalMeshResource* ImportedResource = SkeletalMesh->GetImportedResource();
 #else
@@ -467,9 +470,6 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
         return nullptr;
     }
 #endif
-
-    SkeletalMesh->RefSkeleton = RefSkeleton;
-    SkeletalMesh->CalculateInvRefMatrices();
 
     /// import the material
     if (glTFImporterOptions->Details->bImportMaterial)
