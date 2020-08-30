@@ -7,26 +7,18 @@
 #include "glTF/glTFImporterOptionsWindowEd.h"
 #include "glTF/glTFImporterEd.h"
 
-#include "Engine/StaticMesh.h"
-#include "Engine/SkeletalMesh.h"
-#include "Misc/FeedbackContext.h"
-#include "Misc/Paths.h"
+#include <Engine/StaticMesh.h>
+#include <Engine/SkeletalMesh.h>
+#include <Misc/FeedbackContext.h>
+#include <Misc/Paths.h>
 
-#include "ObjectTools.h"
+#include <ObjectTools.h>
 
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
-UglTFFactory::UglTFFactory()
-    : Super()
-    , bReimport(false)
-    , ImportClass(nullptr)
-{
-    //
-}
-
 UglTFFactory::UglTFFactory(const FObjectInitializer& InObjectInitializer)
     : Super(InObjectInitializer)
-    , ImportClass(nullptr)
+    , glTFReimporterOptions(nullptr)
 {
     if (Formats.Num() > 0) Formats.Empty();
     Formats.Add(TEXT("gltf;glTF 2.0"));
@@ -44,8 +36,7 @@ bool UglTFFactory::DoesSupportClass(UClass* InClass)
 
 UClass* UglTFFactory::ResolveSupportedClass()
 {
-    if (ImportClass == nullptr) ImportClass = UStaticMesh::StaticClass();
-    return ImportClass;
+    return UStaticMesh::StaticClass();
 }
 
 bool UglTFFactory::FactoryCanImport(const FString& InFilePathInOS)
@@ -74,49 +65,41 @@ UObject* UglTFFactory::FactoryCreateText(UClass* InClass, UObject* InParent, FNa
 UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, UObject* InContext, const TCHAR* InType, FFeedbackContext* InWarn, const FString& InglTFJson, TSharedPtr<FglTFBuffers> InglTFBuffers /*= nullptr*/)
 {
     const FString& FilePathInOS = UFactory::GetCurrentFilename();
-    //if (!ObjectTools::SanitizeObjectName(FPaths::GetBaseFilename(FilePathInOS)).Equals(InName.ToString()))
-    //{
-    //    UE_LOG(LogglTFForUE4Ed, Error, TEXT("It is different between current filename(%s) and name(%s)!!"), *FilePathInOS, *InName.ToString());
-    //    return nullptr;
-    //}
+
+    const FText TaskName = FText::Format(LOCTEXT("ImportAglTFFile", "Import a glTF file - {0}"), FText::FromName(InName));
+    glTFForUE4::FFeedbackTaskWrapper FeedbackTaskWrapper(InWarn, TaskName, true);
 
     /// Parse and check the buffer
     std::shared_ptr<libgltf::SGlTF> GlTF;
-    const GLTFString GlTFString = GLTF_TCHAR_TO_GLTFSTRING(*InglTFJson);
+    const libgltf::string_t GlTFString = GLTF_TCHAR_TO_GLTFSTRING(*InglTFJson);
     if (!(GlTF << GlTFString))
     {
-        if (InWarn)
-        {
-            InWarn->Log(ELogVerbosity::Error, FText::Format(NSLOCTEXT("glTFForUE4Ed", "FailedToParseTheglTFFile", "Failed to parse the glTF file {0}"), FText::FromName(InName)).ToString());
-        }
+        FeedbackTaskWrapper.Log(ELogVerbosity::Error, FText::Format(LOCTEXT("FailedToParseTheglTFFile", "Failed to parse the glTF file {0}"), FText::FromName(InName)));
         return nullptr;
     }
 
     /// Open the importer window, allow to configure some options when is not automated
     bool bCancel = false;
-    TSharedPtr<FglTFImporterOptions> glTFImporterOptions
-        = IsAutomatedImport()
-        ? MakeShared<FglTFImporterOptions>()
-        : SglTFImporterOptionsWindowEd::Open(InContext, FilePathInOS, InParent->GetPathName(), *GlTF, bReimport, bCancel);
-    if (glTFImporterOptions.IsValid())
+    TSharedPtr<FglTFImporterOptions> glTFImporterOptions = glTFReimporterOptions;
+    if (!glTFImporterOptions)
     {
-        if (glTFImporterOptions->ImportType == EglTFImportType::StaticMesh)
-        {
-            ImportClass = UStaticMesh::StaticClass();
-        }
-        else if (glTFImporterOptions->ImportType == EglTFImportType::SkeletalMesh)
-        {
-            ImportClass = USkeletalMesh::StaticClass();
-        }
-        else if (glTFImporterOptions->ImportType == EglTFImportType::Level)
-        {
-            ImportClass = ULevel::StaticClass();
-        }
-        else
-        {
-            //TODO:
-            ImportClass = UStaticMesh::StaticClass();
-        }
+        glTFImporterOptions = IsAutomatedImport()
+            ? MakeShared<FglTFImporterOptions>()
+            : SglTFImporterOptionsWindowEd::Open(InContext, FilePathInOS, InParent->GetPathName(), *GlTF, bCancel);
+    }
+    if (glTFImporterOptions.IsValid() && !glTFImporterOptions->Details)
+    {
+        glTFImporterOptions->Details = GetMutableDefault<UglTFImporterOptionsDetails>();
+    }
+    if (!glTFReimporterOptions.IsValid())
+    {
+        // store the details when importing
+        glTFImporterOptions->Details->Get(glTFImporterOptions->DetailsStored);
+    }
+    else
+    {
+        // restore the details when reimporting
+        glTFImporterOptions->Details->Set(glTFImporterOptions->DetailsStored);
     }
 
     if (bCancel)
@@ -139,7 +122,7 @@ UObject* UglTFFactory::FactoryCreate(UClass* InClass, UObject* InParent, FName I
     const FString FolderPathInOS = FPaths::GetPath(glTFImporterOptions->FilePathInOS);
     InglTFBuffers->Cache(FolderPathInOS, GlTF);
 
-    return FglTFImporterEd::Get(this, ImportClass, InParent, InName, InFlags, InWarn)->Create(glTFImporterOptions, GlTF, *InglTFBuffers);
+    return FglTFImporterEd::Get(this, InParent, InName, InFlags, InWarn)->Create(glTFImporterOptions, GlTF, *InglTFBuffers, FeedbackTaskWrapper);
 }
 
 #undef LOCTEXT_NAMESPACE

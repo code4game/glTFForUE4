@@ -5,7 +5,6 @@
 #include "Styling/SlateTypes.h"
 #include "Widgets/DeclarativeSyntaxSupport.h"
 #include "Widgets/SCompoundWidget.h"
-#include "glTF/glTFImporterOptions.h"
 
 namespace libgltf
 {
@@ -21,16 +20,10 @@ public:
     SLATE_BEGIN_ARGS(SglTFImporterOptionsWindow)
         : _glTFImporterOptions(nullptr)
         , _WidgetWindow(nullptr)
-        , _ImportTypes()
-        , _bHasAnimation(false)
-        , _bReimport(false)
         {}
 
         SLATE_ARGUMENT(TSharedPtr<struct FglTFImporterOptions>, glTFImporterOptions)
         SLATE_ARGUMENT(TSharedPtr<class SWindow>, WidgetWindow)
-        SLATE_ARGUMENT(TArray<TSharedPtr<EglTFImportType>>, ImportTypes)
-        SLATE_ARGUMENT(bool, bHasAnimation)
-        SLATE_ARGUMENT(bool, bReimport)
     SLATE_END_ARGS()
 
 public:
@@ -51,31 +44,7 @@ protected:
     FReply OnImport();
     FReply OnCancel();
 
-    void HandleImportType(const TSharedPtr<EglTFImportType> InImportType, ESelectInfo::Type InSelectInfo);
-    TSharedRef<SWidget> GenerateImportType(TSharedPtr<EglTFImportType> InImportType) const;
-    FText GetImportTypeText() const;
-    FText GetImportTypeText(EglTFImportType InImportType) const;
-
-    void HandleMeshScaleRatio(float InNewValue);
-    void HandleMeshInvertNormal(ECheckBoxState InCheckBoxState);
-    void HandleMeshUseMikkTSpace(ECheckBoxState InCheckBoxState);
-    void HandleMeshRecomputeNormals(ECheckBoxState InCheckBoxState);
-    void HandleMeshRecomputeTangents(ECheckBoxState InCheckBoxState);
-
-    bool CanHandleIntegrateAllMeshsForStaticMesh() const;
-    ECheckBoxState CheckHandleIntegrateAllMeshsForStaticMesh() const;
-    void HandleIntegrateAllMeshsForStaticMesh(ECheckBoxState InCheckBoxState);
-
-    void HandleImportMaterial(ECheckBoxState InCheckBoxState);
-    void HandleImportTexture(ECheckBoxState InCheckBoxState);
-
-protected:
-    bool HasAnimation() const;
-
 protected:
     TWeakPtr<struct FglTFImporterOptions> glTFImporterOptions;
     TWeakPtr<class SWindow> WidgetWindow;
-    TArray<TSharedPtr<EglTFImportType>> ImportTypes;
-    bool bHasAnimation;
-    bool bReimport;
 };

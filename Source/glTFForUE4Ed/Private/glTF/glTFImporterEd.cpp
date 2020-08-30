@@ -3,26 +3,17 @@
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTF/glTFImporterEd.h"
 
-#include "glTF/glTFImporterOptions.h"
 #include "glTF/glTFImporterEdStaticMesh.h"
 #include "glTF/glTFImporterEdSkeletalMesh.h"
-#include "glTF/glTFImporterEdLevel.h"
 
 #include <EditorFramework/AssetImportData.h>
 
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
-FglTFImporterEd::FglTFMaterialInfo::FglTFMaterialInfo(int32 InId, FString InPrimitiveName)
-    : Id(InId)
-    , PrimitiveName(InPrimitiveName)
-{
-    //
-}
-
-TSharedPtr<FglTFImporterEd> FglTFImporterEd::Get(UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext)
+TSharedPtr<FglTFImporterEd> FglTFImporterEd::Get(UFactory* InFactory, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext)
 {
     TSharedPtr<FglTFImporterEd> glTFImporterEd = MakeShareable(new FglTFImporterEd);
-    glTFImporterEd->Set(InClass, InParent, InName, InFlags, InFeedbackContext);
+    glTFImporterEd->Set(InParent, InName, InFlags, InFeedbackContext);
     glTFImporterEd->InputFactory = InFactory;
     return glTFImporterEd;
 }
@@ -39,7 +30,9 @@ FglTFImporterEd::~FglTFImporterEd()
     //
 }
 
-UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers) const
+UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions
+    , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers
+    , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
 {
     if (!InGlTF)
     {
@@ -55,43 +48,188 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
     }
 
     const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
+    check(glTFImporterOptions->Details);
 
     FlushRenderingCommands();
 
     std::vector<std::shared_ptr<libgltf::SScene>> Scenes;
-    if (InGlTF->scene)
+    if (!glTFImporterOptions->Details->bImportAllScene && InGlTF->scene)
     {
         Scenes.push_back(InGlTF->scenes[(int32)(*InGlTF->scene)]);
     }
     else if (InGlTF->scenes.size() > 0)
     {
-        for (const std::shared_ptr<libgltf::SScene>& Scene : InGlTF->scenes)
+        Scenes = InGlTF->scenes;
+    }
+
+    if (Scenes.empty())
+    {
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("No scene!"));
+        return nullptr;
+    }
+
+    FglTFImporterCollection glTFImporterCollection;
+    if (!FglTFImporter::GetNodeInfos(InGlTF, glTFImporterCollection.NodeInfos))
+    {
+        //TODO: print a message
+        return nullptr;
+    }
+
+    /// make sure the target world
+    if (glTFImporterOptions->Details->bImportLevel)
+    {
+        if (glTFImporterOptions->Details->ImportLevelTemplate.IsValid())
         {
-            Scenes.push_back(Scene);
+            /// create a world by a template
+            UPackage* NewAssetPackage = FindPackage(nullptr, *glTFImporterOptions->FilePathInEngine);
+            if (!NewAssetPackage) NewAssetPackage = CreatePackage(nullptr, *glTFImporterOptions->FilePathInEngine);
+            checkSlow(NewAssetPackage);
+            if (NewAssetPackage)
+            {
+                glTFImporterCollection.TargetWorld = Cast<UWorld>(StaticDuplicateObject(glTFImporterOptions->Details->ImportLevelTemplate.TryLoad(), NewAssetPackage, InputName, InputFlags, UWorld::StaticClass()));
+            }
+            else
+            {
+                glTFImporterOptions->Details->bImportLevel = false;
+            }
+        }
+        else
+        {
+            glTFImporterCollection.TargetWorld = GEditor ? GEditor->GetEditorWorldContext(false).World() : nullptr;
+        }
+    }
+    else
+    {
+        glTFImporterCollection.TargetWorld = nullptr;
+    }
+
+    // scale the transform
+    if (glTFImporterOptions->Details->MeshScaleRatio != 1.0f)
+    {
+        const FVector ScaleVector(glTFImporterOptions->Details->MeshScaleRatio);
+        const FTransform ScaleTransform(FQuat::Identity, FVector::ZeroVector, ScaleVector);
+        for (TPair<int32, FglTFImporterNodeInfo>& NodeInfo : glTFImporterCollection.NodeInfos)
+        {
+            FglTFImporterNodeInfo& NodeInfoValue = NodeInfo.Value;
+            NodeInfoValue.AbsoluteTransform.ScaleTranslation(ScaleVector);
         }
     }
 
     UObject* CreatedObject = nullptr;
-    switch (glTFImporterOptions->ImportType)
+    for (const std::shared_ptr<libgltf::SScene>& ScenePtr : Scenes)
     {
-    case EglTFImportType::StaticMesh:
-        CreatedObject = FglTFImporterEdStaticMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateStaticMesh(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
-        break;
-
-    case EglTFImportType::SkeletalMesh:
-        CreatedObject = FglTFImporterEdSkeletalMesh::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateSkeletalMesh(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
-        break;
-
-    case EglTFImportType::Level:
-        CreatedObject = FglTFImporterEdLevel::Get(InputFactory, InputClass, InputParent, InputName, InputFlags, FeedbackContext)->CreateLevel(InglTFImporterOptions, InGlTF, Scenes, InglTFBuffers);
-        break;
-
-    default:
-        break;
+        UObject* ObjectNode = CreateNodes(InglTFImporterOptions, InGlTF, ScenePtr->nodes, InglTFBuffers, glTFImporterCollection);
+        if (!CreatedObject) CreatedObject = ObjectNode;
     }
 
-    FglTFImporterEd::UpdateAssetImportData(CreatedObject, glTFImporterOptions->FilePathInOS);
     return CreatedObject;
+}
+
+UObject* FglTFImporterEd::CreateNodes(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions
+    , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::vector<std::shared_ptr<libgltf::SGlTFId>>& InNodeIdPtrs, const FglTFBuffers& InglTFBuffers
+    , FglTFImporterCollection& InOutglTFImporterCollection) const
+{
+    UObject* CreatedObject = nullptr;
+    for (const std::shared_ptr<libgltf::SGlTFId>& NodeIdPtr : InNodeIdPtrs)
+    {
+        UObject* ObjectNode = CreateNode(InglTFImporterOptions, InGlTF, NodeIdPtr, InglTFBuffers, InOutglTFImporterCollection);
+        if (!CreatedObject) CreatedObject = ObjectNode;
+    }
+    return CreatedObject;
+}
+
+UObject* FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions
+    , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SGlTFId>& InNodeIdPtr, const FglTFBuffers& InglTFBuffers
+    , FglTFImporterCollection& InOutglTFImporterCollection) const
+{
+    if (!InNodeIdPtr) return nullptr;
+    const int32 glTFNodeId = *InNodeIdPtr;
+    if (glTFNodeId < 0 || glTFNodeId >= static_cast<int32>(InGlTF->nodes.size())) return nullptr;
+    const std::shared_ptr<libgltf::SNode>& glTFNodePtr = InGlTF->nodes[glTFNodeId];
+    if (!glTFNodePtr) return nullptr;
+
+    const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
+    check(glTFImporterOptions->Details);
+
+    const FglTFImporterNodeInfo& NodeInfo = InOutglTFImporterCollection.FindNodeInfo(glTFNodeId);
+    const FTransform TransformScale(FQuat::Identity, FVector::ZeroVector, FVector(glTFImporterOptions->Details->MeshScaleRatio));
+    const FTransform TransformMesh = glTFImporterOptions->Details->bApplyAbsoluteTransform
+        ? (NodeInfo.AbsoluteTransform * TransformScale)
+        : TransformScale;
+    const FTransform TransformActor = glTFImporterOptions->Details->bApplyAbsoluteTransform
+        ? FTransform::Identity
+        : NodeInfo.AbsoluteTransform;
+
+    TArray<UObject*> CreatedObjects;
+    if (!!(glTFNodePtr->mesh))
+    {
+        if (!glTFImporterOptions->Details->bImportSkeletalMesh || !glTFNodePtr->skin)
+        {
+            UStaticMesh* NewStaticMesh = FglTFImporterEdStaticMesh::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext)
+                ->CreateStaticMesh(InglTFImporterOptions, InGlTF, glTFNodePtr->mesh, InglTFBuffers, TransformMesh, InOutglTFImporterCollection);
+            FglTFImporterEd::UpdateAssetImportData(NewStaticMesh, InglTFImporterOptions);
+            CreatedObjects.Emplace(NewStaticMesh);
+            if (glTFImporterOptions->Details->bImportLevel)
+            {
+                SpawnStaticMeshActor(InOutglTFImporterCollection.TargetWorld, TransformActor, NewStaticMesh);
+            }
+        }
+        else
+        {
+            USkeletalMesh* NewSkeletalMesh = FglTFImporterEdSkeletalMesh::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext)
+                ->CreateSkeletalMesh(InglTFImporterOptions, InGlTF, glTFNodePtr->mesh, glTFNodePtr->skin, InglTFBuffers, TransformMesh, InOutglTFImporterCollection);
+            FglTFImporterEd::UpdateAssetImportData(NewSkeletalMesh, InglTFImporterOptions);
+            CreatedObjects.Emplace(NewSkeletalMesh);
+            if (glTFImporterOptions->Details->bImportLevel)
+            {
+                SpawnSkeletalMeshActor(InOutglTFImporterCollection.TargetWorld, TransformActor, NewSkeletalMesh);
+            }
+        }
+    }
+    if (!!(glTFNodePtr->camera))
+    {
+        //TODO:
+    }
+
+    if (!glTFNodePtr->children.empty())
+    {
+        UObject* ObjectChlid = CreateNodes(InglTFImporterOptions, InGlTF, glTFNodePtr->children, InglTFBuffers, InOutglTFImporterCollection);
+        CreatedObjects.Emplace(ObjectChlid);
+    }
+    return ((CreatedObjects.Num() > 0) ? CreatedObjects[0] : nullptr);
+}
+
+bool FglTFImporterEd::SetAssetImportData(UObject* InObject, const FglTFImporterOptions& InglTFImporterOptions)
+{
+    if (!InObject) return false;
+    // just supports `UStaticMesh` and `USkeletalMesh`
+    if (!InObject->IsA<UStaticMesh>() && !InObject->IsA<USkeletalMesh>())
+    {
+        return false;
+    }
+
+    UglTFImporterEdData* glTFImporterEdData = Cast<UglTFImporterEdData>(GetAssetImportData(InObject));
+    if (!glTFImporterEdData)
+    {
+        glTFImporterEdData = NewObject<UglTFImporterEdData>(InObject);
+    }
+    glTFImporterEdData->glTFImporterOptions = InglTFImporterOptions;
+    glTFImporterEdData->glTFImporterOptions.FilePathInEngine = InObject->GetPathName();
+    glTFImporterEdData->Update(InglTFImporterOptions.FilePathInOS);
+
+    if (UStaticMesh* StaticMesh = Cast<UStaticMesh>(InObject))
+    {
+        StaticMesh->AssetImportData = glTFImporterEdData;
+    }
+    else if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(InObject))
+    {
+        SkeletalMesh->AssetImportData = glTFImporterEdData;
+    }
+    if (glTFImporterEdData)
+    {
+        glTFImporterEdData->MarkPackageDirty();
+    }
+    return true;
 }
 
 UAssetImportData* FglTFImporterEd::GetAssetImportData(UObject* InObject)
@@ -112,13 +250,13 @@ UAssetImportData* FglTFImporterEd::GetAssetImportData(UObject* InObject)
     return AssetImportData;
 }
 
-void FglTFImporterEd::UpdateAssetImportData(UObject* InObject, const FString& InFilePath)
+void FglTFImporterEd::UpdateAssetImportData(UObject* InObject, const FString& InFilePathInOS)
 {
-    if (!InFilePath.IsEmpty())
+    if (!InFilePathInOS.IsEmpty())
     {
         if (UAssetImportData* AssetImportData = GetAssetImportData(InObject))
         {
-            AssetImportData->Update(InFilePath);
+            AssetImportData->Update(InFilePathInOS);
         }
     }
 
@@ -127,6 +265,33 @@ void FglTFImporterEd::UpdateAssetImportData(UObject* InObject, const FString& In
         InObject->PostEditChange();
         InObject->MarkPackageDirty();
     }
+}
+
+void FglTFImporterEd::UpdateAssetImportData(UObject* InObject, const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions)
+{
+    if (!InglTFImporterOptions.IsValid())
+    {
+        return;
+    }
+
+    const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
+
+    if (!glTFImporterOptions->FilePathInOS.IsEmpty())
+    {
+        SetAssetImportData(InObject, *glTFImporterOptions);
+    }
+
+    if (InObject)
+    {
+        InObject->PostEditChange();
+        InObject->MarkPackageDirty();
+    }
+}
+
+UglTFImporterEdData::UglTFImporterEdData(const FObjectInitializer& InObjectInitializer)
+    : Super(InObjectInitializer)
+{
+    //
 }
 
 #undef LOCTEXT_NAMESPACE

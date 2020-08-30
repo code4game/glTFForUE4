@@ -16,9 +16,4 @@ class GLTFFORUE4_API UglTFForUE4Settings : public UObject
     GENERATED_UCLASS_BODY()
 
 public:
-    //UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, config, Category = Prefix)
-    //FString PrefixStaticMesh;
-
-    //UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, config, Category = Prefix)
-    //FString PrefixSkeletalMesh;
 };

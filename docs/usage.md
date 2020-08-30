@@ -8,3 +8,7 @@
     * capture image
     * **Import Type**: Import as a static mesh or a skeletal mesh?
 1. You will see some new assets (Wait a few minutes)
+
+## Reimport the glTF
+
+Just the static mesh and the skeleton mesh for now.

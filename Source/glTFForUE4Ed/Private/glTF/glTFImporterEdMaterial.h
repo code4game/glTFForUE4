@@ -9,7 +9,7 @@ class FglTFImporterEdMaterial : public FglTFImporterEd
     typedef FglTFImporterEd Super;
 
 public:
-    static TSharedPtr<FglTFImporterEdMaterial> Get(class UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
+    static TSharedPtr<FglTFImporterEdMaterial> Get(class UFactory* InFactory, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
 
 protected:
     FglTFImporterEdMaterial();
@@ -19,8 +19,18 @@ public:
 
 public:
     /// Create the material for mesh
-    class UMaterial* CreateMaterial(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const class FglTFBuffers& InBuffers, const FglTFMaterialInfo& InglTFMaterialInfo, TMap<FString, class UTexture*>& InOutTextureLibrary, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const;
+    class UMaterialInterface* CreateMaterial(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions
+        , const std::shared_ptr<libgltf::SGlTF>& InglTF, const int32 InMaterialId, const class FglTFBuffers& InBuffers
+        , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper
+        , struct FglTFImporterCollection& InOutglTFImporterCollection) const;
 
 private:
-    bool ConstructSampleParameter(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STextureInfo>& InglTFTextureInfo, const class FglTFBuffers& InBuffers, const FString& InParameterName, TMap<FString, class UTexture*>& InOutTextureLibrary, class UMaterialExpressionTextureSampleParameter* InSampleParameter, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const;
+    bool ConstructSampleParameter(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions
+        , const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STextureInfo>& InglTFTextureInfo, const class FglTFBuffers& InBuffers
+        , const FString& InParameterName, class UMaterialExpressionTextureSampleParameter* InOutSampleParameter, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper
+        , struct FglTFImporterCollection& InOutglTFImporterCollection) const;
+    bool ConstructTextureParameter(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions
+        , const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STextureInfo>& InglTFTextureInfo, const class FglTFBuffers& InBuffers
+        , const FString& InParameterName, class UTexture*& OutTexture, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper
+        , struct FglTFImporterCollection& InOutglTFImporterCollection) const;
 };

@@ -34,6 +34,9 @@ public class glTFForUE4Ed : ModuleRules
                 "EditorStyle",
                 "RawMesh",
                 "MeshUtilities",
+#if UE_4_25_OR_LATER
+                "MeshBuilder",
+#endif
                 "AnimationModifiers",
                 "glTFForUE4",
                 "libgltf_ue4",

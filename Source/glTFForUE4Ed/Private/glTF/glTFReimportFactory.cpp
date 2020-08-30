@@ -3,12 +3,14 @@
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTFReimportFactory.h"
 
+#include <Engine/StaticMesh.h>
+#include <Engine/SkeletalMesh.h>
+
 UglTFReimportFactory::UglTFReimportFactory(const FObjectInitializer& InObjectInitializer)
     : Super(InObjectInitializer)
 {
     SupportedClass = UStaticMesh::StaticClass();
     ImportPriority = DefaultImportPriority + 1;
-    bReimport = true;
 }
 
 bool UglTFReimportFactory::CanReimport(UObject* Obj, TArray<FString>& OutFilenames)
@@ -16,6 +18,14 @@ bool UglTFReimportFactory::CanReimport(UObject* Obj, TArray<FString>& OutFilenam
     if (!Obj)
     {
         UE_LOG(LogglTFForUE4Ed, Error, TEXT("The `Obj` is nullptr when call `UglTFReimportFactory::CanReimport`!"));
+        return false;
+    }
+
+    if (!Obj->IsA<UStaticMesh>() && !Obj->IsA<USkeletalMesh>())
+    {
+        UClass* ObjClass = Obj->GetClass();
+        const FString ObjClassName = ObjClass ? ObjClass->GetName() : "None";
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("The class Is not supported! %s"), *ObjClassName);
         return false;
     }
 
@@ -28,6 +38,10 @@ bool UglTFReimportFactory::CanReimport(UObject* Obj, TArray<FString>& OutFilenam
     }
 
     OutFilenames = AssetImportData->ExtractFilenames();
+    if (OutFilenames.Num() > 0)
+    {
+        return Super::FactoryCanImport(OutFilenames[0]);
+    }
     return true;
 }
 
@@ -55,6 +69,13 @@ EReimportResult::Type UglTFReimportFactory::Reimport(UObject* Obj)
         const FString ObjPathName = Obj->GetPathName();
         UE_LOG(LogglTFForUE4Ed, Error, TEXT("Not support! %s"), *ObjPathName);
         return EReimportResult::Failed;
+    }
+
+    // get the import data
+    if (UglTFImporterEdData* glTFImporterEdData = Cast<UglTFImporterEdData>(AssetImportData))
+    {
+        glTFReimporterOptions = MakeShared<FglTFImporterOptions>();
+        *glTFReimporterOptions = glTFImporterEdData->glTFImporterOptions;
     }
 
     const FString AssetImportFilename = AssetImportData->GetFirstFilename();

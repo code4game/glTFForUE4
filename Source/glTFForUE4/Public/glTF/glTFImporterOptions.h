@@ -1,14 +1,138 @@
+// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
 #pragma once
 
 #include "glTFImporterOptions.generated.h"
 
-UENUM()
-enum class EglTFImportType : uint8
+USTRUCT()
+struct GLTFFORUE4_API FglTFImporterOptionsDetailsStored
 {
-    None,
-    StaticMesh,
-    SkeletalMesh,
-    Level,
+    GENERATED_USTRUCT_BODY()
+
+    FglTFImporterOptionsDetailsStored();
+    
+    /// common options
+    UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (ToolTip = "Construct the skeletal mesh when node has skin"))
+    bool bImportSkeletalMesh;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay, meta = (EditCondition = bImportSkeletalMesh))
+    bool bImportAnimation;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Common")
+    bool bImportMaterial;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay, meta = (EditCondition = bImportMaterial))
+    bool bImportTexture;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay)
+    bool bImportAllScene;
+    
+    /// mesh options
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", meta = (ClampMin = 0.0001, ClampMax = 100000.0f))
+    float MeshScaleRatio;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    bool bApplyAbsoluteTransform;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    bool bGenerateLightmapUVs;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
+    bool bInvertNormal;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
+    bool bUseMikkTSpace;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
+    bool bRecomputeNormals;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
+    bool bRecomputeTangents;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
+    bool bRemoveDegenerates;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
+    bool bBuildAdjacencyBuffer;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
+    bool bUseFullPrecisionUVs;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay, meta = (EditCondition = bImportSkeletalMesh))
+    bool bCreatePhysicsAsset;
+
+    /// material options
+    UPROPERTY(EditAnywhere, Config, Category = "Material", meta = (EditCondition = bImportMaterial))
+    bool bUseMaterialInstance;
+};
+
+UCLASS(config = glTFForUE4Settings, defaultconfig)
+class GLTFFORUE4_API UglTFImporterOptionsDetails : public UObject
+{
+    GENERATED_UCLASS_BODY()
+
+public:
+    /// common options
+    UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (ToolTip = "Construct the skeletal mesh when node has skin"))
+    bool bImportSkeletalMesh;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay, meta = (EditCondition = bImportSkeletalMesh))
+    bool bImportAnimation;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Common")
+    bool bImportMaterial;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay, meta = (EditCondition = bImportMaterial))
+    bool bImportTexture;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay)
+    bool bImportAllScene;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (ToolTip = "Construct the scene in the current level or new level"))
+    bool bImportLevel;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay, meta = (EditCondition = bImportLevel, AllowedClasses = "World", ToolTip = "Import a new level that create by the template"))
+    FStringAssetReference ImportLevelTemplate;
+
+    /// mesh options
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", meta = (ClampMin = 0.0001, ClampMax = 100000.0f))
+    float MeshScaleRatio;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    bool bApplyAbsoluteTransform;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh")
+    bool bGenerateLightmapUVs;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
+    bool bInvertNormal;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
+    bool bUseMikkTSpace;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
+    bool bRecomputeNormals;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
+    bool bRecomputeTangents;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
+    bool bRemoveDegenerates;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
+    bool bBuildAdjacencyBuffer;
+
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay)
+    bool bUseFullPrecisionUVs;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Mesh", AdvancedDisplay, meta = (EditCondition = bImportSkeletalMesh))
+    bool bCreatePhysicsAsset;
+
+    /// material options
+    UPROPERTY(EditAnywhere, Config, Category = "Material", meta = (EditCondition = bImportMaterial))
+    bool bUseMaterialInstance;
+
+    void Get(FglTFImporterOptionsDetailsStored& OutDetailsStored) const;
+    void Set(const FglTFImporterOptionsDetailsStored& InDetailsStored);
 };
 
 USTRUCT()
@@ -24,37 +148,9 @@ struct GLTFFORUE4_API FglTFImporterOptions
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
     FString FilePathInEngine;
 
-    /// Import options
     UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    EglTFImportType ImportType;
+    FglTFImporterOptionsDetailsStored DetailsStored;
 
-    /// Mesh options
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    float MeshScaleRatio;
-
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bInvertNormal;
-
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bUseMikkTSpace;
-
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bRecomputeNormals;
-
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bRecomputeTangents;
-
-    /// Static Mesh options
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bIntegrateAllMeshsForStaticMesh;
-
-    /// Material options
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bImportMaterial;
-
-    UPROPERTY(EditAnywhere, Category = glTFForUE4Ed)
-    bool bImportTexture;
-
-    static const FglTFImporterOptions Default;
-    static FglTFImporterOptions Current;
+    UPROPERTY()
+    UglTFImporterOptionsDetails* Details;
 };

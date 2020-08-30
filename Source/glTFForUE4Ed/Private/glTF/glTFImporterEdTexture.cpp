@@ -15,10 +15,10 @@
 
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
-TSharedPtr<FglTFImporterEdTexture> FglTFImporterEdTexture::Get(UFactory* InFactory, UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
+TSharedPtr<FglTFImporterEdTexture> FglTFImporterEdTexture::Get(UFactory* InFactory, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
 {
     TSharedPtr<FglTFImporterEdTexture> glTFImporterEdTexture = MakeShareable(new FglTFImporterEdTexture);
-    glTFImporterEdTexture->Set(InClass, InParent, InName, InFlags, InFeedbackContext);
+    glTFImporterEdTexture->Set(InParent, InName, InFlags, InFeedbackContext);
     glTFImporterEdTexture->InputFactory = InFactory;
     return glTFImporterEdTexture;
 }
@@ -34,19 +34,31 @@ FglTFImporterEdTexture::~FglTFImporterEdTexture()
     //
 }
 
-UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::STexture>& InglTFTexture, const FglTFBuffers& InBuffers, const FString& InTextureName, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const
+UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions
+    , const std::shared_ptr<libgltf::SGlTF>& InglTF, const std::shared_ptr<libgltf::SGlTFId>& InTextureId, const FglTFBuffers& InBuffers, bool InIsNormalmap, const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper
+    , FglTFImporterCollection& InOutglTFImporterCollection) const
 {
-    if (!InglTF || !InglTFTexture || !(InglTFTexture->source)) return nullptr;
-    int32 ImageIndex = (int32)(*(InglTFTexture->source));
+    if (!InglTF || !InTextureId) return nullptr;
+    const int32 glTFTextureId = *InTextureId;
+    if (InOutglTFImporterCollection.Textures.Contains(glTFTextureId))
+    {
+        return InOutglTFImporterCollection.Textures[glTFTextureId];
+    }
+    if (glTFTextureId < 0 || glTFTextureId >= static_cast<int32>(InglTF->textures.size())) return nullptr;
+    const std::shared_ptr<libgltf::STexture>& glTFTexture = InglTF->textures[glTFTextureId];
+    if (!glTFTexture || !(glTFTexture->source)) return nullptr;
+
+    const int32 glTFImageIndex = (int32)(*(glTFTexture->source));
     FString ImageFilePath;
     TArray<uint8> ImageFileData;
-    if (!InBuffers.GetImageData(InglTF, ImageIndex, ImageFileData, ImageFilePath)
+    if (!InBuffers.GetImageData(InglTF, glTFImageIndex, ImageFileData, ImageFilePath)
         || ImageFileData.Num() <= 0)
     {
         return nullptr;
     }
 
-    FString PackageName = FPackageName::GetLongPackagePath(InputParent->GetPathName()) / InTextureName;
+    const FString TextureName = FString::Printf(TEXT("T_%s_%d"), *InputName.ToString(), glTFTextureId);
+    FString PackageName = FPackageName::GetLongPackagePath(InputParent->GetPathName()) / TextureName;
     UPackage* TexturePackage = FindPackage(nullptr, *PackageName);
     if (!TexturePackage)
     {
@@ -126,10 +138,10 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
             break;
         }
 
-        NewTexture = FindObject<UTexture2D>(TexturePackage, *InTextureName);
+        NewTexture = FindObject<UTexture2D>(TexturePackage, *TextureName);
         if (!NewTexture)
         {
-            NewTexture = NewObject<UTexture2D>(TexturePackage, UTexture2D::StaticClass(), *InTextureName, InputFlags);
+            NewTexture = NewObject<UTexture2D>(TexturePackage, UTexture2D::StaticClass(), *TextureName, InputFlags);
             checkSlow(NewTexture);
             if (NewTexture) FAssetRegistryModule::AssetCreated(NewTexture);
         }
@@ -163,9 +175,9 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
         break;
     }
 
-    if (NewTexture && !!(InglTFTexture->sampler))
+    if (NewTexture && !!(glTFTexture->sampler))
     {
-        int32 glTFSamplerId = *(InglTFTexture->sampler);
+        int32 glTFSamplerId = *(glTFTexture->sampler);
         if (glTFSamplerId >= 0 && glTFSamplerId < static_cast<int32>(InglTF->samplers.size()))
         {
             const std::shared_ptr<libgltf::SSampler>& glTFSampler = InglTF->samplers[glTFSamplerId];
@@ -182,6 +194,8 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
         NewTexture->UpdateResource();
         FglTFImporterEd::UpdateAssetImportData(NewTexture, ImageFilePath);
     }
+
+    InOutglTFImporterCollection.Textures.Add(glTFTextureId, NewTexture);
     return NewTexture;
 }
 

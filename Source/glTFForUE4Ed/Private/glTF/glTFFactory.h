@@ -11,9 +11,6 @@ class UglTFFactory : public UFactory
     GENERATED_UCLASS_BODY()
 
 public:
-    UglTFFactory();
-
-public:
     // Begin UFactory Interface
     virtual bool DoesSupportClass(UClass* InClass) override;
     virtual UClass* ResolveSupportedClass() override;
@@ -27,8 +24,5 @@ protected:
     virtual UObject* FactoryCreate(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, UObject* InContext, const TCHAR* InType, FFeedbackContext* InWarn, const FString& InglTFJson, TSharedPtr<class FglTFBuffers> InglTFBuffers = nullptr);
 
 protected:
-    bool bReimport;
-
-private:
-    UClass* ImportClass;
+    TSharedPtr<struct FglTFImporterOptions> glTFReimporterOptions;
 };

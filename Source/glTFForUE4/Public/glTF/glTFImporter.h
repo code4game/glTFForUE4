@@ -16,15 +16,23 @@
 #include <Curves/RichCurve.h>
 #endif
 
+#include "glTFImporter.generated.h"
+
 #define GLTF_TRIANGLE_POINTS_NUM            3
 #define GLTF_JOINT_LAYERS_NUM_MAX           3
 
-#if defined(UNICODE)
-#define GLTF_TCHAR_TO_GLTFSTRING(a)         TCHAR_TO_WCHAR(a)
-#define GLTF_GLTFSTRING_TO_TCHAR(a)         WCHAR_TO_TCHAR(a)
+#if defined(LIBGLTF_CHARACTOR_ENCODING_IS_UTF8)
+#   define GLTF_TCHAR_TO_GLTFSTRING(a)         TCHAR_TO_UTF8(a)
+#   define GLTF_GLTFSTRING_TO_TCHAR(a)         UTF8_TO_TCHAR(a)
+#elif defined(LIBGLTF_CHARACTOR_ENCODING_IS_UTF16)
+#   error not supports the utf16
+#elif defined(LIBGLTF_CHARACTOR_ENCODING_IS_UTF32)
+#   error not supports the utf32
+#elif defined(LIBGLTF_CHARACTOR_ENCODING_IS_UNICODE)
+#   define GLTF_TCHAR_TO_GLTFSTRING(a)         TCHAR_TO_WCHAR(a)
+#   define GLTF_GLTFSTRING_TO_TCHAR(a)         WCHAR_TO_TCHAR(a)
 #else
-#define GLTF_TCHAR_TO_GLTFSTRING(a)         (a)
-#define GLTF_GLTFSTRING_TO_TCHAR(a)         (a)
+#   error not supports
 #endif
 
 namespace glTFForUE4
@@ -36,6 +44,7 @@ namespace glTFForUE4
         virtual ~FFeedbackTaskWrapper();
 
     public:
+        FORCEINLINE class FFeedbackContext* Get() const { return FeedbackContext; }
         const FFeedbackTaskWrapper& Log(ELogVerbosity::Type InLogVerbosity, const FText& InMessge) const;
         const FFeedbackTaskWrapper& UpdateProgress(int32 InNumerator, int32 InDenominator) const;
         const FFeedbackTaskWrapper& StatusUpdate(int32 InNumerator, int32 InDenominator, const FText& InStatusText) const;
@@ -45,6 +54,53 @@ namespace glTFForUE4
         class FFeedbackContext* FeedbackContext;
     };
 }
+
+USTRUCT()
+struct GLTFFORUE4_API FglTFImporterNodeInfo
+{
+    GENERATED_USTRUCT_BODY()
+
+    UPROPERTY()
+    int32 ParentIndex;
+
+    UPROPERTY()
+    FTransform RelativeTransform;
+
+    UPROPERTY()
+    FTransform AbsoluteTransform;
+
+    FglTFImporterNodeInfo();
+
+    static const FglTFImporterNodeInfo Default;
+};
+
+USTRUCT()
+struct GLTFFORUE4_API FglTFImporterCollection
+{
+    GENERATED_USTRUCT_BODY()
+
+    UPROPERTY()
+    class UWorld* TargetWorld;
+    
+    UPROPERTY()
+    TMap<int32, FglTFImporterNodeInfo> NodeInfos;
+    
+    UPROPERTY()
+    TMap<int32, class UTexture*> Textures;
+    
+    UPROPERTY()
+    TMap<int32, class UMaterialInterface*> Materials;
+    
+    UPROPERTY()
+    TMap<int32, class UStaticMesh*> StaticMeshes;
+    
+    UPROPERTY()
+    TMap<int32, class USkeletalMesh*> SkeletalMeshes;
+
+    FglTFImporterCollection();
+
+    const FglTFImporterNodeInfo& FindNodeInfo(int32 InNodeId) const;
+};
 
 class GLTFFORUE4_API FglTFBufferData
 {
@@ -209,30 +265,37 @@ struct GLTFFORUE4_API FglTFAnimationSequenceDatas
 class GLTFFORUE4_API FglTFImporter
 {
 public:
-    static TSharedPtr<FglTFImporter> Get(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
+    static TSharedPtr<FglTFImporter> Get(UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
 
 public:
     FglTFImporter();
     virtual ~FglTFImporter();
 
 public:
-    virtual FglTFImporter& Set(UClass* InClass, UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
-    virtual UObject* Create(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers) const;
+    virtual FglTFImporter& Set(UObject* InParent, FName InName, EObjectFlags InFlags, class FFeedbackContext* InFeedbackContext);
+    virtual UObject* Create(const TWeakPtr<struct FglTFImporterOptions>& InglTFImporterOptions
+        , const std::shared_ptr<libgltf::SGlTF>& InGlTF, const FglTFBuffers& InglTFBuffers
+        , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper) const;
 
 protected:
-    UClass* InputClass;
     UObject* InputParent;
     FName InputName;
     EObjectFlags InputFlags;
     class FFeedbackContext* FeedbackContext;
 
 public:
-    static bool GetStaticMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_STATIC_TEXCOORDS], bool bSwapYZ = true);
-    static bool GetSkeletalMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const std::shared_ptr<libgltf::SSkin>& InSkin, const FglTFBuffers& InBufferFiles, TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_TEXCOORDS], TArray<FMatrix>& OutInverseBindMatrices, TArray<FVector4> OutJointIndeies[GLTF_JOINT_LAYERS_NUM_MAX], TArray<FVector4> OutJointWeights[GLTF_JOINT_LAYERS_NUM_MAX], bool bSwapYZ = true);
-    static bool GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SAnimation>& InglTFAnimation, const FglTFBuffers& InBufferFiles, FglTFAnimationSequenceDatas& OutAnimationSequenceDatas, bool bSwapYZ = true);
+    static bool GetStaticMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers
+        , TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_TEXCOORDS], bool bSwapYZ = true);
+    static bool GetSkeletalMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers
+        , TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_TEXCOORDS], TArray<FVector4> OutJointsIndices[GLTF_JOINT_LAYERS_NUM_MAX], TArray<FVector4> OutJointsWeights[GLTF_JOINT_LAYERS_NUM_MAX], bool bSwapYZ = true);
+    static bool GetInverseBindMatrices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SSkin>& InSkin, const FglTFBuffers& InBuffers, TArray<FMatrix>& OutInverseBindMatrices, bool bSwapYZ = true);
+    static bool GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SAnimation>& InglTFAnimation, const FglTFBuffers& InBuffers, FglTFAnimationSequenceDatas& OutAnimationSequenceDatas, bool bSwapYZ = true);
     static bool GetNodeParentIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<int32>& OutParentIndices);
     static bool GetNodeRelativeTransforms(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<FTransform>& OutRelativeTransforms, bool bSwapYZ = true);
     static bool GetNodeParentIndicesAndTransforms(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<int32>& OutParentIndices, TArray<FTransform>& OutRelativeTransforms, TArray<FTransform>& OutAbsoluteTransforms, bool bSwapYZ = true);
+    static bool GetNodeInfos(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TMap<int32, FglTFImporterNodeInfo>& OutNodeInfos, bool bSwapYZ = true);
+    static bool SpawnStaticMeshActor(class UWorld* InWorld, const FTransform& InTransform, class UStaticMesh* InStaticMesh);
+    static bool SpawnSkeletalMeshActor(class UWorld* InWorld, const FTransform& InTransform, class USkeletalMesh* InSkeletalMesh);
 
 public:
     static FString SanitizeObjectName(const FString& InObjectName);

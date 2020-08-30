@@ -5,8 +5,6 @@
 
 UglTFForUE4Settings::UglTFForUE4Settings(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
-    //, PrefixStaticMesh(TEXT("SM_"))
-    //, PrefixSkeletalMesh(TEXT("SM_"))
 {
     //
 }

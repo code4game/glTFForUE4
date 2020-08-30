@@ -1,6 +1,7 @@
-// Copyright 2016 - 2020 Code 4 Game <develop@c4g.io>
+// Copyright (o) 2016-2020 Code 4 Game <develop@c4g.io>
 
 using UnrealBuildTool;
+using System.Collections.Generic;
 
 public class libdraco_ue4 : ModuleRules
 {
@@ -8,15 +9,15 @@ public class libdraco_ue4 : ModuleRules
     {
         Type = ModuleType.External;
 
-        string DracoPath = System.IO.Path.Combine(ModuleDirectory, "libdraco-1.2.5");
+        string DracoPath = System.IO.Path.Combine(ModuleDirectory, "libdraco-1.3.6");
         string IncludePath = System.IO.Path.Combine(DracoPath, "include");
-        string LibPath = "";
-        string LibFilePath1 = "";
-        string LibFilePath2 = "";
+        List<string> LibPaths = new List<string>();
+        List<string> LibFilePaths = new List<string>();
 
         if ((Target.Platform == UnrealTargetPlatform.Win32) || (Target.Platform == UnrealTargetPlatform.Win64))
         {
             string PlatformName = "";
+#if UE_4_23_OR_LATER
             if (Target.Platform == UnrealTargetPlatform.Win32)
             {
                 PlatformName = "win32";
@@ -25,38 +26,34 @@ public class libdraco_ue4 : ModuleRules
             {
                 PlatformName = "win64";
             }
+#else
+            switch (Target.Platform)
+            {
+            case UnrealTargetPlatform.Win32:
+                PlatformName = "win32";
+                break;
+            case UnrealTargetPlatform.Win64:
+                PlatformName = "win64";
+                break;
+            }
+#endif
 
-            string VSName = "vs2015";
+            LibPaths.Add(System.IO.Path.Combine(DracoPath, "lib", PlatformName, "vs2019", "Release"));
 
-            LibPath = System.IO.Path.Combine(DracoPath, "lib", PlatformName, VSName);
-
-            LibFilePath1 = System.IO.Path.Combine(LibPath, "dracodec.lib");
-            LibFilePath2 = System.IO.Path.Combine(LibPath, "dracoenc.lib");
-        }
-        else if (Target.Platform == UnrealTargetPlatform.Linux)
-        {
-            LibPath = System.IO.Path.Combine(DracoPath, "lib", "linux");
-
-            LibFilePath1 = System.IO.Path.Combine(LibPath, "libdracodec.a");
-            LibFilePath2 = System.IO.Path.Combine(LibPath, "libdracoenc.a");
+            LibFilePaths.Add("dracodec.lib");
+            LibFilePaths.Add("dracoenc.lib");
         }
         else if (Target.Platform == UnrealTargetPlatform.Mac)
         {
-            LibPath = System.IO.Path.Combine(DracoPath, "lib", "macos");
+            string LibPath = System.IO.Path.Combine(DracoPath, "lib", "macos");
+            LibPaths.Add(LibPath);
 
-            LibFilePath1 = System.IO.Path.Combine(LibPath, "libdracodec.a");
-            LibFilePath2 = System.IO.Path.Combine(LibPath, "libdracoenc.a");
-        }
-        else if (Target.Platform == UnrealTargetPlatform.IOS)
-        {
-            LibPath = System.IO.Path.Combine(DracoPath, "lib", "ios");
-
-            LibFilePath1 = System.IO.Path.Combine(LibPath, "libdracodec.a");
-            LibFilePath2 = System.IO.Path.Combine(LibPath, "libdracoenc.a");
+            LibFilePaths.Add(System.IO.Path.Combine(LibPath, "libdracodec.a"));
+            LibFilePaths.Add(System.IO.Path.Combine(LibPath, "libdracoenc.a"));
         }
 
         PublicIncludePaths.Add(IncludePath);
-        PublicAdditionalLibraries.Add(LibFilePath1);
-        PublicAdditionalLibraries.Add(LibFilePath2);
+        PublicLibraryPaths.AddRange(LibPaths);
+        PublicAdditionalLibraries.AddRange(LibFilePaths);
     }
 }
