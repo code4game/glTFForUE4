@@ -82,14 +82,15 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
         {
             /// create a world by a template
             UPackage* NewAssetPackage = LoadPackage(nullptr, *glTFImporterOptions->FilePathInEngine, LOAD_None);
-            if (!NewAssetPackage) NewAssetPackage = CreatePackage(nullptr, *glTFImporterOptions->FilePathInEngine);
-            checkSlow(NewAssetPackage);
-            if (NewAssetPackage)
+            if (!NewAssetPackage)
             {
+                NewAssetPackage = CreatePackage(nullptr, *glTFImporterOptions->FilePathInEngine);
+                checkSlow(NewAssetPackage);
                 glTFImporterCollection.TargetWorld = Cast<UWorld>(StaticDuplicateObject(glTFImporterOptions->Details->ImportLevelTemplate.TryLoad(), NewAssetPackage, InputName, InputFlags, UWorld::StaticClass()));
             }
             else
             {
+                /// don't spawn the actor in the exist level
                 glTFImporterOptions->Details->bImportLevel = false;
             }
         }
