@@ -49,7 +49,7 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
 
     FString AnimationObjectName = FString::Printf(TEXT("%s_AnimationSequence"), *InputName.ToString());
 
-    UAnimSequence* AnimSequence = FindObject<UAnimSequence>(InputParent, *AnimationObjectName);
+    UAnimSequence* AnimSequence = LoadObject<UAnimSequence>(InputParent, *AnimationObjectName);
     if (!AnimSequence)
     {
         AnimSequence = NewObject<UAnimSequence>(InputParent, UAnimSequence::StaticClass(), *AnimationObjectName, InputFlags);

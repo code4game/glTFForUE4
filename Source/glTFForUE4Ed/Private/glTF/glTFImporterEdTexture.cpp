@@ -57,9 +57,9 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
         return nullptr;
     }
 
-    const FString TextureName = FString::Printf(TEXT("T_%s_%d"), *InputName.ToString(), glTFTextureId);
+    const FString TextureName = FglTFImporter::SanitizeObjectName(FString::Printf(TEXT("T_%s_%d"), *InputName.ToString(), glTFTextureId));
     FString PackageName = FPackageName::GetLongPackagePath(InputParent->GetPathName()) / TextureName;
-    UPackage* TexturePackage = FindPackage(nullptr, *PackageName);
+    UPackage* TexturePackage = LoadPackage(nullptr, *PackageName, LOAD_None);
     if (!TexturePackage)
     {
         TexturePackage = CreatePackage(nullptr, *PackageName);
@@ -138,7 +138,7 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
             break;
         }
 
-        NewTexture = FindObject<UTexture2D>(TexturePackage, *TextureName);
+        NewTexture = LoadObject<UTexture2D>(TexturePackage, *TextureName);
         if (!NewTexture)
         {
             NewTexture = NewObject<UTexture2D>(TexturePackage, UTexture2D::StaticClass(), *TextureName, InputFlags);

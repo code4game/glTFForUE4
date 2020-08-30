@@ -318,7 +318,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
     check(glTFImporterOptions->Details);
 
-    const FString MeshName = GLTF_GLTFSTRING_TO_TCHAR(glTFMeshPtr->name.c_str());
+    const FString MeshName = FglTFImporter::SanitizeObjectName(GLTF_GLTFSTRING_TO_TCHAR(glTFMeshPtr->name.c_str()));
     const FString SkeletalMeshName = MeshName.IsEmpty()
         ? FString::Printf(TEXT("SK_%s_%d"), *InputName.ToString(), glTFMeshId)
         : FString::Printf(TEXT("SK_%s_%d_%s"), *InputName.ToString(), glTFMeshId, *MeshName);
@@ -399,22 +399,38 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
         return nullptr;
     }
 
-    /// Create new skeletal mesh
+    const FString NewPackagePath = FPackageName::GetLongPackagePath(InputParent->GetPathName()) / SkeletalMeshName;
+    UObject* NewAssetPackage = InputParent;
+
+    /// load or create new skeletal mesh
     bool bCreated = false;
-    USkeletalMesh* SkeletalMesh = FindObject<USkeletalMesh>(InputParent, *SkeletalMeshName);
+    USkeletalMesh* SkeletalMesh = LoadObject<USkeletalMesh>(NewAssetPackage, *SkeletalMeshName);
     if (!SkeletalMesh)
     {
-        SkeletalMesh = NewObject<USkeletalMesh>(InputParent, USkeletalMesh::StaticClass(), *SkeletalMeshName, InputFlags);
+        NewAssetPackage = LoadPackage(nullptr, *NewPackagePath, LOAD_None);
+        if (!NewAssetPackage)
+        {
+            NewAssetPackage = CreatePackage(nullptr, *NewPackagePath);
+            checkSlow(NewAssetPackage);
+        }
+        if (!NewAssetPackage)
+        {
+            //TODO: output error
+            return nullptr;
+        }
+        SkeletalMesh = LoadObject<USkeletalMesh>(NewAssetPackage, *SkeletalMeshName);
+    }
+    if (!SkeletalMesh)
+    {
+        /// create new skeletal mesh
+        SkeletalMesh = NewObject<USkeletalMesh>(NewAssetPackage, USkeletalMesh::StaticClass(), *SkeletalMeshName, InputFlags);
+        checkSlow(SkeletalMesh);
         if (SkeletalMesh) FAssetRegistryModule::AssetCreated(SkeletalMesh);
         bCreated = true;
     }
-    checkSlow(SkeletalMesh);
     if (!SkeletalMesh) return nullptr;
 
     SkeletalMesh->PreEditChange(nullptr);
-
-    SkeletalMesh->RefSkeleton = RefSkeleton;
-    SkeletalMesh->CalculateInvRefMatrices();
 
 #if ENGINE_MINOR_VERSION <= 18
     FSkeletalMeshResource* ImportedResource = SkeletalMesh->GetImportedResource();
@@ -447,6 +463,9 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
 
         SkeletalMesh->Materials.Empty();
     }
+
+    SkeletalMesh->RefSkeleton = RefSkeleton;
+    SkeletalMesh->CalculateInvRefMatrices();
 
 #if ENGINE_MINOR_VERSION <= 24
     ImportedResource->LODModels[0] = LODModel;
@@ -508,11 +527,11 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     USkeleton* Skeleton = SkeletalMesh->Skeleton;
     if (!Skeleton)
     {
-        Skeleton = FindObject<USkeleton>(InputParent, *SkeletonObjectName);
+        Skeleton = LoadObject<USkeleton>(NewAssetPackage, *SkeletonObjectName);
     }
     if (!Skeleton)
     {
-        Skeleton = NewObject<USkeleton>(InputParent, USkeleton::StaticClass(), *SkeletonObjectName, InputFlags);
+        Skeleton = NewObject<USkeleton>(NewAssetPackage, USkeleton::StaticClass(), *SkeletonObjectName, InputFlags);
         if (Skeleton) FAssetRegistryModule::AssetCreated(Skeleton);
     }
     checkSlow(Skeleton);
@@ -534,7 +553,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     if (glTFImporterOptions->Details->bImportAnimation)
     {
         /// generate the skeleton animation
-        FglTFImporterEdAnimationSequence::Get(InputFactory, InputParent, *SkeletalMeshName, InputFlags, FeedbackContext)
+        FglTFImporterEdAnimationSequence::Get(InputFactory, NewAssetPackage, *SkeletalMeshName, InputFlags, FeedbackContext)
             ->CreateAnimationSequence(InglTFImporterOptions, InGlTF
                 , InBuffers, NodeIndexToBoneNames
                 , SkeletalMesh, Skeleton
@@ -552,11 +571,11 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
         SkeletalMesh->PhysicsAsset = nullptr;
         if (!PhysicsAsset)
         {
-            PhysicsAsset = FindObject<UPhysicsAsset>(InputParent, *PhysicsObjectName);
+            PhysicsAsset = LoadObject<UPhysicsAsset>(NewAssetPackage, *PhysicsObjectName);
         }
         if (!PhysicsAsset)
         {
-            PhysicsAsset = NewObject<UPhysicsAsset>(InputParent, UPhysicsAsset::StaticClass(), *PhysicsObjectName, InputFlags);
+            PhysicsAsset = NewObject<UPhysicsAsset>(NewAssetPackage, UPhysicsAsset::StaticClass(), *PhysicsObjectName, InputFlags);
             if (PhysicsAsset) FAssetRegistryModule::AssetCreated(PhysicsAsset);
         }
         else

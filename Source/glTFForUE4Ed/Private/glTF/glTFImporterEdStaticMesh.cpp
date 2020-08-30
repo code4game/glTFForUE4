@@ -97,7 +97,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     const TSharedPtr<FglTFImporterOptions> glTFImporterOptions = InglTFImporterOptions.Pin();
     check(glTFImporterOptions->Details);
 
-    const FString MeshName = GLTF_GLTFSTRING_TO_TCHAR(MeshPtr->name.c_str());
+    const FString MeshName = FglTFImporter::SanitizeObjectName(GLTF_GLTFSTRING_TO_TCHAR(MeshPtr->name.c_str()));
     const FString StaticMeshName = MeshName.IsEmpty()
         ? FString::Printf(TEXT("SM_%s_%d"), *InputName.ToString(), MeshId)
         : FString::Printf(TEXT("SM_%s_%d_%s"), *InputName.ToString(), MeshId, *MeshName);
@@ -115,12 +115,31 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
         return nullptr;
     }
 
+    const FString NewPackagePath = FPackageName::GetLongPackagePath(InputParent->GetPathName()) / StaticMeshName;
+    UObject* NewAssetPackage = InputParent;
+
+    /// load or create new static mesh
     bool bCreated = false;
-    UStaticMesh* NewStaticMesh = FindObject<UStaticMesh>(InputParent, *StaticMeshName);
+    UStaticMesh* NewStaticMesh = LoadObject<UStaticMesh>(NewAssetPackage, *StaticMeshName);
     if (!NewStaticMesh)
     {
-        /// Create a new static mesh
-        NewStaticMesh = NewObject<UStaticMesh>(InputParent, UStaticMesh::StaticClass(), *StaticMeshName, InputFlags);
+        NewAssetPackage = LoadPackage(nullptr, *NewPackagePath, LOAD_None);
+        if (!NewAssetPackage)
+        {
+            NewAssetPackage = CreatePackage(nullptr, *NewPackagePath);
+            checkSlow(NewAssetPackage);
+        }
+        if (!NewAssetPackage)
+        {
+            //TODO: output error
+            return nullptr;
+        }
+        NewStaticMesh = LoadObject<UStaticMesh>(NewAssetPackage, *StaticMeshName);
+    }
+    if (!NewStaticMesh)
+    {
+        /// create new static mesh
+        NewStaticMesh = NewObject<UStaticMesh>(NewAssetPackage, UStaticMesh::StaticClass(), *StaticMeshName, InputFlags);
         checkSlow(NewStaticMesh);
         if (NewStaticMesh) FAssetRegistryModule::AssetCreated(NewStaticMesh);
         bCreated = true;
