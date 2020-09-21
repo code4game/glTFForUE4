@@ -4,7 +4,7 @@
 [![Manual](https://img.shields.io/badge/read-manual-green.svg?style=flat)](https://gltf-for-ue4.readthedocs.io/)
 [![Roadmap](https://img.shields.io/badge/visit-roadmap-blue.svg?style=flat)](https://github.com/code4game/glTFForUE4/milestones)
 
-> If you are interesting, you can star or fork or post an issue.
+> If you are interesting, you can star or fork or post an issue or join a chat in [discord](https://discord.gg/UqzxsEx).
 
 ## Download & Donate
 
