@@ -2,9 +2,10 @@
 
 [![glTF status](https://img.shields.io/badge/glTF-2%2E0-green.svg?style=flat)](https://github.com/KhronosGroup/glTF)
 [![Manual](https://img.shields.io/badge/read-manual-green.svg?style=flat)](https://gltf-for-ue4.readthedocs.io/)
-[![Roadmap](https://img.shields.io/badge/visit-roadmap-blue.svg?style=flat)](https://github.com/code4game/glTFForUE4/milestones)
+[![Roadmap](https://img.shields.io/badge/visit-roadmap-green.svg?style=flat)](https://github.com/code4game/glTFForUE4/milestones)
+[![Chat](https://img.shields.io/badge/join-chat-green.svg?style=flat)](https://discord.gg/UqzxsEx)
 
-> If you are interesting, you can star or fork or post an issue or join a chat in [discord](https://discord.gg/UqzxsEx).
+> If you are interesting, you can star or fork or post an issue or say something.
 
 ## Download & Donate
 
@@ -13,7 +14,7 @@
 | 4.23 | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
 | 4.24 | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
 | 4.25 | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
-| Donate | [![Download from marketplace](https://img.shields.io/badge/buy-marketplace-blue.svg?style=flat)](https://www.unrealengine.com/marketplace/en-US/product/gltfforue4) |
+| Donate | [![Download from marketplace](https://img.shields.io/badge/buy-marketplace-orange.svg?style=flat)](https://www.unrealengine.com/marketplace/en-US/product/gltfforue4) |
 
 > Now, I just maintenance the lastest three versions. It should available for UE4.10~22, you need compile it by yourself.
 >
