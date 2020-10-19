@@ -7,7 +7,7 @@
     "SupportURL": "https://doc.c4g.io/",
     "Category": "Importers",
     "MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/42c1de74ac44481bb4e80378863e04c8",
-    "FileVersion": 3,
+    "FileVersion": 2,
     "Version": 1,
     "VersionName": "2.0.1",
     "EnabledByDefault": true,
