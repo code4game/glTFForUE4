@@ -112,7 +112,14 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
         for (TPair<int32, FglTFImporterNodeInfo>& NodeInfo : glTFImporterCollection.NodeInfos)
         {
             FglTFImporterNodeInfo& NodeInfoValue = NodeInfo.Value;
-            NodeInfoValue.AbsoluteTransform.ScaleTranslation(ScaleVector);
+            if (glTFImporterOptions->Details->bApplyAbsoluteTransform)
+            {
+                NodeInfoValue.AbsoluteTransform *= ScaleTransform;
+            }
+            else
+            {
+                NodeInfoValue.AbsoluteTransform.ScaleTranslation(ScaleVector);
+            }
         }
     }
 
@@ -153,10 +160,11 @@ UObject* FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImporterOptions>& InglT
     check(glTFImporterOptions->Details);
 
     const FglTFImporterNodeInfo& NodeInfo = InOutglTFImporterCollection.FindNodeInfo(glTFNodeId);
-    const FTransform TransformScale(FQuat::Identity, FVector::ZeroVector, FVector(glTFImporterOptions->Details->MeshScaleRatio));
+    const FVector ScaleVector(glTFImporterOptions->Details->MeshScaleRatio);
+    const FTransform ScaleTransform(FQuat::Identity, FVector::ZeroVector, ScaleVector);
     const FTransform TransformMesh = glTFImporterOptions->Details->bApplyAbsoluteTransform
-        ? (NodeInfo.AbsoluteTransform * TransformScale)
-        : TransformScale;
+        ? NodeInfo.AbsoluteTransform
+        : ScaleTransform;
     const FTransform TransformActor = glTFImporterOptions->Details->bApplyAbsoluteTransform
         ? FTransform::Identity
         : NodeInfo.AbsoluteTransform;
