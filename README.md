@@ -32,7 +32,7 @@
 > If you get the message `batch response: This repository is over its data quota. Account responsible for LFS bandwidth should purchase more data packs to restore access.`
 > when you clone or pull form [github](https://github.com/code4game/glTFForUE4),
 > you can pull the project from [gitlab](https://gitlab.com/c4g/gltf/glTFForUE4).
-> *I am too poor to buy LFS bandwidth.* :sob:
+> *I don't have enough money to buy LFS bandwidth. :sob:. The LFS is excellent, but its free bandwidth is too small for an open-source project.*
 
 ## License
 
