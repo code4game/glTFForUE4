@@ -3,7 +3,7 @@
 [![glTF status](https://img.shields.io/badge/glTF-2%2E0-green.svg?style=flat)](https://github.com/KhronosGroup/glTF)
 [![Manual](https://img.shields.io/badge/read-manual-green.svg?style=flat)](https://gltf-for-ue4.readthedocs.io/)
 [![Roadmap](https://img.shields.io/badge/visit-roadmap-green.svg?style=flat)](https://github.com/code4game/glTFForUE4/milestones)
-[![Chat](https://img.shields.io/badge/join-chat-green.svg?style=flat)](https://discord.gg/UqzxsEx)
+[![Join the chat at https://gitter.im/code4game/glTFForUE4](https://badges.gitter.im/code4game/glTFForUE4.svg)](https://gitter.im/code4game/glTFForUE4)
 
 > If you are interesting, you can star or fork or post an issue or say something.
 
