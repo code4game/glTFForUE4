@@ -126,7 +126,6 @@ namespace EglTFBufferSource
 {
     enum Type
     {
-        Binaries,
         Images,
         Buffers,
         Max,
@@ -151,6 +150,8 @@ public:
     {
         if (!IndexToIndex[SourceType].Contains(InIndex)) return DataEmpty;
         uint32 DataIndex = IndexToIndex[SourceType][InIndex];
+        /// just one data when import a glb file
+        if (bConstructByBinary) DataIndex = 0;
         if (DataIndex >= static_cast<uint32>(Datas.Num())) return DataEmpty;
         const TSharedPtr<FglTFBufferData>& Data = Datas[DataIndex];
         if (!Data.IsValid()) return DataEmpty;
@@ -214,9 +215,7 @@ public:
         const std::shared_ptr<libgltf::SBufferView>& BufferView = InglTF->bufferViews[InBufferViewIndex];
         if (!BufferView || !BufferView->buffer) return false;
         int32 BufferIndex = (int32)(*BufferView->buffer);
-        return (bConstructByBinary
-            ? Get<TElem, EglTFBufferSource::Binaries>(BufferIndex, OutBufferSegment, OutFilePath, BufferView->byteOffset + InOffset, InCount != 0 ? InCount : BufferView->byteLength, BufferView->byteStride)
-            : Get<TElem, EglTFBufferSource::Buffers>(BufferIndex, OutBufferSegment, OutFilePath, BufferView->byteOffset + InOffset, InCount != 0 ? InCount : BufferView->byteLength, BufferView->byteStride));
+        return Get<TElem, EglTFBufferSource::Buffers>(BufferIndex, OutBufferSegment, OutFilePath, BufferView->byteOffset + InOffset, InCount != 0 ? InCount : BufferView->byteLength, BufferView->byteStride);
     }
 
 private:
