@@ -9,7 +9,7 @@ public class libdraco_ue4 : ModuleRules
     {
         Type = ModuleType.External;
 
-        string DracoPath = ModuleDirectory;
+        string DracoPath = System.IO.Path.Combine(ModuleDirectory, "libdraco-1.3.0");
         string IncludePath = System.IO.Path.Combine(DracoPath, "include");
         List<string> LibPaths = new List<string>();
         List<string> LibFilePaths = new List<string>();
