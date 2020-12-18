@@ -38,10 +38,11 @@ public class libdraco_ue4 : ModuleRules
             }
 #endif
 
-            LibPaths.Add(System.IO.Path.Combine(DracoPath, "lib", PlatformName, "vs2019", "Release"));
+            string LibPath = System.IO.Path.Combine(DracoPath, "lib", PlatformName, "vs2019", "Release");
+            LibPaths.Add(LibPath);
 
-            LibFilePaths.Add("dracodec.lib");
-            LibFilePaths.Add("dracoenc.lib");
+            LibFilePaths.Add(System.IO.Path.Combine(LibPath, "dracodec.lib"));
+            LibFilePaths.Add(System.IO.Path.Combine(LibPath, "dracoenc.lib"));
         }
         else if (Target.Platform == UnrealTargetPlatform.Mac)
         {
@@ -53,7 +54,11 @@ public class libdraco_ue4 : ModuleRules
         }
 
         PublicIncludePaths.Add(IncludePath);
+#if UE_4_24_OR_LATER
+        PublicSystemLibraryPaths.AddRange(LibPaths);
+#else
         PublicLibraryPaths.AddRange(LibPaths);
+#endif
         PublicAdditionalLibraries.AddRange(LibFilePaths);
     }
 }
