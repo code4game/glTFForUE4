@@ -26,7 +26,6 @@
 
 > Now, I just maintenance the latest three versions of Unreal Engine.
 > It should available for UE4.10~23, you can compile the source code.
-> I failed to compile the plugin for UE4.25/UE4.24 after upgrading the macOS to Big Sur. :sweat:
 > 
 > If you get the message `batch response: This repository is over its data quota. Account responsible for LFS bandwidth should purchase more data packs to restore access.`
 > when you clone or pull from [github](https://github.com/code4game/glTFForUE4),
