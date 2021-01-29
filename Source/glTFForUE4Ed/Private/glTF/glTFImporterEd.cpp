@@ -172,7 +172,16 @@ UObject* FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImporterOptions>& InglT
     TArray<UObject*> CreatedObjects;
     if (!!(glTFNodePtr->mesh))
     {
-        if (!glTFImporterOptions->Details->bImportSkeletalMesh || !glTFNodePtr->skin)
+        bool bImportAsSkeletalMesh = false;
+        if (glTFImporterOptions->Details->bImportSkeletalMesh && glTFNodePtr->skin)
+        {
+            bImportAsSkeletalMesh |= true;
+        }
+        if (glTFImporterOptions->Details->bImportMorphTarget)
+        {
+            //
+        }
+        if (!bImportAsSkeletalMesh)
         {
             UStaticMesh* NewStaticMesh = FglTFImporterEdStaticMesh::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext)
                 ->CreateStaticMesh(InglTFImporterOptions, InGlTF, glTFNodePtr->mesh, InglTFBuffers, TransformMesh, InOutglTFImporterCollection);
