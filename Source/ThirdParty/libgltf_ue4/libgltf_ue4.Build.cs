@@ -9,7 +9,7 @@ public class libgltf_ue4 : ModuleRules
     {
         Type = ModuleType.External;
 
-        string glTFPath = System.IO.Path.Combine(ModuleDirectory, "libgltf-0.1.6");
+        string glTFPath = System.IO.Path.Combine(ModuleDirectory, "libgltf-0.1.7");
         string IncludePath = System.IO.Path.Combine(glTFPath, "include");
         List<string> LibPaths = new List<string>();
         string LibFilePath = "";
@@ -38,9 +38,10 @@ public class libgltf_ue4 : ModuleRules
             }
 #endif
 
-            LibPaths.Add(System.IO.Path.Combine(glTFPath, "lib", PlatformName, "vs2019", "Release"));
+            string LibPath = System.IO.Path.Combine(glTFPath, "lib", PlatformName, "vs2019", "Release");
+            LibPaths.Add(LibPath);
 
-            LibFilePath = "libgltf.lib";
+            LibFilePath = System.IO.Path.Combine(LibPath, "libgltf.lib");
         }
         else if (Target.Platform == UnrealTargetPlatform.Mac)
         {
@@ -51,7 +52,11 @@ public class libgltf_ue4 : ModuleRules
         }
 
         PublicIncludePaths.Add(IncludePath);
+#if UE_4_24_OR_LATER
+        PublicSystemLibraryPaths.AddRange(LibPaths);
+#else
         PublicLibraryPaths.AddRange(LibPaths);
+#endif
         PublicAdditionalLibraries.Add(LibFilePath);
         PublicDefinitions.Add("LIBGLTF_CHARACTOR_ENCODING_IS_UTF8");
     }

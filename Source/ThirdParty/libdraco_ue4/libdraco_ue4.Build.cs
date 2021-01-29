@@ -9,7 +9,7 @@ public class libdraco_ue4 : ModuleRules
     {
         Type = ModuleType.External;
 
-        string DracoPath = System.IO.Path.Combine(ModuleDirectory, "libdraco-1.3.6");
+        string DracoPath = System.IO.Path.Combine(ModuleDirectory, "libdraco-1.3.0");
         string IncludePath = System.IO.Path.Combine(DracoPath, "include");
         List<string> LibPaths = new List<string>();
         List<string> LibFilePaths = new List<string>();
@@ -38,22 +38,27 @@ public class libdraco_ue4 : ModuleRules
             }
 #endif
 
-            LibPaths.Add(System.IO.Path.Combine(DracoPath, "lib", PlatformName, "vs2019", "Release"));
+            string LibPath = System.IO.Path.Combine(DracoPath, "lib", PlatformName, "vs2019", "Release");
+            LibPaths.Add(LibPath);
 
-            LibFilePaths.Add("dracodec.lib");
-            LibFilePaths.Add("dracoenc.lib");
+            LibFilePaths.Add(System.IO.Path.Combine(LibPath, "dracodec.lib"));
+            LibFilePaths.Add(System.IO.Path.Combine(LibPath, "dracoenc.lib"));
         }
         else if (Target.Platform == UnrealTargetPlatform.Mac)
         {
             string LibPath = System.IO.Path.Combine(DracoPath, "lib", "macos");
             LibPaths.Add(LibPath);
 
-            LibFilePaths.Add(System.IO.Path.Combine(LibPath, "libdracodec.a"));
-            LibFilePaths.Add(System.IO.Path.Combine(LibPath, "libdracoenc.a"));
+            LibFilePaths.Add(System.IO.Path.Combine(LibPath, "dracodec.a"));
+            LibFilePaths.Add(System.IO.Path.Combine(LibPath, "dracoenc.a"));
         }
 
         PublicIncludePaths.Add(IncludePath);
+#if UE_4_24_OR_LATER
+        PublicSystemLibraryPaths.AddRange(LibPaths);
+#else
         PublicLibraryPaths.AddRange(LibPaths);
+#endif
         PublicAdditionalLibraries.AddRange(LibFilePaths);
     }
 }

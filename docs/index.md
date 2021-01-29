@@ -16,7 +16,7 @@ This is a **[glTF][glTF]** tool for **[UE4][UE4](Unreal Engine 4)**. It can help
 * Imports the material(`PBR`) in UE4 editor
 * Imports the texture in UE4 editor
 
-## More powerfull features in the future
+## More powerful features in the future
 
 You can [visit all in github][Github].
 

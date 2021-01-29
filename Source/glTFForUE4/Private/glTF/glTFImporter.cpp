@@ -208,7 +208,7 @@ FglTFBuffers::~FglTFBuffers()
 
 bool FglTFBuffers::CacheBinary(uint32 InIndex, const TArray<uint8>& InData)
 {
-    IndexToIndex[EglTFBufferSource::Binaries].Add(InIndex, Datas.Num());
+    IndexToIndex[EglTFBufferSource::Buffers].Add(InIndex, Datas.Num());
     Datas.Add(MakeShared<FglTFBufferData>(InData));
     return true;
 }
