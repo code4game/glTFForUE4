@@ -1,7 +1,7 @@
 /*
  * This software is released under the MIT license.
  *
- * Copyright (c) 2017-2020 Alex Chi, The Code 4 Game Organization
+ * Copyright (c) 2017-2021 Code 4 Game, Org. All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -660,7 +660,7 @@ namespace libgltf
         // The type of primitives to render.
         int32_t mode;
         // An array of Morph Targets, each  Morph Target is a dictionary mapping attributes (only `POSITION`, `NORMAL`, and `TANGENT` supported) to their deviations in the Morph Target.
-        std::vector<std::shared_ptr<SGlTFId>> targets;
+        std::vector<std::map<string_t, std::shared_ptr<SGlTFId>>> targets;
     };
 
     /*!

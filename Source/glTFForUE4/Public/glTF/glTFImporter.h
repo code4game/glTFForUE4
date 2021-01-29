@@ -283,10 +283,32 @@ protected:
     class FFeedbackContext* FeedbackContext;
 
 public:
-    static bool GetStaticMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers
-        , TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_TEXCOORDS], bool bSwapYZ = true);
-    static bool GetSkeletalMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers
-        , TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_TEXCOORDS], TArray<FVector4> OutJointsIndices[GLTF_JOINT_LAYERS_NUM_MAX], TArray<FVector4> OutJointsWeights[GLTF_JOINT_LAYERS_NUM_MAX], bool bSwapYZ = true);
+    static bool GetStaticMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF,
+        const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive,
+        const FglTFBuffers& InBuffers,
+        TArray<uint32>& OutTriangleIndices,
+        TArray<FVector>& OutVertexPositions,
+        TArray<TArray<FVector>>& OutMorphTargetsVertexPositions,
+        TArray<FVector>& OutVertexNormals,
+        TArray<TArray<FVector>>& OutMorphTargetsVertexNormals,
+        TArray<FVector4>& OutVertexTangents,
+        TArray<TArray<FVector4>>& OutMorphTargetsVertexTangents,
+        TArray<FVector2D> OutVertexTexcoords[MAX_TEXCOORDS],
+        bool bSwapYZ = true);
+    static bool GetSkeletalMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF,
+        const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive,
+        const FglTFBuffers& InBuffers,
+        TArray<uint32>& OutTriangleIndices,
+        TArray<FVector>& OutVertexPositions,
+        TArray<TArray<FVector>>& OutMorphTargetsVertexPositions,
+        TArray<FVector>& OutVertexNormals,
+        TArray<TArray<FVector>>& OutMorphTargetsVertexNormals,
+        TArray<FVector4>& OutVertexTangents,
+        TArray<TArray<FVector4>>& OutMorphTargetsVertexTangents,
+        TArray<FVector2D> OutVertexTexcoords[MAX_TEXCOORDS],
+        TArray<FVector4> OutJointsIndices[GLTF_JOINT_LAYERS_NUM_MAX],
+        TArray<FVector4> OutJointsWeights[GLTF_JOINT_LAYERS_NUM_MAX],
+        bool bSwapYZ = true);
     static bool GetInverseBindMatrices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SSkin>& InSkin, const FglTFBuffers& InBuffers, TArray<FMatrix>& OutInverseBindMatrices, bool bSwapYZ = true);
     static bool GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SAnimation>& InglTFAnimation, const FglTFBuffers& InBuffers, FglTFAnimationSequenceDatas& OutAnimationSequenceDatas, bool bSwapYZ = true);
     static bool GetNodeParentIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<int32>& OutParentIndices);

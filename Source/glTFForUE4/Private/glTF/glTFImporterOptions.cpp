@@ -5,6 +5,7 @@
 
 FglTFImporterOptionsDetailsStored::FglTFImporterOptionsDetailsStored()
     : bImportSkeletalMesh(true)
+    , bImportMorphTarget(true)
     , bImportAnimation(true)
     , bImportMaterial(true)
     , bImportTexture(true)
@@ -28,11 +29,13 @@ FglTFImporterOptionsDetailsStored::FglTFImporterOptionsDetailsStored()
 UglTFImporterOptionsDetails::UglTFImporterOptionsDetails(const FObjectInitializer& InObjectInitializer)
     : Super(InObjectInitializer)
     , bImportSkeletalMesh(true)
+    , bImportMorphTarget(true)
     , bImportAnimation(true)
     , bImportMaterial(true)
     , bImportTexture(true)
     , bImportAllScene(false)
     , bImportLevel(false)
+    , bImportLightInLevel(true)
     , ImportLevelTemplate()
     , MeshScaleRatio(1.0f)
     , bApplyAbsoluteTransform(false)
@@ -53,6 +56,7 @@ UglTFImporterOptionsDetails::UglTFImporterOptionsDetails(const FObjectInitialize
 void UglTFImporterOptionsDetails::Get(FglTFImporterOptionsDetailsStored& OutDetailsStored) const
 {
     OutDetailsStored.bImportSkeletalMesh = bImportSkeletalMesh;
+    OutDetailsStored.bImportMorphTarget = bImportMorphTarget;
     OutDetailsStored.bImportAnimation = bImportAnimation;
     OutDetailsStored.bImportMaterial = bImportMaterial;
     OutDetailsStored.bImportTexture = bImportTexture;
@@ -74,6 +78,7 @@ void UglTFImporterOptionsDetails::Get(FglTFImporterOptionsDetailsStored& OutDeta
 void UglTFImporterOptionsDetails::Set(const FglTFImporterOptionsDetailsStored& InDetailsStored)
 {
     bImportSkeletalMesh = InDetailsStored.bImportSkeletalMesh;
+    bImportMorphTarget = InDetailsStored.bImportMorphTarget;
     bImportAnimation = InDetailsStored.bImportAnimation;
     bImportMaterial = InDetailsStored.bImportMaterial;
     bImportTexture = InDetailsStored.bImportTexture;

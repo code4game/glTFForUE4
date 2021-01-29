@@ -654,12 +654,21 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
 
     TArray<uint32> TriangleIndices;
     TArray<FVector> Points;
+    TArray<TArray<FVector>> MorphTargetsPoints;
     TArray<FVector> Normals;
+    TArray<TArray<FVector>> MorphTargetsNormals;
     TArray<FVector4> Tangents;
+    TArray<TArray<FVector4>> MorphTargetsTangents;
     TArray<FVector2D> TextureCoords[MAX_TEXCOORDS];
     TArray<FVector4> JointsIndeies[GLTF_JOINT_LAYERS_NUM_MAX];
     TArray<FVector4> JointsWeights[GLTF_JOINT_LAYERS_NUM_MAX];
-    if (!FglTFImporter::GetSkeletalMeshData(InGlTF, InMeshPrimitive, InBuffers, TriangleIndices, Points, Normals, Tangents, TextureCoords, JointsIndeies, JointsWeights))
+    if (!FglTFImporter::GetSkeletalMeshData(InGlTF, InMeshPrimitive, InBuffers,
+        TriangleIndices,
+        Points, MorphTargetsPoints,
+        Normals, MorphTargetsNormals,
+        Tangents, MorphTargetsTangents,
+        TextureCoords,
+        JointsIndeies, JointsWeights))
     {
         return false;
     }

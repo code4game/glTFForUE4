@@ -6,6 +6,9 @@
 [![Join the chat at https://gitter.im/code4game/glTFForUE4](https://badges.gitter.im/code4game/glTFForUE4.svg)](https://gitter.im/code4game/glTFForUE4)
 
 > If you are interesting, you can star or fork or post an issue or say something.
+>
+> Use [libgltf](https://github.com/code4game/libgltf) to parse the glTF 2.0 file.
+
 
 ## Download
 
@@ -25,7 +28,7 @@
 | 4.15 | 1.2.2 Win/Mac | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
 
 > Now, I just maintenance the latest three versions of Unreal Engine.
-> It should available for UE4.10~23, you can compile the source code.
+> It should available for UE4.10~23, you can compile it by yourself.
 > 
 > If you get the message `batch response: This repository is over its data quota. Account responsible for LFS bandwidth should purchase more data packs to restore access.`
 > when you clone or pull from [github](https://github.com/code4game/glTFForUE4),

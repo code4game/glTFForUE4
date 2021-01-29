@@ -14,7 +14,10 @@ struct GLTFFORUE4_API FglTFImporterOptionsDetailsStored
     UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (ToolTip = "Construct the skeletal mesh when node has skin"))
     bool bImportSkeletalMesh;
     
-    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay, meta = (EditCondition = bImportSkeletalMesh))
+    UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (ToolTip = "Import the morph target?"))
+    bool bImportMorphTarget;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay, meta = (ToolTip = "Import the animation for skeletal mesh or morph target?"))
     bool bImportAnimation;
 
     UPROPERTY(EditAnywhere, Config, Category = "Common")
@@ -75,7 +78,10 @@ public:
     UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (ToolTip = "Construct the skeletal mesh when node has skin"))
     bool bImportSkeletalMesh;
     
-    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay, meta = (EditCondition = bImportSkeletalMesh))
+    UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (ToolTip = "Import the morph target?"))
+    bool bImportMorphTarget;
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay, meta = (ToolTip = "Import the animation for skeletal mesh or morph target?"))
     bool bImportAnimation;
 
     UPROPERTY(EditAnywhere, Config, Category = "Common")
@@ -89,7 +95,10 @@ public:
     
     UPROPERTY(EditAnywhere, Config, Category = "Common", meta = (ToolTip = "Construct the scene in the current level or new level"))
     bool bImportLevel;
-
+    
+    UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay, meta = (EditCondition = bImportLevel, ToolTip = "Import the light in the level?"))
+    bool bImportLightInLevel;
+    
     UPROPERTY(EditAnywhere, Config, Category = "Common", AdvancedDisplay, meta = (EditCondition = bImportLevel, AllowedClasses = "World", ToolTip = "Import a new level that create by the template"))
     FStringAssetReference ImportLevelTemplate;
 
