@@ -1,16 +1,15 @@
-// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
+// Copyright(c) 2016 - 2021 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4PrivatePCH.h"
 #include "glTF/glTFImporterOptions.h"
 
 FglTFImporterOptionsDetailsStored::FglTFImporterOptionsDetailsStored()
-    : bImportSkeletalMesh(true)
-    , bImportMorphTarget(true)
-    , bImportAnimation(true)
+    : bImportAllScene(false)
+    , bImportStaticMesh(true)
+    , bImportSkeletalMesh(true)
     , bImportMaterial(true)
     , bImportTexture(true)
-    , bImportAllScene(false)
-    , MeshScaleRatio(1.0f)
+    , MeshScaleRatio(100.0f)
     , bApplyAbsoluteTransform(false)
     , bGenerateLightmapUVs(true)
     , bInvertNormal(false)
@@ -20,6 +19,8 @@ FglTFImporterOptionsDetailsStored::FglTFImporterOptionsDetailsStored()
     , bRemoveDegenerates(false)
     , bBuildAdjacencyBuffer(false)
     , bUseFullPrecisionUVs(false)
+    , bImportAnimation(true)
+    , bImportMorphTarget(true)
     , bCreatePhysicsAsset(true)
     , bUseMaterialInstance(true)
 {
@@ -28,16 +29,13 @@ FglTFImporterOptionsDetailsStored::FglTFImporterOptionsDetailsStored()
 
 UglTFImporterOptionsDetails::UglTFImporterOptionsDetails(const FObjectInitializer& InObjectInitializer)
     : Super(InObjectInitializer)
+    , bImportAllScene(false)
+    , bImportStaticMesh(true)
     , bImportSkeletalMesh(true)
-    , bImportMorphTarget(true)
-    , bImportAnimation(true)
     , bImportMaterial(true)
     , bImportTexture(true)
-    , bImportAllScene(false)
     , bImportLevel(false)
-    , bImportLightInLevel(true)
-    , ImportLevelTemplate()
-    , MeshScaleRatio(1.0f)
+    , MeshScaleRatio(100.0f)
     , bApplyAbsoluteTransform(false)
     , bGenerateLightmapUVs(true)
     , bInvertNormal(false)
@@ -47,20 +45,24 @@ UglTFImporterOptionsDetails::UglTFImporterOptionsDetails(const FObjectInitialize
     , bRemoveDegenerates(false)
     , bBuildAdjacencyBuffer(false)
     , bUseFullPrecisionUVs(false)
+    , bImportAnimation(true)
+    , bImportMorphTarget(true)
     , bCreatePhysicsAsset(true)
     , bUseMaterialInstance(true)
+    , bImportLightInLevel(false)
+    , bImportCameraInLevel(false)
+    , ImportLevelTemplate()
 {
     //
 }
 
 void UglTFImporterOptionsDetails::Get(FglTFImporterOptionsDetailsStored& OutDetailsStored) const
 {
+    OutDetailsStored.bImportAllScene = bImportAllScene;
+    OutDetailsStored.bImportStaticMesh = bImportStaticMesh;
     OutDetailsStored.bImportSkeletalMesh = bImportSkeletalMesh;
-    OutDetailsStored.bImportMorphTarget = bImportMorphTarget;
-    OutDetailsStored.bImportAnimation = bImportAnimation;
     OutDetailsStored.bImportMaterial = bImportMaterial;
     OutDetailsStored.bImportTexture = bImportTexture;
-    OutDetailsStored.bImportAllScene = bImportAllScene;
     OutDetailsStored.MeshScaleRatio = MeshScaleRatio;
     OutDetailsStored.bApplyAbsoluteTransform = bApplyAbsoluteTransform;
     OutDetailsStored.bGenerateLightmapUVs = bGenerateLightmapUVs;
@@ -71,18 +73,19 @@ void UglTFImporterOptionsDetails::Get(FglTFImporterOptionsDetailsStored& OutDeta
     OutDetailsStored.bRemoveDegenerates = bRemoveDegenerates;
     OutDetailsStored.bBuildAdjacencyBuffer = bBuildAdjacencyBuffer;
     OutDetailsStored.bUseFullPrecisionUVs = bUseFullPrecisionUVs;
+    OutDetailsStored.bImportAnimation = bImportAnimation;
+    OutDetailsStored.bImportMorphTarget = bImportMorphTarget;
     OutDetailsStored.bCreatePhysicsAsset = bCreatePhysicsAsset;
     OutDetailsStored.bUseMaterialInstance = bUseMaterialInstance;
 }
 
 void UglTFImporterOptionsDetails::Set(const FglTFImporterOptionsDetailsStored& InDetailsStored)
 {
+    bImportAllScene = InDetailsStored.bImportAllScene;
+    bImportStaticMesh = InDetailsStored.bImportStaticMesh;
     bImportSkeletalMesh = InDetailsStored.bImportSkeletalMesh;
-    bImportMorphTarget = InDetailsStored.bImportMorphTarget;
-    bImportAnimation = InDetailsStored.bImportAnimation;
     bImportMaterial = InDetailsStored.bImportMaterial;
     bImportTexture = InDetailsStored.bImportTexture;
-    bImportAllScene = InDetailsStored.bImportAllScene;
     MeshScaleRatio = InDetailsStored.MeshScaleRatio;
     bApplyAbsoluteTransform = InDetailsStored.bApplyAbsoluteTransform;
     bGenerateLightmapUVs = InDetailsStored.bGenerateLightmapUVs;
@@ -93,6 +96,8 @@ void UglTFImporterOptionsDetails::Set(const FglTFImporterOptionsDetailsStored& I
     bRemoveDegenerates = InDetailsStored.bRemoveDegenerates;
     bBuildAdjacencyBuffer = InDetailsStored.bBuildAdjacencyBuffer;
     bUseFullPrecisionUVs = InDetailsStored.bUseFullPrecisionUVs;
+    bImportAnimation = InDetailsStored.bImportAnimation;
+    bImportMorphTarget = InDetailsStored.bImportMorphTarget;
     bCreatePhysicsAsset = InDetailsStored.bCreatePhysicsAsset;
     bUseMaterialInstance = InDetailsStored.bUseMaterialInstance;
 }

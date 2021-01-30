@@ -1,4 +1,4 @@
-// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
+// Copyright(c) 2016 - 2021 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTF/glTFImporterEdStaticMesh.h"
@@ -45,14 +45,21 @@ namespace glTFForUE4Ed
     class FMergeMorphTarget
     {
     public:
-        static bool Do(TArray<T>& InOutOrigin, const TArray<T>& InMorph)
+        static void Do(TArray<T>& InOutOrigin, const TArray<TArray<T>>& InMorphTargets, const std::vector<float>& InWeights)
         {
-            if (InOutOrigin.Num() != InMorph.Num()) return false;
-            for (int32 i = 0, ic = InOutOrigin.Num(); i < ic; ++i)
+            const int32_t count = InMorphTargets.Num() > static_cast<int32_t>(InWeights.size()) ?
+                static_cast<int32_t>(InWeights.size()) : InMorphTargets.Num();
+            for (int32_t i = 0; i < count; ++i)
             {
-                InOutOrigin[i] += InMorph[i];
+                const TArray<T>& MorphTarget = InMorphTargets[i];
+                if (InOutOrigin.Num() != MorphTarget.Num()) continue;
+                const float Weight = InWeights.empty() ? 1.0f : InWeights[i];
+                if (Weight == 0.0f) continue;
+                for (int32 j = 0, jc = InOutOrigin.Num(); j < jc; ++j)
+                {
+                    InOutOrigin[j] += MorphTarget[j] * Weight;
+                }
             }
-            return true;
         }
     };
 }
@@ -141,7 +148,11 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
         NewAssetPackage = LoadPackage(nullptr, *NewPackagePath, LOAD_None);
         if (!NewAssetPackage)
         {
+#if (ENGINE_MINOR_VERSION <= 25)
             NewAssetPackage = CreatePackage(nullptr, *NewPackagePath);
+#else
+            NewAssetPackage = CreatePackage(*NewPackagePath);
+#endif
             checkSlow(NewAssetPackage);
         }
         if (!NewAssetPackage)
@@ -284,7 +295,7 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const TSharedPtr<FglTFImporterOp
         {
             MaterialId = (*Primitive->material);
         }
-        if (!GenerateRawMesh(InglTFImporterOptions, InGlTF, Primitive, InBuffers, InNodeAbsoluteTransform, NewRawMesh, InOutglTFMaterialIds.Num(), InFeedbackTaskWrapper, InOutglTFImporterCollection))
+        if (!GenerateRawMesh(InglTFImporterOptions, InGlTF, InMesh, Primitive, InBuffers, InNodeAbsoluteTransform, NewRawMesh, InOutglTFMaterialIds.Num(), InFeedbackTaskWrapper, InOutglTFImporterCollection))
         {
             checkSlow(0);
             continue;
@@ -301,13 +312,21 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const TSharedPtr<FglTFImporterOp
 }
 
 bool FglTFImporterEdStaticMesh::GenerateRawMesh(const TSharedPtr<FglTFImporterOptions> InglTFImporterOptions,
-    const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers,
-    const FTransform& InNodeAbsoluteTransform, FRawMesh& OutRawMesh, int32 InMaterialIndex,
-    const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper, FglTFImporterCollection& InOutglTFImporterCollection) const
+    const std::shared_ptr<libgltf::SGlTF>& InGlTF,
+    const std::shared_ptr<libgltf::SMesh>& InMesh,
+    const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive,
+    const FglTFBuffers& InBuffers,
+    const FTransform& InNodeAbsoluteTransform,
+    FRawMesh& OutRawMesh,
+    int32 InMaterialIndex,
+    const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper,
+    FglTFImporterCollection& InOutglTFImporterCollection) const
 {
-    if (!InMeshPrimitive)
+    checkSlow(InMesh != nullptr);
+    checkSlow(InMeshPrimitive != nullptr);
+    checkSlow(InglTFImporterOptions.IsValid());
+    if (!InMesh || !InMeshPrimitive || !InglTFImporterOptions.IsValid())
     {
-        checkSlow(0);
         return false;
     }
 
@@ -335,12 +354,12 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const TSharedPtr<FglTFImporterOp
 
     OutRawMesh.WedgeIndices.Append(TriangleIndices);
 
-    if (InglTFImporterOptions.IsValid() && InglTFImporterOptions->Details->bImportMorphTarget)
+    if (InglTFImporterOptions->Details->bImportMorphTarget)
     {
         /// merge with the morph target
-        if (MorphTargetsPoints.Num() > 0) glTFForUE4Ed::FMergeMorphTarget<FVector>::Do(Points, MorphTargetsPoints[0]);
-        if (MorphTargetsNormals.Num() > 0) glTFForUE4Ed::FMergeMorphTarget<FVector>::Do(Normals, MorphTargetsNormals[0]);
-        if (MorphTargetsTangents.Num() > 0) glTFForUE4Ed::FMergeMorphTarget<FVector4>::Do(Tangents, MorphTargetsTangents[0]);
+        glTFForUE4Ed::FMergeMorphTarget<FVector>::Do(Points, MorphTargetsPoints, InMesh->weights);
+        glTFForUE4Ed::FMergeMorphTarget<FVector>::Do(Normals, MorphTargetsNormals, InMesh->weights);
+        glTFForUE4Ed::FMergeMorphTarget<FVector4>::Do(Tangents, MorphTargetsTangents, InMesh->weights);
     }
 
     const bool bNodeAbsoluteTransformIsIdentity = InNodeAbsoluteTransform.Equals(FTransform::Identity);

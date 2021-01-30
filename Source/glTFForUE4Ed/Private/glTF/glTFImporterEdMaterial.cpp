@@ -1,4 +1,4 @@
-// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
+// Copyright(c) 2016 - 2021 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTF/glTFImporterEdMaterial.h"
@@ -96,7 +96,11 @@ UMaterialInterface* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTF
     UPackage* MaterialPackage = LoadPackage(nullptr, *PackageName, LOAD_None);
     if (!MaterialPackage)
     {
+#if (ENGINE_MINOR_VERSION <= 25)
         MaterialPackage = CreatePackage(nullptr, *PackageName);
+#else
+        MaterialPackage = CreatePackage(*PackageName);
+#endif
     }
     if (!MaterialPackage) return nullptr;
     MaterialPackage->FullyLoad();

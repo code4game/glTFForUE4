@@ -1,4 +1,4 @@
-// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
+// Copyright(c) 2016 - 2021 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTF/glTFImporterEdTexture.h"
@@ -62,7 +62,11 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
     UPackage* TexturePackage = LoadPackage(nullptr, *PackageName, LOAD_None);
     if (!TexturePackage)
     {
+#if (ENGINE_MINOR_VERSION <= 25)
         TexturePackage = CreatePackage(nullptr, *PackageName);
+#else
+        TexturePackage = CreatePackage(*PackageName);
+#endif
     }
     if (!TexturePackage) return nullptr;
     TexturePackage->FullyLoad();

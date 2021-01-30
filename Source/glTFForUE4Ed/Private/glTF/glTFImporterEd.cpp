@@ -1,4 +1,4 @@
-// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
+// Copyright(c) 2016 - 2021 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTF/glTFImporterEd.h"
@@ -84,7 +84,11 @@ UObject* FglTFImporterEd::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImp
             UPackage* NewAssetPackage = LoadPackage(nullptr, *glTFImporterOptions->FilePathInEngine, LOAD_None);
             if (!NewAssetPackage)
             {
+#if (ENGINE_MINOR_VERSION <= 25)
                 NewAssetPackage = CreatePackage(nullptr, *glTFImporterOptions->FilePathInEngine);
+#else
+                NewAssetPackage = CreatePackage(*glTFImporterOptions->FilePathInEngine);
+#endif
                 checkSlow(NewAssetPackage);
                 glTFImporterCollection.TargetWorld = Cast<UWorld>(StaticDuplicateObject(glTFImporterOptions->Details->ImportLevelTemplate.TryLoad(), NewAssetPackage, InputName, InputFlags, UWorld::StaticClass()));
             }
@@ -170,29 +174,23 @@ UObject* FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImporterOptions>& InglT
         : NodeInfo.AbsoluteTransform;
 
     TArray<UObject*> CreatedObjects;
-    if (!!(glTFNodePtr->mesh))
+
+    std::shared_ptr<libgltf::SMesh> glTFMeshPtr;
+    if (glTFNodePtr->mesh)
     {
-        bool bImportAsSkeletalMesh = false;
-        if (glTFImporterOptions->Details->bImportSkeletalMesh && glTFNodePtr->skin)
+        const int32_t glTFMeshId = *glTFNodePtr->mesh;
+        if (glTFMeshId >= 0 && glTFMeshId < InGlTF->meshes.size())
         {
-            bImportAsSkeletalMesh |= true;
-        }
-        if (glTFImporterOptions->Details->bImportMorphTarget)
-        {
-            //
-        }
-        if (!bImportAsSkeletalMesh)
-        {
-            UStaticMesh* NewStaticMesh = FglTFImporterEdStaticMesh::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext)
-                ->CreateStaticMesh(InglTFImporterOptions, InGlTF, glTFNodePtr->mesh, InglTFBuffers, TransformMesh, InOutglTFImporterCollection);
-            FglTFImporterEd::UpdateAssetImportData(NewStaticMesh, InglTFImporterOptions);
-            CreatedObjects.Emplace(NewStaticMesh);
-            if (glTFImporterOptions->Details->bImportLevel)
-            {
-                SpawnStaticMeshActor(InOutglTFImporterCollection.TargetWorld, TransformActor, NewStaticMesh);
-            }
+            glTFMeshPtr = InGlTF->meshes[glTFMeshId];
         }
         else
+        {
+            UE_LOG(LogglTFForUE4Ed, Error, TEXT("The mesh index is invalid!"));
+        }
+    }
+    if (glTFMeshPtr)
+    {
+        if (glTFImporterOptions->Details->bImportSkeletalMesh && glTFNodePtr->skin)
         {
             USkeletalMesh* NewSkeletalMesh = FglTFImporterEdSkeletalMesh::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext)
                 ->CreateSkeletalMesh(InglTFImporterOptions, InGlTF, glTFNodePtr->mesh, glTFNodePtr->skin, InglTFBuffers, TransformMesh, InOutglTFImporterCollection);
@@ -203,10 +201,40 @@ UObject* FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImporterOptions>& InglT
                 SpawnSkeletalMeshActor(InOutglTFImporterCollection.TargetWorld, TransformActor, NewSkeletalMesh);
             }
         }
+        else if (glTFImporterOptions->Details->bImportStaticMesh)
+        {
+            UStaticMesh* NewStaticMesh = FglTFImporterEdStaticMesh::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext)
+                ->CreateStaticMesh(InglTFImporterOptions, InGlTF, glTFNodePtr->mesh, InglTFBuffers, TransformMesh, InOutglTFImporterCollection);
+            FglTFImporterEd::UpdateAssetImportData(NewStaticMesh, InglTFImporterOptions);
+            CreatedObjects.Emplace(NewStaticMesh);
+            if (glTFImporterOptions->Details->bImportLevel)
+            {
+                SpawnStaticMeshActor(InOutglTFImporterCollection.TargetWorld, TransformActor, NewStaticMesh);
+            }
+        }
     }
-    if (!!(glTFNodePtr->camera))
+
+    if (glTFImporterOptions->Details->bImportLevel && glTFImporterOptions->Details->bImportLightInLevel)
     {
-        //TODO:
+        //TODO: spawn a light in the level
+    }
+
+    if (glTFImporterOptions->Details->bImportLevel && glTFImporterOptions->Details->bImportCameraInLevel)
+    {
+        /// spawn a camera in the level
+        std::shared_ptr<libgltf::SCamera> glTFCameraPtr;
+        if (glTFNodePtr->camera)
+        {
+            const int32_t glTFCameraId = *glTFNodePtr->mesh;
+            if (glTFCameraId >= 0 && glTFCameraId < InGlTF->cameras.size())
+            {
+                glTFCameraPtr = InGlTF->cameras[glTFCameraId];
+            }
+        }
+        if (glTFCameraPtr)
+        {
+            //TODO:
+        }
     }
 
     if (!glTFNodePtr->children.empty())
