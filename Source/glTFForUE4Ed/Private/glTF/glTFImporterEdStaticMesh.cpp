@@ -40,28 +40,6 @@ namespace glTFForUE4Ed
         OutTo.WedgeColors.Append(InFrom.WedgeColors);
         return true;
     }
-
-    template<typename T>
-    class FMergeMorphTarget
-    {
-    public:
-        static void Do(TArray<T>& InOutOrigin, const TArray<TArray<T>>& InMorphTargets, const std::vector<float>& InWeights)
-        {
-            const int32_t count = InMorphTargets.Num() > static_cast<int32_t>(InWeights.size()) ?
-                static_cast<int32_t>(InWeights.size()) : InMorphTargets.Num();
-            for (int32_t i = 0; i < count; ++i)
-            {
-                const TArray<T>& MorphTarget = InMorphTargets[i];
-                if (InOutOrigin.Num() != MorphTarget.Num()) continue;
-                const float Weight = InWeights.empty() ? 1.0f : InWeights[i];
-                if (Weight == 0.0f) continue;
-                for (int32 j = 0, jc = InOutOrigin.Num(); j < jc; ++j)
-                {
-                    InOutOrigin[j] += MorphTarget[j] * Weight;
-                }
-            }
-        }
-    };
 }
 
 TSharedPtr<FglTFImporterEdStaticMesh> FglTFImporterEdStaticMesh::Get(UFactory* InFactory, UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
@@ -357,9 +335,9 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const TSharedPtr<FglTFImporterOp
     if (InglTFImporterOptions->Details->bImportMorphTarget)
     {
         /// merge with the morph target
-        glTFForUE4Ed::FMergeMorphTarget<FVector>::Do(Points, MorphTargetsPoints, InMesh->weights);
-        glTFForUE4Ed::FMergeMorphTarget<FVector>::Do(Normals, MorphTargetsNormals, InMesh->weights);
-        glTFForUE4Ed::FMergeMorphTarget<FVector4>::Do(Tangents, MorphTargetsTangents, InMesh->weights);
+        FglTFImporter::MergeMorphTarget<FVector>(Points, MorphTargetsPoints, InMesh->weights);
+        FglTFImporter::MergeMorphTarget<FVector>(Normals, MorphTargetsNormals, InMesh->weights);
+        FglTFImporter::MergeMorphTarget<FVector4>(Tangents, MorphTargetsTangents, InMesh->weights);
     }
 
     const bool bNodeAbsoluteTransformIsIdentity = InNodeAbsoluteTransform.Equals(FTransform::Identity);

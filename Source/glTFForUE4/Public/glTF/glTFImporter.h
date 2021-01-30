@@ -330,4 +330,22 @@ public:
     static TextureAddress WrapSToTextureAddress(int32 InValue);
     static TextureAddress WrapTToTextureAddress(int32 InValue);
     static ERichCurveInterpMode StringToRichCurveInterpMode(const FString& InInterpolation);
+
+    template<typename TElem>
+    static void MergeMorphTarget(TArray<TElem>& InOutOrigin, const TArray<TArray<TElem>>& InMorphTargets, const std::vector<float>& InWeights)
+    {
+        const int32_t count = InMorphTargets.Num() > static_cast<int32_t>(InWeights.size()) ?
+            static_cast<int32_t>(InWeights.size()) : InMorphTargets.Num();
+        for (int32_t i = 0; i < count; ++i)
+        {
+            const TArray<TElem>& MorphTarget = InMorphTargets[i];
+            if (InOutOrigin.Num() != MorphTarget.Num()) continue;
+            const float Weight = InWeights.empty() ? 1.0f : InWeights[i];
+            if (Weight == 0.0f) continue;
+            for (int32 j = 0, jc = InOutOrigin.Num(); j < jc; ++j)
+            {
+                InOutOrigin[j] += MorphTarget[j] * Weight;
+            }
+        }
+    }
 };
