@@ -191,7 +191,7 @@ UObject* FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImporterOptions>& InglT
     if (glTFMeshPtr)
     {
         if (glTFImporterOptions->Details->bImportSkeletalMesh &&
-            (glTFNodePtr->skin || (glTFImporterOptions->Details->bImportMorphTarget && !glTFMeshPtr->weights.empty())))
+            (glTFNodePtr->skin || (glTFImporterOptions->Details->bImportMorphTarget /*&& !glTFMeshPtr->weights.empty()*/)))
         {
             USkeletalMesh* NewSkeletalMesh = FglTFImporterEdSkeletalMesh::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext)
                 ->CreateSkeletalMesh(InglTFImporterOptions, InGlTF, glTFNodeId, glTFNodePtr->mesh, glTFNodePtr->skin, InglTFBuffers, TransformMesh, InOutglTFImporterCollection);
