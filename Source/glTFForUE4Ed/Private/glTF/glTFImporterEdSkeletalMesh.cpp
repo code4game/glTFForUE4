@@ -111,10 +111,10 @@ namespace glTFForUE4Ed
             OutNodeIndexToBoneNames.FindOrAdd(NodeIndexToBoneName.Key + RefBonesBinaryStartIndex) = NodeIndexToBoneName.Value;
         }
 
-        //TODO:
-        OutImportData.MorphTargets.Append(InImportData.MorphTargets);
+        //TODO: merge the morph target
+        /*OutImportData.MorphTargets.Append(InImportData.MorphTargets);
         OutImportData.MorphTargetModifiedPoints.Append(InImportData.MorphTargetModifiedPoints);
-        OutImportData.MorphTargetNames.Append(InImportData.MorphTargetNames);
+        OutImportData.MorphTargetNames.Append(InImportData.MorphTargetNames);*/
 
         return true;
     }
@@ -464,6 +464,11 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
         if (SkeletalMesh) FAssetRegistryModule::AssetCreated(SkeletalMesh);
         bCreated = true;
     }
+    else
+    {
+        SkeletalMesh->PreEditChange(nullptr);
+        SkeletalMesh->InvalidateDeriveDataCacheGUID();
+    }
     if (!SkeletalMesh) return nullptr;
 
     SkeletalMesh->PreEditChange(nullptr);
@@ -504,8 +509,14 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
     SkeletalMesh->CalculateInvRefMatrices();
 
 #if ENGINE_MINOR_VERSION <= 24
+    /// still use the legacy mesh builder
+#if ENGINE_MINOR_VERSION <= 23
+#else
+    SkeletalMesh->UseLegacyMeshDerivedDataKey = true;
+#endif
     ImportedResource->LODModels[0] = LODModel;
 #else
+    /// use new mesh builder
     FSkeletalMeshBuildSettings BuildOptions;
     BuildOptions.bRemoveDegenerates = glTFImporterOptions->Details->bRemoveDegenerates;
     BuildOptions.bRecomputeNormals = bShouldComputeNormals;
