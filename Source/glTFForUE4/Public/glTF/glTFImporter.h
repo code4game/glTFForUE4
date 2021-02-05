@@ -230,10 +230,23 @@ struct GLTFFORUE4_API FglTFAnimationSequenceKeyData
     FglTFAnimationSequenceKeyData();
 
     float Time;
+
     FTransform Transform;
+    TArray<float> Weights;
+
+    typedef uint8 EFlags;
+    enum EFlag
+    {
+        EFlag_None = 0,
+        EFlag_Transform = 1 << 0,
+        EFlag_Weights = 1 << 1,
+    };
+    EFlags Flags;
+
     ERichCurveInterpMode TranslationInterpolation;
     ERichCurveInterpMode RotationInterpolation;
     ERichCurveInterpMode ScaleInterpolation;
+    ERichCurveInterpMode WeightsInterpolation;
 };
 
 struct GLTFFORUE4_API FglTFAnimationSequenceData
@@ -247,6 +260,7 @@ struct GLTFFORUE4_API FglTFAnimationSequenceData
     void FindOrAddSequenceKeyDataAndSetTranslation(float InTime, const FVector& InValue, ERichCurveInterpMode InInterpolation);
     void FindOrAddSequenceKeyDataAndSetRotation(float InTime, const FQuat& InValue, ERichCurveInterpMode InInterpolation);
     void FindOrAddSequenceKeyDataAndSetScale(float InTime, const FVector& InValue, ERichCurveInterpMode InInterpolation);
+    void FindOrAddSequenceKeyDataAndSetWeights(float InTime, const TArray<float>& InValue, ERichCurveInterpMode InInterpolation);
 };
 
 struct GLTFFORUE4_API FglTFAnimationSequenceDatas
@@ -259,6 +273,7 @@ struct GLTFFORUE4_API FglTFAnimationSequenceDatas
     void FindOrAddSequenceDataAndSetTranslation(int32 InNodeIndex, float InTime, const FVector& InValue, ERichCurveInterpMode InInterpolation);
     void FindOrAddSequenceDataAndSetRotation(int32 InNodeIndex, float InTime, const FQuat& InValue, ERichCurveInterpMode InInterpolation);
     void FindOrAddSequenceDataAndSetScale(int32 InNodeIndex, float InTime, const FVector& InValue, ERichCurveInterpMode InInterpolation);
+    void FindOrAddSequenceDataAndSetWeights(int32 InNodeIndex, float InTime, const TArray<float>& InValue, ERichCurveInterpMode InInterpolation);
 };
 
 class GLTFFORUE4_API FglTFImporter
@@ -310,7 +325,11 @@ public:
         TArray<FVector4> OutJointsWeights[GLTF_JOINT_LAYERS_NUM_MAX],
         bool bSwapYZ = true);
     static bool GetInverseBindMatrices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SSkin>& InSkin, const FglTFBuffers& InBuffers, TArray<FMatrix>& OutInverseBindMatrices, bool bSwapYZ = true);
-    static bool GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SAnimation>& InglTFAnimation, const FglTFBuffers& InBuffers, FglTFAnimationSequenceDatas& OutAnimationSequenceDatas, bool bSwapYZ = true);
+    static bool GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlTF>& InGlTF,
+        const std::shared_ptr<libgltf::SAnimation>& InglTFAnimation,
+        const FglTFBuffers& InBuffers,
+        int32 InNumTargets,
+        FglTFAnimationSequenceDatas& OutAnimationSequenceDatas, bool bSwapYZ = true);
     static bool GetNodeParentIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<int32>& OutParentIndices);
     static bool GetNodeRelativeTransforms(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<FTransform>& OutRelativeTransforms, bool bSwapYZ = true);
     static bool GetNodeParentIndicesAndTransforms(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<int32>& OutParentIndices, TArray<FTransform>& OutRelativeTransforms, TArray<FTransform>& OutAbsoluteTransforms, bool bSwapYZ = true);

@@ -767,7 +767,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
         /// generate the skeleton animation
         FglTFImporterEdAnimationSequence::Get(InputFactory, NewAssetPackage, *SkeletalMeshName, InputFlags, FeedbackContext)
             ->CreateAnimationSequence(InglTFImporterOptions, InGlTF
-                , InBuffers, NodeIndexToBoneNames
+                , InBuffers, NodeIndexToBoneNames, SkeletalMeshImportData.MorphTargetNames
                 , SkeletalMesh, Skeleton
                 , FeedbackTaskWrapper
                 , InOutglTFImporterCollection);

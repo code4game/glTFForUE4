@@ -701,9 +701,12 @@ public:
 FglTFAnimationSequenceKeyData::FglTFAnimationSequenceKeyData()
     : Time(0.0f)
     , Transform(FTransform::Identity)
+    , Weights()
+    , Flags(EFlag_None)
     , TranslationInterpolation(RCIM_Linear)
     , RotationInterpolation(RCIM_Linear)
     , ScaleInterpolation(RCIM_Linear)
+    , WeightsInterpolation(RCIM_Linear)
 {
     //
 }
@@ -736,6 +739,8 @@ void FglTFAnimationSequenceData::FindOrAddSequenceKeyDataAndSetTranslation(float
     checkSlow(KeyDataPtr);
     if (!KeyDataPtr) return;
 
+    KeyDataPtr->Flags = KeyDataPtr->Flags | FglTFAnimationSequenceKeyData::EFlag_Transform;
+
     FVector NewValue = KeyDataPtr->Transform.GetTranslation() + InValue;
     KeyDataPtr->Transform.SetTranslation(NewValue);
     KeyDataPtr->TranslationInterpolation = InInterpolation;
@@ -746,6 +751,8 @@ void FglTFAnimationSequenceData::FindOrAddSequenceKeyDataAndSetRotation(float In
     FglTFAnimationSequenceKeyData* KeyDataPtr = FindOrAddSequenceKeyData(InTime);
     checkSlow(KeyDataPtr);
     if (!KeyDataPtr) return;
+
+    KeyDataPtr->Flags = KeyDataPtr->Flags | FglTFAnimationSequenceKeyData::EFlag_Transform;
 
     FQuat NewValue = KeyDataPtr->Transform.GetRotation() * InValue;
     KeyDataPtr->Transform.SetRotation(NewValue);
@@ -758,9 +765,23 @@ void FglTFAnimationSequenceData::FindOrAddSequenceKeyDataAndSetScale(float InTim
     checkSlow(KeyDataPtr);
     if (!KeyDataPtr) return;
 
+    KeyDataPtr->Flags = KeyDataPtr->Flags | FglTFAnimationSequenceKeyData::EFlag_Transform;
+
     FVector NewValue = KeyDataPtr->Transform.GetScale3D() * InValue;
     KeyDataPtr->Transform.SetScale3D(NewValue);
     KeyDataPtr->ScaleInterpolation = InInterpolation;
+}
+
+void FglTFAnimationSequenceData::FindOrAddSequenceKeyDataAndSetWeights(float InTime, const TArray<float>& InValue, ERichCurveInterpMode InInterpolation)
+{
+    FglTFAnimationSequenceKeyData* KeyDataPtr = FindOrAddSequenceKeyData(InTime);
+    checkSlow(KeyDataPtr);
+    if (!KeyDataPtr) return;
+
+    KeyDataPtr->Flags = KeyDataPtr->Flags | FglTFAnimationSequenceKeyData::EFlag_Weights;
+
+    KeyDataPtr->Weights = InValue;
+    KeyDataPtr->WeightsInterpolation = InInterpolation;
 }
 
 FglTFAnimationSequenceDatas::FglTFAnimationSequenceDatas()
@@ -806,6 +827,14 @@ void FglTFAnimationSequenceDatas::FindOrAddSequenceDataAndSetScale(int32 InNodeI
     checkSlow(SequenceDataPtr);
     if (!SequenceDataPtr) return;
     SequenceDataPtr->FindOrAddSequenceKeyDataAndSetScale(InTime, InValue, InInterpolation);
+}
+
+void FglTFAnimationSequenceDatas::FindOrAddSequenceDataAndSetWeights(int32 InNodeIndex, float InTime, const TArray<float>& InValue, ERichCurveInterpMode InInterpolation)
+{
+    FglTFAnimationSequenceData* SequenceDataPtr = FindOrAddSequenceData(InNodeIndex);
+    checkSlow(SequenceDataPtr);
+    if (!SequenceDataPtr) return;
+    SequenceDataPtr->FindOrAddSequenceKeyDataAndSetWeights(InTime, InValue, InInterpolation);
 }
 
 TSharedPtr<FglTFImporter> FglTFImporter::Get(UObject* InParent, FName InName, EObjectFlags InFlags, FFeedbackContext* InFeedbackContext)
@@ -1597,8 +1626,9 @@ bool FglTFImporter::GetInverseBindMatrices(const std::shared_ptr<libgltf::SGlTF>
         : glTFImporter::GetInverseBindMatrices<false, true>(InGlTF, InSkin, InBuffers, OutInverseBindMatrices);
 }
 
-bool FglTFImporter::GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SAnimation>& InglTFAnimation, const FglTFBuffers& InBuffers
-    , FglTFAnimationSequenceDatas& OutAnimationSequenceDatas, bool bSwapYZ /*= true*/)
+bool FglTFImporter::GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlTF>& InGlTF,
+    const std::shared_ptr<libgltf::SAnimation>& InglTFAnimation, const FglTFBuffers& InBuffers,
+    int32 InNumTargets, FglTFAnimationSequenceDatas& OutAnimationSequenceDatas, bool bSwapYZ /*= true*/)
 {
     if (!InGlTF || !InglTFAnimation) return false;
 
@@ -1646,6 +1676,7 @@ bool FglTFImporter::GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlT
         TArray<FVector> Translations;
         TArray<FQuat> Rotations;
         TArray<FVector> Scales;
+        TArray<float> Weights;
         const FString glTFAnimationChannelTargetPath = GLTF_GLTFSTRING_TO_TCHAR(glTFAnimationChannelTargetPtr->path.c_str());
         if (glTFAnimationChannelTargetPath.Equals(TEXT("translation"), ESearchCase::IgnoreCase))
         {
@@ -1680,6 +1711,10 @@ bool FglTFImporter::GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlT
                 if (!glTFImporter::GetAccessorData<FVector, false, false>(InGlTF, InBuffers, glTFOutputAccessorPtr, Scales)) continue;
             }
         }
+        else if (glTFAnimationChannelTargetPath.Equals(TEXT("weights"), ESearchCase::IgnoreCase))
+        {
+            if (!glTFImporter::GetAccessorData<float, true, false>(InGlTF, InBuffers, glTFOutputAccessorPtr, Weights)) continue;
+        }
 
         if (Translations.Num() == Times.Num())
         {
@@ -1700,6 +1735,18 @@ bool FglTFImporter::GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlT
             for (int32 i = 0; i < Scales.Num(); ++i)
             {
                 OutAnimationSequenceDatas.FindOrAddSequenceDataAndSetScale(NodeIndex, Times[i], Scales[i], Interpolation);
+            }
+        }
+        else if (Weights.Num() > 0 && Weights.Num() == (Times.Num() * InNumTargets))
+        {
+            int32 WeightIndex = 0;
+            TArray<float> TargetWeights;
+            TargetWeights.SetNum(InNumTargets);
+            for (int32 i = 0; i < Times.Num(); ++i)
+            {
+                FMemory::Memcpy(&TargetWeights[0], &Weights[WeightIndex], sizeof(float) * InNumTargets);
+                OutAnimationSequenceDatas.FindOrAddSequenceDataAndSetWeights(NodeIndex, Times[i], TargetWeights, Interpolation);
+                WeightIndex += InNumTargets;
             }
         }
     }
