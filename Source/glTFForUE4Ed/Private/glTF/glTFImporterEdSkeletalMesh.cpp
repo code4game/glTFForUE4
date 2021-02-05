@@ -714,7 +714,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
             if (!NewMaterial)
             {
                 checkSlow(0);
-                continue;
+                NewMaterial = UMaterial::GetDefaultMaterial(MD_Surface);
             }
             SkeletalMesh->Materials.Emplace(FSkeletalMaterial(NewMaterial));
         }
