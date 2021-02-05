@@ -332,20 +332,32 @@ public:
     static ERichCurveInterpMode StringToRichCurveInterpMode(const FString& InInterpolation);
 
     template<typename TElem>
+    static void MergeMorphTarget(TArray<TElem>& InOutOrigin, const TArray<TElem>& InDeltas, float InWeightOrigin, float InWeightDelta)
+    {
+        if (InOutOrigin.Num() != InDeltas.Num() || (InWeightOrigin == 1.0f && InWeightDelta == 0.0f)) return;
+        for (int32_t i = 0; i < InOutOrigin.Num(); ++i)
+        {
+            InOutOrigin[i] = InOutOrigin[i] * InWeightOrigin + InDeltas[i] * InWeightDelta;
+        }
+    }
+
+    template<typename TElem>
     static void MergeMorphTarget(TArray<TElem>& InOutOrigin, const TArray<TArray<TElem>>& InMorphTargets, const std::vector<float>& InWeights)
     {
-        const int32_t count = InMorphTargets.Num() > static_cast<int32_t>(InWeights.size()) ?
-            static_cast<int32_t>(InWeights.size()) : InMorphTargets.Num();
-        for (int32_t i = 0; i < count; ++i)
+        const int32_t MinNum = FMath::Min(InMorphTargets.Num(), static_cast<int32_t>(InWeights.size()));
+        for (int32_t i = 0; i < MinNum; ++i)
         {
-            const TArray<TElem>& MorphTarget = InMorphTargets[i];
-            if (InOutOrigin.Num() != MorphTarget.Num()) continue;
-            const float Weight = InWeights.empty() ? 1.0f : InWeights[i];
-            if (Weight == 0.0f) continue;
-            for (int32 j = 0, jc = InOutOrigin.Num(); j < jc; ++j)
-            {
-                InOutOrigin[j] += MorphTarget[j] * Weight;
-            }
+            MergeMorphTarget<TElem>(InOutOrigin, InMorphTargets[i], 1.0f, InWeights[i]);
+        }
+    }
+
+    template<typename TElem>
+    static void MergeMorphTarget(TArray<TArray<TElem>>& InOutMorphTargets, const TArray<TElem>& InOrigin, float InWeight)
+    {
+        for (int32 i = 0; i < InOutMorphTargets.Num(); ++i)
+        {
+            TArray<TElem>& InOutMorphTarget = InOutMorphTargets[i];
+            MergeMorphTarget<TElem>(InOutMorphTarget, InOrigin, InWeight, 1.0f);
         }
     }
 };

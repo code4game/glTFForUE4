@@ -37,6 +37,9 @@ public class glTFForUE4Ed : ModuleRules
 #if UE_4_25_OR_LATER
                 "MeshBuilder",
 #endif
+#if UE_4_24_OR_LATER
+                "SkeletalMeshUtilitiesCommon",
+#endif
                 "AnimationModifiers",
                 "glTFForUE4",
                 "libgltf_ue4",

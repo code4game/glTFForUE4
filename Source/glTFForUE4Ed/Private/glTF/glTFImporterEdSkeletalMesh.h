@@ -48,6 +48,7 @@ private:
         const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive,
         const class FglTFBuffers& InBuffers,
         class FSkeletalMeshImportData& OutSkeletalMeshImportData,
+        TArray<class FSkeletalMeshImportData>& OutMorphTargetImportDatas,
         TMap<int32, FString>& OutNodeIndexToBoneNames,
         const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper,
         struct FglTFImporterCollection& InOutglTFImporterCollection) const;

@@ -9,6 +9,7 @@
 
 #include <SkeletalMeshTypes.h>
 #include <Engine/SkeletalMesh.h>
+#include <Animation/MorphTarget.h>
 #include <Misc/Paths.h>
 
 #include <SkelImport.h>
@@ -16,6 +17,10 @@
 #if ENGINE_MINOR_VERSION <= 24
 #else
 #include <IMeshBuilderModule.h>
+#endif
+#if ENGINE_MINOR_VERSION <= 23
+#else
+#include <LODUtilities.h>
 #endif
 #include <PhysicsAssetUtils.h>
 #include <AssetRegistryModule.h>
@@ -31,6 +36,21 @@
 
 namespace glTFForUE4Ed
 {
+    FString FixupBoneName(const FString& InBoneName)
+    {
+        FString BoneName = InBoneName;
+
+#if ENGINE_MINOR_VERSION <= 17
+        BoneName.Trim();
+        BoneName.TrimTrailing();
+#else
+        BoneName.TrimStartAndEndInline();
+#endif
+        BoneName = BoneName.Replace(TEXT(" "), TEXT("-"));
+
+        return BoneName;
+    }
+
     bool CheckAndMerge(const FSkeletalMeshImportData& InImportData,
         const TMap<int32, FString>& InNodeIndexToBoneNames,
         FSkeletalMeshImportData& OutImportData,
@@ -111,12 +131,27 @@ namespace glTFForUE4Ed
             OutNodeIndexToBoneNames.FindOrAdd(NodeIndexToBoneName.Key + RefBonesBinaryStartIndex) = NodeIndexToBoneName.Value;
         }
 
-        //TODO: merge the morph target
-        /*OutImportData.MorphTargets.Append(InImportData.MorphTargets);
-        OutImportData.MorphTargetModifiedPoints.Append(InImportData.MorphTargetModifiedPoints);
-        OutImportData.MorphTargetNames.Append(InImportData.MorphTargetNames);*/
-
         return true;
+    }
+
+    void TransformSkeletalMeshImportData(FSkeletalMeshImportData& InOutSkeletalMeshImportData, const FTransform& InNodeTransform)
+    {
+        for (FVector& Point : InOutSkeletalMeshImportData.Points)
+        {
+            Point = InNodeTransform.TransformPosition(Point);
+        }
+        for (SkeletalMeshImportData::FTriangle& Triangle : InOutSkeletalMeshImportData.Faces)
+        {
+            for (int32 i = 0; i < 3; ++i)
+            {
+                FVector& TangentX = Triangle.TangentX[i];
+                TangentX = InNodeTransform.TransformVectorNoScale(TangentX);
+                FVector& TangentY = Triangle.TangentY[i];
+                TangentY = InNodeTransform.TransformVectorNoScale(TangentY);
+                FVector& TangentZ = Triangle.TangentZ[i];
+                TangentZ = InNodeTransform.TransformVectorNoScale(TangentZ);
+            }
+        }
     }
 
     void CopyLODImportData(const FSkeletalMeshImportData& InSkeletalMeshImportData,
@@ -196,21 +231,6 @@ namespace glTFForUE4Ed
         LODPointToRawMap = InSkeletalMeshImportData.PointToRawMap;
     }
 
-    FString FixupBoneName(const FString &InBoneName)
-    {
-        FString BoneName = InBoneName;
-
-#if ENGINE_MINOR_VERSION <= 17
-        BoneName.Trim();
-        BoneName.TrimTrailing();
-#else
-        BoneName.TrimStartAndEndInline();
-#endif
-        BoneName = BoneName.Replace(TEXT(" "), TEXT("-"));
-
-        return BoneName;
-    }
-
     bool ProcessImportMeshSkeleton(const FSkeletalMeshImportData& InImportData, const USkeleton* InSkeleton, FReferenceSkeleton& OutReferenceSkeleton, int32& OutSkeletalDepth, glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper)
     {
 #if ENGINE_MINOR_VERSION <= 20
@@ -277,6 +297,138 @@ namespace glTFForUE4Ed
             }
             SkeletalDepths[b] = Depth;
         }
+
+        return true;
+    }
+
+    bool BuildSkeletalMeshImportData(const TArray<uint32>& InTriangleIndices,
+        const TArray<FVector>& InPoints,
+        const TArray<FVector>& InNormals,
+        const TArray<FVector4>& InTangents,
+        const TArray<FVector2D> InTextureCoords[MAX_TEXCOORDS],
+        const TArray<FVector4> InJointsIndeies[GLTF_JOINT_LAYERS_NUM_MAX],
+        const TArray<FVector4> InJointsWeights[GLTF_JOINT_LAYERS_NUM_MAX],
+        FSkeletalMeshImportData& InOutSkeletalMeshImportData)
+    {
+        if (InPoints.Num() <= 0) return false;
+
+        const TArray<FVector4>& JointIndeies0 = InJointsIndeies[0];
+        const TArray<FVector4>& JointWeights0 = InJointsWeights[0];
+        if (JointIndeies0.Num() == InPoints.Num() && JointWeights0.Num() == InPoints.Num())
+        {
+            for (int32 i = 0; i < InPoints.Num(); ++i)
+            {
+                const FVector4& JointIndex = JointIndeies0[i];
+                const FVector4& JointWeight = JointWeights0[i];
+
+                TArray<int32> JointIndeiesTemp;
+                TArray<float> JointWeightsTemp;
+                JointIndeiesTemp.Add(static_cast<int32>(JointIndex.X));
+                JointWeightsTemp.Add(JointWeight.X);
+                JointIndeiesTemp.Add(static_cast<int32>(JointIndex.Y));
+                JointWeightsTemp.Add(JointWeight.Y);
+                JointIndeiesTemp.Add(static_cast<int32>(JointIndex.Z));
+                JointWeightsTemp.Add(JointWeight.Z);
+                JointIndeiesTemp.Add(static_cast<int32>(JointIndex.W));
+                JointWeightsTemp.Add(JointWeight.W);
+
+#if ENGINE_MINOR_VERSION <= 20
+                VRawBoneInfluence RawBoneInfluence;
+#else
+                SkeletalMeshImportData::FRawBoneInfluence RawBoneInfluence;
+#endif
+                RawBoneInfluence.VertexIndex = i;
+
+                for (int32 j = 0; j < JointIndeiesTemp.Num(); ++j)
+                {
+                    if (JointWeightsTemp[j] == 0.0f) continue;
+
+                    RawBoneInfluence.BoneIndex = JointIndeiesTemp[j];
+                    RawBoneInfluence.Weight = JointWeightsTemp[j];
+                    InOutSkeletalMeshImportData.Influences.Add(RawBoneInfluence);
+                }
+            }
+        }
+
+        InOutSkeletalMeshImportData.PointToRawMap.SetNumZeroed(InPoints.Num());
+        for (int32 i = 0; i < InPoints.Num(); ++i)
+        {
+            InOutSkeletalMeshImportData.PointToRawMap[i] = i;
+        }
+        InOutSkeletalMeshImportData.Points = InPoints;
+
+        for (int32 i = 0; i < InTriangleIndices.Num(); i += GLTF_TRIANGLE_POINTS_NUM)
+        {
+#if ENGINE_MINOR_VERSION <= 20
+            VTriangle TriangleFace;
+#else
+            SkeletalMeshImportData::FTriangle TriangleFace;
+#endif
+            for (int32 j = 0; j < GLTF_TRIANGLE_POINTS_NUM; ++j)
+            {
+                TriangleFace.WedgeIndex[j] = InOutSkeletalMeshImportData.Wedges.Num();
+
+                const int32 PointIndex = InTriangleIndices[i + j];
+                if (InNormals.Num() == InPoints.Num())
+                {
+                    const FVector& Normal = InNormals[PointIndex];
+                    TriangleFace.TangentZ[j] = Normal;
+
+                    if (InTangents.Num() == InPoints.Num())
+                    {
+                        const FVector4& Tangent = InTangents[PointIndex];
+
+                        FVector WedgeTangentX(Tangent.X, Tangent.Y, Tangent.Z);
+
+                        TriangleFace.TangentX[j] = WedgeTangentX;
+                        TriangleFace.TangentY[j] = FVector::CrossProduct(Normal, WedgeTangentX * Tangent.W);
+                    }
+                }
+
+#if ENGINE_MINOR_VERSION <= 20
+                VVertex Wedge;
+#else
+                SkeletalMeshImportData::FVertex Wedge;
+#endif
+                Wedge.VertexIndex = PointIndex;
+
+                for (int32 k = 0; k < MAX_TEXCOORDS; ++k)
+                {
+                    Wedge.UVs[k] = FVector2D::ZeroVector;
+
+                    const TArray<FVector2D>& TextureCoord = InTextureCoords[k];
+                    if (PointIndex >= TextureCoord.Num()) continue;
+                    Wedge.UVs[k] = TextureCoord[PointIndex];
+                }
+                InOutSkeletalMeshImportData.Wedges.Add(Wedge);
+            }
+            TriangleFace.MatIndex = 0;
+            TriangleFace.AuxMatIndex = 0;
+            TriangleFace.SmoothingGroups = 0;
+            InOutSkeletalMeshImportData.Faces.Add(TriangleFace);
+        }
+
+        //TODO: material/texture
+#if ENGINE_MINOR_VERSION <= 20
+        VMaterial Material;
+#else
+        SkeletalMeshImportData::FMaterial Material;
+#endif
+        Material.Material = UMaterial::GetDefaultMaterial(MD_Surface);
+        Material.MaterialImportName = TEXT("Default");
+        InOutSkeletalMeshImportData.Materials.Add(Material);
+
+        InOutSkeletalMeshImportData.NumTexCoords = 0;
+        for (int32 i = 0; i < MAX_TEXCOORDS; ++i)
+        {
+            const TArray<FVector2D>& TextureCoord = InTextureCoords[i];
+            if (InPoints.Num() != TextureCoord.Num() && InTriangleIndices.Num() != TextureCoord.Num()) continue;
+            ++InOutSkeletalMeshImportData.NumTexCoords;
+        }
+        InOutSkeletalMeshImportData.MaxMaterialIndex = 0;
+        InOutSkeletalMeshImportData.bHasVertexColors = false;
+        InOutSkeletalMeshImportData.bHasNormals = (InNormals.Num() == InPoints.Num());
+        InOutSkeletalMeshImportData.bHasTangents = (InTangents.Num() == InPoints.Num());
 
         return true;
     }
@@ -466,12 +618,15 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
     }
     else
     {
+        /// clean old data
         SkeletalMesh->PreEditChange(nullptr);
         SkeletalMesh->InvalidateDeriveDataCacheGUID();
+        SkeletalMesh->UnregisterAllMorphTarget();
+
+        SkeletalMesh->RefBasesInvMatrix.Empty();
+        SkeletalMesh->Materials.Empty();
     }
     if (!SkeletalMesh) return nullptr;
-
-    SkeletalMesh->PreEditChange(nullptr);
 
 #if ENGINE_MINOR_VERSION <= 18
     FSkeletalMeshResource* ImportedResource = SkeletalMesh->GetImportedResource();
@@ -480,10 +635,8 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
 #endif
     check(ImportedResource);
 
-    /// clean old data
     {
-        SkeletalMesh->RefBasesInvMatrix.Empty();
-
+        /// regenerate lod info
 #if ENGINE_MINOR_VERSION <= 19
         TArray<FSkeletalMeshLODInfo>& SkeletalMeshLODInfos = SkeletalMesh->LODInfo;
 #else
@@ -491,6 +644,9 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
 #endif
         SkeletalMeshLODInfos.Empty();
         SkeletalMeshLODInfos.Add(FSkeletalMeshLODInfo());
+        SkeletalMeshLODInfos[0].ReductionSettings.NumOfTrianglesPercentage = 1.0f;
+        SkeletalMeshLODInfos[0].ReductionSettings.NumOfVertPercentage = 1.0f;
+        SkeletalMeshLODInfos[0].ReductionSettings.MaxDeviationPercentage = 0.0f;
         SkeletalMeshLODInfos[0].LODHysteresis = 0.02f;
 
         ImportedResource->LODModels.Empty();
@@ -501,8 +657,6 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
 #else
         ImportedResource->LODModels.Add(new FSkeletalMeshLODModel);
 #endif
-
-        SkeletalMesh->Materials.Empty();
     }
 
     SkeletalMesh->RefSkeleton = RefSkeleton;
@@ -535,6 +689,17 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
         FeedbackTaskWrapper.Log(ELogVerbosity::Error, LOCTEXT("CreateSkeletalMeshFailedToBuildTheSkeletalMesh", "Failed to build the skeletal mesh!"));
         return nullptr;
     }
+#endif
+
+    /// build the morph target
+#if ENGINE_MINOR_VERSION <= 23
+    /// not support the morph target for UE4.23 :(
+#elif ENGINE_MINOR_VERSION <= 24
+    FOverlappingThresholds OverlappingThresholds;
+    FLODUtilities::BuildMorphTargets(SkeletalMesh, SkeletalMeshImportData, 0,
+        (SkeletalMeshImportData.bHasNormals && !glTFImporterOptions->Details->bRecomputeNormals),
+        (SkeletalMeshImportData.bHasTangents && !glTFImporterOptions->Details->bRecomputeTangents),
+        glTFImporterOptions->Details->bUseMikkTSpace, OverlappingThresholds);
 #endif
 
     /// import the material
@@ -673,24 +838,75 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(
         {
             MaterialId = (*Primitive->material);
         }
+        TArray<FSkeletalMeshImportData> NewMorphTargetImportDatas;
         if (!GenerateSkeletalMeshImportData(
             InGlTF, InMesh, Primitive, InBuffers,
-            NewSkeletalMeshImportData, NewNodeIndexToBoneNames,
+            NewSkeletalMeshImportData, NewMorphTargetImportDatas, NewNodeIndexToBoneNames,
             InFeedbackTaskWrapper, InOutglTFImporterCollection))
         {
             checkSlow(0);
             continue;
         }
-        if (glTFForUE4Ed::CheckAndMerge(NewSkeletalMeshImportData, NewNodeIndexToBoneNames
-            , OutSkeletalMeshImportData, OutNodeIndexToBoneNames))
+        if (!glTFForUE4Ed::CheckAndMerge(NewSkeletalMeshImportData,
+            NewNodeIndexToBoneNames, OutSkeletalMeshImportData, OutNodeIndexToBoneNames))
         {
             checkSlow(0);
+        }
+
+        if (NewMorphTargetImportDatas.Num() > 0)
+        {
+            if (OutSkeletalMeshImportData.MorphTargets.Num() <= 0)
+            {
+                OutSkeletalMeshImportData.MorphTargets = NewMorphTargetImportDatas;
+            }
+            else
+            {
+                while (OutSkeletalMeshImportData.MorphTargets.Num() < NewMorphTargetImportDatas.Num())
+                {
+                    OutSkeletalMeshImportData.MorphTargets.Add(OutSkeletalMeshImportData.MorphTargets[OutSkeletalMeshImportData.MorphTargets.Num() - 1]);
+                }
+                TMap<int32, FString> NodeIndexToBoneNames;
+                for (int32 j = 0; j < NewMorphTargetImportDatas.Num(); ++j)
+                {
+                    if (!glTFForUE4Ed::CheckAndMerge(NewMorphTargetImportDatas[j],
+                        NewNodeIndexToBoneNames, OutSkeletalMeshImportData.MorphTargets[j], NodeIndexToBoneNames))
+                    {
+                        checkSlow(0);
+                    }
+                }
+            }
         }
 
         InOutMaterialIds.Emplace(MaterialId);
     }
 
-    // generate the skeletal data
+    /// ready for the morph target
+    if (OutSkeletalMeshImportData.MorphTargets.Num() > 0)
+    {
+        OutSkeletalMeshImportData.MorphTargetModifiedPoints.SetNum(OutSkeletalMeshImportData.MorphTargets.Num());
+        OutSkeletalMeshImportData.MorphTargetNames.SetNum(OutSkeletalMeshImportData.MorphTargets.Num());
+        {
+            TSet<uint32>& MorphTargetModifiedPoint = OutSkeletalMeshImportData.MorphTargetModifiedPoints[0];
+            MorphTargetModifiedPoint.Empty();
+
+            for (int32 i = 0, jc = OutSkeletalMeshImportData.Points.Num(); i < jc; ++i)
+            {
+                MorphTargetModifiedPoint.Add(static_cast<uint32>(i));
+            }
+        }
+        for (int32 i = 0, ic = OutSkeletalMeshImportData.MorphTargetModifiedPoints.Num(); i < ic; ++i)
+        {
+            TSet<uint32>& MorphTargetModifiedPoint = OutSkeletalMeshImportData.MorphTargetModifiedPoints[i];
+            MorphTargetModifiedPoint = OutSkeletalMeshImportData.MorphTargetModifiedPoints[0];
+        }
+        for (int32 i = 0; i < OutSkeletalMeshImportData.MorphTargetNames.Num(); ++i)
+        {
+            FString& MorphTargetName = OutSkeletalMeshImportData.MorphTargetNames[i];
+            MorphTargetName = FString::Printf(TEXT("MorphTarget%d"), i);
+        }
+    }
+
+    // generate the skeletal data if no skin
     if (InSkin == nullptr)
     {
         OutSkeletalMeshImportData.RefBonesBinary.SetNum(1);
@@ -730,21 +946,11 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(
         /// transform the point and tangent
         if (!InNodeTransform.Equals(FTransform::Identity))
         {
-            for (FVector& Point : OutSkeletalMeshImportData.Points)
+            glTFForUE4Ed::TransformSkeletalMeshImportData(OutSkeletalMeshImportData, InNodeTransform);
+
+            for (FSkeletalMeshImportData& MorphTargetImportData : OutSkeletalMeshImportData.MorphTargets)
             {
-                Point = InNodeTransform.TransformPosition(Point);
-            }
-            for (SkeletalMeshImportData::FTriangle& Triangle : OutSkeletalMeshImportData.Faces)
-            {
-                for (int32 i = 0; i < 3; ++i)
-                {
-                    FVector& TangentX = Triangle.TangentX[i];
-                    TangentX = InNodeTransform.TransformVectorNoScale(TangentX);
-                    FVector& TangentY = Triangle.TangentY[i];
-                    TangentY = InNodeTransform.TransformVectorNoScale(TangentY);
-                    FVector& TangentZ = Triangle.TangentZ[i];
-                    TangentZ = InNodeTransform.TransformVectorNoScale(TangentZ);
-                }
+                glTFForUE4Ed::TransformSkeletalMeshImportData(MorphTargetImportData, InNodeTransform);
             }
         }
         return true;
@@ -760,6 +966,7 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(
     const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive,
     const FglTFBuffers& InBuffers,
     FSkeletalMeshImportData& OutSkeletalMeshImportData,
+    TArray<FSkeletalMeshImportData>& OutMorphTargetImportDatas,
     TMap<int32, FString>& OutNodeIndexToBoneNames,
     const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper,
     FglTFImporterCollection& InOutglTFImporterCollection) const
@@ -791,125 +998,37 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(
         return false;
     }
 
-    if (Points.Num() <= 0) return false;
-
-    const TArray<FVector4>& JointIndeies0 = JointsIndeies[0];
-    const TArray<FVector4>& JointWeights0 = JointsWeights[0];
-    if (JointIndeies0.Num() == Points.Num() && JointWeights0.Num() == Points.Num())
+    if (!glTFForUE4Ed::BuildSkeletalMeshImportData(TriangleIndices, Points, Normals, Tangents,
+        TextureCoords, JointsIndeies, JointsWeights, OutSkeletalMeshImportData))
     {
-        for (int32 i = 0; i < Points.Num(); ++i)
+        return false;
+    }
+
+    /// ready for morph target
+    FglTFImporter::MergeMorphTarget<>(MorphTargetsPoints, Points, 1.0f);
+    FglTFImporter::MergeMorphTarget<>(MorphTargetsNormals, Normals, 1.0f);
+    FglTFImporter::MergeMorphTarget<>(MorphTargetsTangents, Tangents, 1.0f);
+
+    /// build for morph target
+    const int32 MeshWeightsCount = static_cast<int32>(InMesh->weights.size());
+    if (MeshWeightsCount == MorphTargetsPoints.Num() &&
+        MeshWeightsCount == MorphTargetsNormals.Num() &&
+        MeshWeightsCount == MorphTargetsTangents.Num())
+    {
+        OutMorphTargetImportDatas.SetNum(MeshWeightsCount);
+        for (int32 i = 0, ic = OutMorphTargetImportDatas.Num(); i < ic; ++i)
         {
-            const FVector4& JointIndex = JointIndeies0[i];
-            const FVector4& JointWeight = JointWeights0[i];
-
-            TArray<int32> JointIndeiesTemp;
-            TArray<float> JointWeightsTemp;
-            JointIndeiesTemp.Add(static_cast<int32>(JointIndex.X));
-            JointWeightsTemp.Add(JointWeight.X);
-            JointIndeiesTemp.Add(static_cast<int32>(JointIndex.Y));
-            JointWeightsTemp.Add(JointWeight.Y);
-            JointIndeiesTemp.Add(static_cast<int32>(JointIndex.Z));
-            JointWeightsTemp.Add(JointWeight.Z);
-            JointIndeiesTemp.Add(static_cast<int32>(JointIndex.W));
-            JointWeightsTemp.Add(JointWeight.W);
-
-#if ENGINE_MINOR_VERSION <= 20
-            VRawBoneInfluence RawBoneInfluence;
-#else
-            SkeletalMeshImportData::FRawBoneInfluence RawBoneInfluence;
-#endif
-            RawBoneInfluence.VertexIndex = i;
-
-            for (int32 j = 0; j < JointIndeiesTemp.Num(); ++j)
+            if (glTFForUE4Ed::BuildSkeletalMeshImportData(TriangleIndices,
+                MorphTargetsPoints[i], MorphTargetsNormals[i], MorphTargetsTangents[i],
+                TextureCoords, JointsIndeies, JointsWeights, OutMorphTargetImportDatas[i]))
             {
-                if (JointWeightsTemp[j] == 0.0f) continue;
-
-                RawBoneInfluence.BoneIndex = JointIndeiesTemp[j];
-                RawBoneInfluence.Weight = JointWeightsTemp[j];
-                OutSkeletalMeshImportData.Influences.Add(RawBoneInfluence);
+                continue;
             }
+            OutMorphTargetImportDatas[i] = OutSkeletalMeshImportData;
+            OutMorphTargetImportDatas[i].Points = MorphTargetsPoints[i];
+            OutMorphTargetImportDatas[i].PointToRawMap.Empty();
         }
     }
-
-    OutSkeletalMeshImportData.PointToRawMap.SetNumZeroed(Points.Num());
-    for (int32 i = 0; i < Points.Num(); ++i)
-    {
-        OutSkeletalMeshImportData.PointToRawMap[i] = i;
-    }
-    OutSkeletalMeshImportData.Points = Points;
-
-    for (int32 i = 0; i < TriangleIndices.Num(); i += GLTF_TRIANGLE_POINTS_NUM)
-    {
-#if ENGINE_MINOR_VERSION <= 20
-        VTriangle TriangleFace;
-#else
-        SkeletalMeshImportData::FTriangle TriangleFace;
-#endif
-        for (int32 j = 0; j < GLTF_TRIANGLE_POINTS_NUM; ++j)
-        {
-            TriangleFace.WedgeIndex[j] = OutSkeletalMeshImportData.Wedges.Num();
-
-            const int32 PointIndex = TriangleIndices[i + j];
-            if (Normals.Num() == Points.Num())
-            {
-                const FVector& Normal = Normals[PointIndex];
-                TriangleFace.TangentZ[j] = Normal;
-
-                if (Tangents.Num() == Points.Num())
-                {
-                    const FVector4& Tangent = Tangents[PointIndex];
-
-                    FVector WedgeTangentX(Tangent.X, Tangent.Y, Tangent.Z);
-
-                    TriangleFace.TangentX[j] = WedgeTangentX;
-                    TriangleFace.TangentY[j] = FVector::CrossProduct(Normal, WedgeTangentX * Tangent.W);
-                }
-            }
-
-#if ENGINE_MINOR_VERSION <= 20
-            VVertex Wedge;
-#else
-            SkeletalMeshImportData::FVertex Wedge;
-#endif
-            Wedge.VertexIndex = PointIndex;
-
-            for (int32 k = 0; k < MAX_TEXCOORDS; ++k)
-            {
-                Wedge.UVs[k] = FVector2D::ZeroVector;
-
-                const TArray<FVector2D>& TextureCoord = TextureCoords[k];
-                if (PointIndex >= TextureCoord.Num()) continue;
-                Wedge.UVs[k] = TextureCoord[PointIndex];
-            }
-            OutSkeletalMeshImportData.Wedges.Add(Wedge);
-        }
-        TriangleFace.MatIndex = 0;
-        TriangleFace.AuxMatIndex = 0;
-        TriangleFace.SmoothingGroups = 0;
-        OutSkeletalMeshImportData.Faces.Add(TriangleFace);
-    }
-
-    //TODO: material/texture
-#if ENGINE_MINOR_VERSION <= 20
-    VMaterial Material;
-#else
-    SkeletalMeshImportData::FMaterial Material;
-#endif
-    Material.Material = UMaterial::GetDefaultMaterial(MD_Surface);
-    Material.MaterialImportName = TEXT("Default");
-    OutSkeletalMeshImportData.Materials.Add(Material);
-
-    OutSkeletalMeshImportData.NumTexCoords = 0;
-    for (int32 i = 0; i < MAX_TEXCOORDS; ++i)
-    {
-        const TArray<FVector2D>& TextureCoord = TextureCoords[i];
-        if (Points.Num() != TextureCoord.Num() && TriangleIndices.Num() != TextureCoord.Num()) continue;
-        ++OutSkeletalMeshImportData.NumTexCoords;
-    }
-    OutSkeletalMeshImportData.MaxMaterialIndex = 0;
-    OutSkeletalMeshImportData.bHasVertexColors = false;
-    OutSkeletalMeshImportData.bHasNormals = (Normals.Num() == Points.Num());
-    OutSkeletalMeshImportData.bHasTangents = (Tangents.Num() == Points.Num());
 
     return true;
 }
