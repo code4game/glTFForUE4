@@ -30,7 +30,9 @@ public:
         struct FglTFImporterCollection& InOutglTFImporterCollection) const;
 
 private:
-    bool GenerateSkeletalMeshImportData(const std::shared_ptr<libgltf::SGlTF>& InGlTF,
+    bool GenerateSkeletalMeshImportData(
+        const TSharedPtr<struct FglTFImporterOptions>& InglTFImporterOptions, 
+        const std::shared_ptr<libgltf::SGlTF>& InGlTF,
         const int32 InNodeId,
         const std::shared_ptr<libgltf::SMesh>& InMesh,
         const std::shared_ptr<libgltf::SSkin>& InSkin,

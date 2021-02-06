@@ -14,12 +14,9 @@
 
 #include <SkelImport.h>
 #include <MeshUtilities.h>
-#if ENGINE_MINOR_VERSION <= 24
-#else
-#include <IMeshBuilderModule.h>
-#endif
 #if ENGINE_MINOR_VERSION <= 23
 #else
+#include <IMeshBuilderModule.h>
 #include <LODUtilities.h>
 #endif
 #include <PhysicsAssetUtils.h>
@@ -502,7 +499,8 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
     TArray<FMatrix> RefBasesInvMatrix;
     TMap<int32, FString> NodeIndexToBoneNames;
     TArray<int32> MaterialIds;
-    if (!GenerateSkeletalMeshImportData(InGlTF, InNodeId, glTFMeshPtr, glTFSkinPtr, InBuffers,
+    if (!GenerateSkeletalMeshImportData(glTFImporterOptions,
+        InGlTF, InNodeId, glTFMeshPtr, glTFSkinPtr, InBuffers,
         MeshName, InNodeTransform, SkeletalMeshImportData, RefBasesInvMatrix, NodeIndexToBoneNames,
         MaterialIds, FeedbackTaskWrapper, InOutglTFImporterCollection))
     {
@@ -561,7 +559,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
         LODInfluences, LODWedges, LODFaces, LODPoints, LODPointToRawMap,
         false/*ImportOptions->bKeepOverlappingVertices*/, bShouldComputeNormals,
         bShouldComputeTangents, &WarningMessages, &WarningNames))
-#elif ENGINE_MINOR_VERSION <= 24
+#elif ENGINE_MINOR_VERSION <= 23
     IMeshUtilities::MeshBuildOptions BuildOptions;
     BuildOptions.bRemoveDegenerateTriangles = glTFImporterOptions->Details->bRemoveDegenerates;
     BuildOptions.bComputeNormals = bShouldComputeNormals;
@@ -570,6 +568,9 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
     if (!MeshUtilities.BuildSkeletalMesh(LODModel, RefSkeleton, LODInfluences,
         LODWedges, LODFaces, LODPoints, LODPointToRawMap, BuildOptions,
         &WarningMessages, &WarningNames))
+#elif ENGINE_MINOR_VERSION <= 24
+    LODModel.RawSkeletalMeshBulkData.SaveRawMesh(SkeletalMeshImportData);
+    if (false)
 #else
     if (false)
 #endif
@@ -662,24 +663,27 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
     SkeletalMesh->RefSkeleton = RefSkeleton;
     SkeletalMesh->CalculateInvRefMatrices();
 
-#if ENGINE_MINOR_VERSION <= 24
-    /// still use the legacy mesh builder
 #if ENGINE_MINOR_VERSION <= 23
-#else
-    SkeletalMesh->UseLegacyMeshDerivedDataKey = true;
-#endif
     ImportedResource->LODModels[0] = LODModel;
 #else
+#if ENGINE_MINOR_VERSION <= 24
+    ImportedResource->LODModels[0] = LODModel;
+#else
+    SkeletalMesh->SaveLODImportedData(0, SkeletalMeshImportData);
+#endif
     /// use new mesh builder
     FSkeletalMeshBuildSettings BuildOptions;
     BuildOptions.bRemoveDegenerates = glTFImporterOptions->Details->bRemoveDegenerates;
     BuildOptions.bRecomputeNormals = bShouldComputeNormals;
     BuildOptions.bRecomputeTangents = bShouldComputeTangents;
     BuildOptions.bUseMikkTSpace = glTFImporterOptions->Details->bUseMikkTSpace;
-    SkeletalMesh->SaveLODImportedData(0, SkeletalMeshImportData);
     check(SkeletalMesh->GetLODInfo(0) != nullptr);
     SkeletalMesh->GetLODInfo(0)->BuildSettings = BuildOptions;
+#if ENGINE_MINOR_VERSION <= 24
+    IMeshBuilderModule& MeshBuilderModule = IMeshBuilderModule::Get();
+#else
     IMeshBuilderModule& MeshBuilderModule = IMeshBuilderModule::GetForRunningPlatform();
+#endif
     if (!MeshBuilderModule.BuildSkeletalMesh(SkeletalMesh, 0, false))
     {
         if (bCreated)
@@ -689,17 +693,6 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
         FeedbackTaskWrapper.Log(ELogVerbosity::Error, LOCTEXT("CreateSkeletalMeshFailedToBuildTheSkeletalMesh", "Failed to build the skeletal mesh!"));
         return nullptr;
     }
-#endif
-
-    /// build the morph target
-#if ENGINE_MINOR_VERSION <= 23
-    /// not support the morph target for UE4.23 :(
-#elif ENGINE_MINOR_VERSION <= 24
-    FOverlappingThresholds OverlappingThresholds;
-    FLODUtilities::BuildMorphTargets(SkeletalMesh, SkeletalMeshImportData, 0,
-        (SkeletalMeshImportData.bHasNormals && !glTFImporterOptions->Details->bRecomputeNormals),
-        (SkeletalMeshImportData.bHasTangents && !glTFImporterOptions->Details->bRecomputeTangents),
-        glTFImporterOptions->Details->bUseMikkTSpace, OverlappingThresholds);
 #endif
 
     /// import the material
@@ -814,6 +807,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
 }
 
 bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(
+    const TSharedPtr<FglTFImporterOptions>& InglTFImporterOptions,
     const std::shared_ptr<libgltf::SGlTF>& InGlTF,
     const int32 InNodeId,
     const std::shared_ptr<libgltf::SMesh>& InMesh,
@@ -853,7 +847,7 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(
             checkSlow(0);
         }
 
-        if (NewMorphTargetImportDatas.Num() > 0)
+        if (InglTFImporterOptions->Details->bImportMorphTarget && NewMorphTargetImportDatas.Num() > 0)
         {
             if (OutSkeletalMeshImportData.MorphTargets.Num() <= 0)
             {
