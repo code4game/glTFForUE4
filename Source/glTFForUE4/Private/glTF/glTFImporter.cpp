@@ -1300,7 +1300,7 @@ namespace glTFImporter
         int32 InTargetIndex,
         int32& OutAccessorIndex)
     {
-        if (InMeshPrimitive->targets.size() <= InTargetIndex) return false;
+        if (static_cast<int32>(InMeshPrimitive->targets.size()) <= InTargetIndex) return false;
 
         const std::map<libgltf::string_t, std::shared_ptr<libgltf::SGlTFId>>& MorphTargets = InMeshPrimitive->targets[InTargetIndex];
         std::map<libgltf::string_t, std::shared_ptr<libgltf::SGlTFId>>::const_iterator MorphTargetIt = MorphTargets.find(InKey);
@@ -1329,7 +1329,7 @@ namespace glTFImporter
             if (InMeshPrimitive->attributes.find(get_key) == InMeshPrimitive->attributes.cend()) return true;
             AccessorIndex = (int32)(*InMeshPrimitive->attributes[get_key]);
         }
-        if (InGlTF->accessors.size() <= AccessorIndex) return true;
+        if (static_cast<int32>(InGlTF->accessors.size()) <= AccessorIndex) return true;
 
         const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[AccessorIndex];
         return GetAccessorData<FVector, bSwapYZ, bInverseX>(InGlTF, InBuffers, Accessor, OutVertexPositions);
@@ -1354,7 +1354,7 @@ namespace glTFImporter
             if (InMeshPrimitive->attributes.find(get_key) == InMeshPrimitive->attributes.cend()) return true;
             AccessorIndex = (int32)(*InMeshPrimitive->attributes[get_key]);
         }
-        if (InGlTF->accessors.size() <= AccessorIndex) return true;
+        if (static_cast<int32>(InGlTF->accessors.size()) <= AccessorIndex) return true;
 
         const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[AccessorIndex];
         return GetAccessorData<FVector, bSwapYZ, bInverseX>(InGlTF, InBuffers, Accessor, OutVertexNormals);
@@ -1379,7 +1379,7 @@ namespace glTFImporter
             if (InMeshPrimitive->attributes.find(get_key) == InMeshPrimitive->attributes.cend()) return true;
             AccessorIndex = (int32)(*InMeshPrimitive->attributes[get_key]);
         }
-        if (InGlTF->accessors.size() <= AccessorIndex) return true;
+        if (static_cast<int32>(InGlTF->accessors.size()) <= AccessorIndex) return true;
 
         const std::shared_ptr<libgltf::SAccessor>& Accessor = InGlTF->accessors[AccessorIndex];
         return GetAccessorData<FVector4, bSwapYZ, bInverseX>(InGlTF, InBuffers, Accessor, OutVertexTangents);
