@@ -1,4 +1,4 @@
-// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
+// Copyright(c) 2016 - 2021 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTFForUE4EdModule.h"

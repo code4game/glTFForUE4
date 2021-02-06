@@ -9,7 +9,7 @@ public class libgltf_ue4 : ModuleRules
     {
         Type = ModuleType.External;
 
-        string glTFPath = System.IO.Path.Combine(ModuleDirectory, "libgltf-0.1.7");
+        string glTFPath = System.IO.Path.Combine(ModuleDirectory, "libgltf-0.1.8");
         string IncludePath = System.IO.Path.Combine(glTFPath, "include");
         List<string> LibPaths = new List<string>();
         string LibFilePath = "";

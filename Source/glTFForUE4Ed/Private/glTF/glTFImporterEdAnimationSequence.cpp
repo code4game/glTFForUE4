@@ -1,4 +1,4 @@
-// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
+// Copyright(c) 2016 - 2021 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTF/glTFImporterEdAnimationSequence.h"
@@ -9,6 +9,7 @@
 #include <AssetRegistryModule.h>
 #include <ComponentReregisterContext.h>
 #include <AnimationBlueprintLibrary.h>
+#include <Animation/AnimCurveCompressionSettings.h>
 
 #if ENGINE_MINOR_VERSION <= 12
 #else
@@ -37,12 +38,12 @@ FglTFImporterEdAnimationSequence::~FglTFImporterEdAnimationSequence()
 }
 
 UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const TWeakPtr<FglTFImporterOptions>& InglTFImporterOptions, const std::shared_ptr<libgltf::SGlTF>& InglTF
-    , const FglTFBuffers& InBuffers, const TMap<int32, FString>& InNodeIndexToBoneNames
+    , const FglTFBuffers& InBuffers, const TMap<int32, FString>& InNodeIndexToBoneNames, const TArray<FString>& InMorphTargetNames
     , USkeletalMesh* InSkeletalMesh, USkeleton* InSkeleton
     , const glTFForUE4::FFeedbackTaskWrapper& InFeedbackTaskWrapper
     , FglTFImporterCollection& InOutglTFImporterCollection) const
 {
-    if (!InglTF || InglTF->animations.empty() || InglTF->skins.empty() || !InSkeleton) return nullptr;
+    if (!InglTF || InglTF->animations.empty() || !InSkeleton) return nullptr;
 
     FText TaskName = FText::Format(LOCTEXT("BeginImportSkeletalAnimationTask", "Importing the skeletal animation ({0})"), FText::FromName(InputName));
     glTFForUE4::FFeedbackTaskWrapper FeedbackTaskWrapper(FeedbackContext, TaskName, true);
@@ -77,7 +78,7 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
     {
         const std::shared_ptr<libgltf::SAnimation>& glTFAnimationPtr = InglTF->animations[i];
         FglTFAnimationSequenceDatas glTFAnimationSequenceDatas;
-        if (!FglTFImporter::GetAnimationSequenceData(InglTF, glTFAnimationPtr, InBuffers, glTFAnimationSequenceDatas))
+        if (!FglTFImporter::GetAnimationSequenceData(InglTF, glTFAnimationPtr, InBuffers, InMorphTargetNames.Num(), glTFAnimationSequenceDatas))
         {
             //WARN:
             continue;
@@ -124,7 +125,8 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
                 continue;
             }
 
-            FName CurveName = FName(*(InNodeIndexToBoneNames[glTFAnimationSequenceData.NodeIndex]));
+            const FName BoneName = FName(*(InNodeIndexToBoneNames[glTFAnimationSequenceData.NodeIndex]));
+            FName CurveName = BoneName;
 #if ENGINE_MINOR_VERSION <= 13
             FSmartNameMapping::UID CurveUID = FSmartNameMapping::MaxUID;
 #else
@@ -165,30 +167,53 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
             CurveUID = NewSmartName.UID;
 #endif
 
+            TArray<FName> MorphTargetNames;
+            MorphTargetNames.SetNum(InMorphTargetNames.Num());
+            for (int32 j = 0, jc = InMorphTargetNames.Num(); j < jc; ++j)
+            {
+                MorphTargetNames[j] = FName(*InMorphTargetNames[j]);
+                UAnimationBlueprintLibrary::AddCurve(AnimSequence, MorphTargetNames[j]);
+            }
+
             for (const FglTFAnimationSequenceKeyData& KeyData : glTFAnimationSequenceData.KeyDatas)
             {
-                AnimSequence->AddKeyToSequence(KeyData.Time, CurveName, KeyData.Transform);
-                AnimSequence->bNeedsRebake = true;
+                if (KeyData.Flags & FglTFAnimationSequenceKeyData::EFlag_Transform)
+                {
+                    AnimSequence->bNeedsRebake = true;
+
+                    AnimSequence->AddKeyToSequence(KeyData.Time, CurveName, KeyData.Transform);
 
 #if ENGINE_MINOR_VERSION <= 15
-                FTransformCurve* TransformCurve = static_cast<FTransformCurve*>(AnimSequence->RawCurveData.GetCurveData(CurveUID, FRawCurveTracks::TransformType));
+                    FTransformCurve* TransformCurve = static_cast<FTransformCurve*>(AnimSequence->RawCurveData.GetCurveData(CurveUID, FRawCurveTracks::TransformType));
 #else
-                FTransformCurve* TransformCurve = static_cast<FTransformCurve*>(AnimSequence->RawCurveData.GetCurveData(CurveUID, ERawCurveTrackTypes::RCT_Transform));
+                    FTransformCurve* TransformCurve = static_cast<FTransformCurve*>(AnimSequence->RawCurveData.GetCurveData(CurveUID, ERawCurveTrackTypes::RCT_Transform));
 #endif
-                check(TransformCurve);
-                {
-                    FKeyHandle KeyHandle = TransformCurve->TranslationCurve.FloatCurves->FindKey(KeyData.Time);
-                    TransformCurve->TranslationCurve.FloatCurves->SetKeyInterpMode(KeyHandle, KeyData.TranslationInterpolation);
+                    check(TransformCurve);
+                    {
+                        FKeyHandle KeyHandle = TransformCurve->TranslationCurve.FloatCurves->FindKey(KeyData.Time);
+                        TransformCurve->TranslationCurve.FloatCurves->SetKeyInterpMode(KeyHandle, KeyData.TranslationInterpolation);
+                    }
+                    {
+                        FKeyHandle KeyHandle = TransformCurve->RotationCurve.FloatCurves->FindKey(KeyData.Time);
+                        TransformCurve->RotationCurve.FloatCurves->SetKeyInterpMode(KeyHandle, KeyData.RotationInterpolation);
+                        //TransformCurve->RotationCurve.FloatCurves->SetKeyTangentMode(KeyHandle, ERichCurveTangentMode::RCTM_Auto);
+                        //TransformCurve->RotationCurve.FloatCurves->SetKeyTangentWeightMode(KeyHandle, ERichCurveTangentWeightMode::RCTWM_WeightedBoth);
+                    }
+                    {
+                        FKeyHandle KeyHandle = TransformCurve->ScaleCurve.FloatCurves->FindKey(KeyData.Time);
+                        TransformCurve->ScaleCurve.FloatCurves->SetKeyInterpMode(KeyHandle, KeyData.ScaleInterpolation);
+                    }
                 }
+                if ((InMorphTargetNames.Num() == KeyData.Weights.Num()) &&
+                    (KeyData.Flags & FglTFAnimationSequenceKeyData::EFlag_Weights))
                 {
-                    FKeyHandle KeyHandle = TransformCurve->RotationCurve.FloatCurves->FindKey(KeyData.Time);
-                    TransformCurve->RotationCurve.FloatCurves->SetKeyInterpMode(KeyHandle, KeyData.RotationInterpolation);
-                    //TransformCurve->RotationCurve.FloatCurves->SetKeyTangentMode(KeyHandle, ERichCurveTangentMode::RCTM_Auto);
-                    //TransformCurve->RotationCurve.FloatCurves->SetKeyTangentWeightMode(KeyHandle, ERichCurveTangentWeightMode::RCTWM_WeightedBoth);
-                }
-                {
-                    FKeyHandle KeyHandle = TransformCurve->ScaleCurve.FloatCurves->FindKey(KeyData.Time);
-                    TransformCurve->ScaleCurve.FloatCurves->SetKeyInterpMode(KeyHandle, KeyData.ScaleInterpolation);
+                    AnimSequence->bNeedsRebake = true;
+
+                    /// set the morph target
+                    for (int32 j = 0, jc = InMorphTargetNames.Num(); j < jc; ++j)
+                    {
+                        UAnimationBlueprintLibrary::AddFloatCurveKey(AnimSequence, MorphTargetNames[j], KeyData.Time, KeyData.Weights[j]);
+                    }
                 }
 
                 SequenceLength = FMath::Max(SequenceLength, KeyData.Time);

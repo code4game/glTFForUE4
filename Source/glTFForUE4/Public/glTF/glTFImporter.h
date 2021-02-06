@@ -1,4 +1,4 @@
-// Copyright 2016 - 2020 Code 4 Game, Org. All Rights Reserved.
+// Copyright(c) 2016 - 2021 Code 4 Game, Org. All Rights Reserved.
 
 #pragma once
 
@@ -230,10 +230,23 @@ struct GLTFFORUE4_API FglTFAnimationSequenceKeyData
     FglTFAnimationSequenceKeyData();
 
     float Time;
+
     FTransform Transform;
+    TArray<float> Weights;
+
+    typedef uint8 EFlags;
+    enum EFlag
+    {
+        EFlag_None = 0,
+        EFlag_Transform = 1 << 0,
+        EFlag_Weights = 1 << 1,
+    };
+    EFlags Flags;
+
     ERichCurveInterpMode TranslationInterpolation;
     ERichCurveInterpMode RotationInterpolation;
     ERichCurveInterpMode ScaleInterpolation;
+    ERichCurveInterpMode WeightsInterpolation;
 };
 
 struct GLTFFORUE4_API FglTFAnimationSequenceData
@@ -247,6 +260,7 @@ struct GLTFFORUE4_API FglTFAnimationSequenceData
     void FindOrAddSequenceKeyDataAndSetTranslation(float InTime, const FVector& InValue, ERichCurveInterpMode InInterpolation);
     void FindOrAddSequenceKeyDataAndSetRotation(float InTime, const FQuat& InValue, ERichCurveInterpMode InInterpolation);
     void FindOrAddSequenceKeyDataAndSetScale(float InTime, const FVector& InValue, ERichCurveInterpMode InInterpolation);
+    void FindOrAddSequenceKeyDataAndSetWeights(float InTime, const TArray<float>& InValue, ERichCurveInterpMode InInterpolation);
 };
 
 struct GLTFFORUE4_API FglTFAnimationSequenceDatas
@@ -259,6 +273,7 @@ struct GLTFFORUE4_API FglTFAnimationSequenceDatas
     void FindOrAddSequenceDataAndSetTranslation(int32 InNodeIndex, float InTime, const FVector& InValue, ERichCurveInterpMode InInterpolation);
     void FindOrAddSequenceDataAndSetRotation(int32 InNodeIndex, float InTime, const FQuat& InValue, ERichCurveInterpMode InInterpolation);
     void FindOrAddSequenceDataAndSetScale(int32 InNodeIndex, float InTime, const FVector& InValue, ERichCurveInterpMode InInterpolation);
+    void FindOrAddSequenceDataAndSetWeights(int32 InNodeIndex, float InTime, const TArray<float>& InValue, ERichCurveInterpMode InInterpolation);
 };
 
 class GLTFFORUE4_API FglTFImporter
@@ -283,12 +298,38 @@ protected:
     class FFeedbackContext* FeedbackContext;
 
 public:
-    static bool GetStaticMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers
-        , TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_TEXCOORDS], bool bSwapYZ = true);
-    static bool GetSkeletalMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive, const FglTFBuffers& InBuffers
-        , TArray<uint32>& OutTriangleIndices, TArray<FVector>& OutVertexPositions, TArray<FVector>& OutVertexNormals, TArray<FVector4>& OutVertexTangents, TArray<FVector2D> OutVertexTexcoords[MAX_TEXCOORDS], TArray<FVector4> OutJointsIndices[GLTF_JOINT_LAYERS_NUM_MAX], TArray<FVector4> OutJointsWeights[GLTF_JOINT_LAYERS_NUM_MAX], bool bSwapYZ = true);
+    static bool GetStaticMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF,
+        const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive,
+        const FglTFBuffers& InBuffers,
+        TArray<uint32>& OutTriangleIndices,
+        TArray<FVector>& OutVertexPositions,
+        TArray<TArray<FVector>>& OutMorphTargetsVertexPositions,
+        TArray<FVector>& OutVertexNormals,
+        TArray<TArray<FVector>>& OutMorphTargetsVertexNormals,
+        TArray<FVector4>& OutVertexTangents,
+        TArray<TArray<FVector4>>& OutMorphTargetsVertexTangents,
+        TArray<FVector2D> OutVertexTexcoords[MAX_TEXCOORDS],
+        bool bSwapYZ = true);
+    static bool GetSkeletalMeshData(const std::shared_ptr<libgltf::SGlTF>& InGlTF,
+        const std::shared_ptr<libgltf::SMeshPrimitive>& InMeshPrimitive,
+        const FglTFBuffers& InBuffers,
+        TArray<uint32>& OutTriangleIndices,
+        TArray<FVector>& OutVertexPositions,
+        TArray<TArray<FVector>>& OutMorphTargetsVertexPositions,
+        TArray<FVector>& OutVertexNormals,
+        TArray<TArray<FVector>>& OutMorphTargetsVertexNormals,
+        TArray<FVector4>& OutVertexTangents,
+        TArray<TArray<FVector4>>& OutMorphTargetsVertexTangents,
+        TArray<FVector2D> OutVertexTexcoords[MAX_TEXCOORDS],
+        TArray<FVector4> OutJointsIndices[GLTF_JOINT_LAYERS_NUM_MAX],
+        TArray<FVector4> OutJointsWeights[GLTF_JOINT_LAYERS_NUM_MAX],
+        bool bSwapYZ = true);
     static bool GetInverseBindMatrices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SSkin>& InSkin, const FglTFBuffers& InBuffers, TArray<FMatrix>& OutInverseBindMatrices, bool bSwapYZ = true);
-    static bool GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlTF>& InGlTF, const std::shared_ptr<libgltf::SAnimation>& InglTFAnimation, const FglTFBuffers& InBuffers, FglTFAnimationSequenceDatas& OutAnimationSequenceDatas, bool bSwapYZ = true);
+    static bool GetAnimationSequenceData(const std::shared_ptr<libgltf::SGlTF>& InGlTF,
+        const std::shared_ptr<libgltf::SAnimation>& InglTFAnimation,
+        const FglTFBuffers& InBuffers,
+        int32 InNumTargets,
+        FglTFAnimationSequenceDatas& OutAnimationSequenceDatas, bool bSwapYZ = true);
     static bool GetNodeParentIndices(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<int32>& OutParentIndices);
     static bool GetNodeRelativeTransforms(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<FTransform>& OutRelativeTransforms, bool bSwapYZ = true);
     static bool GetNodeParentIndicesAndTransforms(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TArray<int32>& OutParentIndices, TArray<FTransform>& OutRelativeTransforms, TArray<FTransform>& OutAbsoluteTransforms, bool bSwapYZ = true);
@@ -308,4 +349,34 @@ public:
     static TextureAddress WrapSToTextureAddress(int32 InValue);
     static TextureAddress WrapTToTextureAddress(int32 InValue);
     static ERichCurveInterpMode StringToRichCurveInterpMode(const FString& InInterpolation);
+
+    template<typename TElem>
+    static void MergeMorphTarget(TArray<TElem>& InOutOrigin, const TArray<TElem>& InDeltas, float InWeightOrigin, float InWeightDelta)
+    {
+        if (InOutOrigin.Num() != InDeltas.Num() || (InWeightOrigin == 1.0f && InWeightDelta == 0.0f)) return;
+        for (int32_t i = 0; i < InOutOrigin.Num(); ++i)
+        {
+            InOutOrigin[i] = InOutOrigin[i] * InWeightOrigin + InDeltas[i] * InWeightDelta;
+        }
+    }
+
+    template<typename TElem>
+    static void MergeMorphTarget(TArray<TElem>& InOutOrigin, const TArray<TArray<TElem>>& InMorphTargets, const std::vector<float>& InWeights)
+    {
+        const int32_t MinNum = FMath::Min(InMorphTargets.Num(), static_cast<int32_t>(InWeights.size()));
+        for (int32_t i = 0; i < MinNum; ++i)
+        {
+            MergeMorphTarget<TElem>(InOutOrigin, InMorphTargets[i], 1.0f, InWeights[i]);
+        }
+    }
+
+    template<typename TElem>
+    static void MergeMorphTarget(TArray<TArray<TElem>>& InOutMorphTargets, const TArray<TElem>& InOrigin, float InWeight)
+    {
+        for (int32 i = 0; i < InOutMorphTargets.Num(); ++i)
+        {
+            TArray<TElem>& InOutMorphTarget = InOutMorphTargets[i];
+            MergeMorphTarget<TElem>(InOutMorphTarget, InOrigin, InWeight, 1.0f);
+        }
+    }
 };
