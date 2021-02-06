@@ -135,9 +135,9 @@ UMaterialInterface* FglTFImporterEdMaterial::CreateMaterial(const TWeakPtr<FglTF
         }
 
         if (!NewMaterialInterface) return nullptr;
-        if (NewMaterialInterface) FAssetRegistryModule::AssetCreated(NewMaterialInterface);
+
+        FAssetRegistryModule::AssetCreated(NewMaterialInterface);
     }
-    if (!NewMaterialInterface) return nullptr;
 
     NewMaterialInterface->PreEditChange(nullptr);
 

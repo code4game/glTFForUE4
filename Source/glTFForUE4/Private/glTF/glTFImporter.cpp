@@ -665,8 +665,6 @@ public:
 
         if (!DracoAttributePosition) return false;
 
-        uint32 VertexNumber = DracoAttributePosition->size();
-
         TArray<uint32> PositionIndices;
         OutTriangleIndices.SetNumUninitialized(DracoMesh->num_faces() * 3);
         for (draco::FaceIndex i(0); i < DracoMesh->num_faces(); ++i)
