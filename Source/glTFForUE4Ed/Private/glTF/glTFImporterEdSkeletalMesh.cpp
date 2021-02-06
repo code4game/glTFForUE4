@@ -742,10 +742,7 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
     checkSlow(Skeleton);
     if (Skeleton)
     {
-        if (SkeletalMesh->Skeleton != Skeleton)
-        {
-            SkeletalMesh->Skeleton = Skeleton;
-        }
+        SkeletalMesh->Skeleton = Skeleton;
 
         Skeleton->MergeAllBonesToBoneTree(SkeletalMesh);
 

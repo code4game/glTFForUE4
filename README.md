@@ -7,8 +7,7 @@
 
 > If you are interesting, you can star or fork or post an issue or say something.
 >
-> Use [libgltf](https://github.com/code4game/libgltf) to parse the glTF 2.0 file.
-
+> Depends on [libgltf](https://github.com/code4game/libgltf) to parse the glTF 2.0 file.
 
 ## Download
 
@@ -33,7 +32,7 @@
 > If you get the message `batch response: This repository is over its data quota. Account responsible for LFS bandwidth should purchase more data packs to restore access.`
 > when you clone or pull from [github](https://github.com/code4game/glTFForUE4),
 > you can pull the project from [gitlab](https://gitlab.com/c4g/gltf/glTFForUE4).
-> *I don't have enough money to buy LFS bandwidth. :sob:. The LFS is excellent, but its free bandwidth is too small for an open-source project.*
+> *I don't have enough money to buy LFS bandwidth. :sob:. The LFS is excellent, but its free bandwidth is too small for an open-source project like this.*
 >
 > [![itch.io](https://img.shields.io/badge/donate-itch%2Eio-orange.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) [![opencollective.com](https://img.shields.io/badge/donate-collective%2Ecom-orange.svg?style=flat)](https://opencollective.com/gltfforue4#section-contribute)
 

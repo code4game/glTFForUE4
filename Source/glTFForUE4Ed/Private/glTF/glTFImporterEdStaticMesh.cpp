@@ -222,7 +222,6 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     TSharedPtr<FglTFImporterEdMaterial> glTFImporterEdMaterial = FglTFImporterEdMaterial::Get(InputFactory, InputParent, InputName, InputFlags, FeedbackContext);
     FMeshSectionInfoMap NewMap;
     static UMaterial* DefaultMaterial = UMaterial::GetDefaultMaterial(MD_Surface);
-    int32 MaterialIndex = 0;
     for (int32 i = 0; i < glTFMaterialIds.Num(); ++i)
     {
         const int32& glTFMaterialId = glTFMaterialIds[i];
@@ -241,11 +240,10 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
         FMeshSectionInfo Info = StaticMeshSectionInfoMap.Get(0, i);
 
 #if (ENGINE_MINOR_VERSION <= 13)
-        MaterialIndex = NewStaticMesh->Materials.Emplace(NewMaterial);
+        Info.MaterialIndex = NewStaticMesh->Materials.Emplace(NewMaterial);
 #else
-        MaterialIndex = NewStaticMesh->StaticMaterials.Emplace(NewMaterial);
+        Info.MaterialIndex = NewStaticMesh->StaticMaterials.Emplace(NewMaterial);
 #endif
-        Info.MaterialIndex = MaterialIndex;
         NewMap.Set(0, i, Info);
     }
     StaticMeshSectionInfoMap.Clear();
