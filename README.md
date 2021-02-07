@@ -8,6 +8,8 @@
 > If you are interesting, you can star or fork or post an issue or say something.
 >
 > Depends on [libgltf](https://github.com/code4game/libgltf) to parse the glTF 2.0 file.
+>
+> [Find More Help in Discussions](https://github.com/code4game/glTFForUE4/discussions)
 
 
 ## Download
