@@ -15,9 +15,9 @@
 
 | UE4  | Plugin | Download |
 |:----:|:--------|:--------|
-| 4.26 | 2.0.5 Win/Mac | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
-| 4.25 | 2.0.5 Win/Mac | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
-| 4.24 | 2.0.5 Win/Mac | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
+| 4.26 | 2.0.6 Win/Mac | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
+| 4.25 | 2.0.6 Win/Mac | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
+| 4.24 | 2.0.6 Win/Mac | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
 | 4.23 | 2.0.1 Win/Mac | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
 | 4.22 | 1.2.3 Win/Mac | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
 | 4.21 | 1.2.3 Win/Mac | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
