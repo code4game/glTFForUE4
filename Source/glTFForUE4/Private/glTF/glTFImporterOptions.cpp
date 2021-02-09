@@ -3,6 +3,11 @@
 #include "glTFForUE4PrivatePCH.h"
 #include "glTF/glTFImporterOptions.h"
 
+#if (ENGINE_MINOR_VERSION <= 25)
+#else
+#include <Misc/SecureHash.h>
+#endif
+
 FglTFImporterOptionsDetailsStored::FglTFImporterOptionsDetailsStored()
     : bImportAllScene(false)
     , bImportStaticMesh(true)
@@ -107,6 +112,10 @@ FglTFImporterOptions::FglTFImporterOptions()
     , FilePathInEngine(TEXT(""))
     , DetailsStored()
     , Details(nullptr)
+#if (ENGINE_MINOR_VERSION <= 13)
+#else
+    , FileHash(nullptr)
+#endif
 {
     //
 }

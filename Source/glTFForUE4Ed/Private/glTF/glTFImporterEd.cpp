@@ -262,7 +262,11 @@ bool FglTFImporterEd::SetAssetImportData(UObject* InObject, const FglTFImporterO
     }
     glTFImporterEdData->glTFImporterOptions = InglTFImporterOptions;
     glTFImporterEdData->glTFImporterOptions.FilePathInEngine = InObject->GetPathName();
+#if (ENGINE_MINOR_VERSION <= 13)
     glTFImporterEdData->Update(InglTFImporterOptions.FilePathInOS);
+#else
+    glTFImporterEdData->Update(InglTFImporterOptions.FilePathInOS, InglTFImporterOptions.FileHash.Get());
+#endif
 
     if (UStaticMesh* StaticMesh = Cast<UStaticMesh>(InObject))
     {

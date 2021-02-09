@@ -172,4 +172,9 @@ struct GLTFFORUE4_API FglTFImporterOptions
 
     UPROPERTY()
     UglTFImporterOptionsDetails* Details;
+
+#if (ENGINE_MINOR_VERSION <= 13)
+#else
+    TSharedPtr<struct FMD5Hash> FileHash;
+#endif
 };

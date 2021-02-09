@@ -12,6 +12,11 @@
 #include <PropertyEditorModule.h>
 #include <IDetailsView.h>
 
+#if (ENGINE_MINOR_VERSION <= 25)
+#else
+#include <Misc/SecureHash.h>
+#endif
+
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
 TSharedPtr<FglTFImporterOptions> SglTFImporterOptionsWindowEd::Open(UObject* InContext, const FString& InFilePathInOS, const FString& InFilePathInEngine, const libgltf::SGlTF& InGlTF, bool& OutCancel)
@@ -21,6 +26,11 @@ TSharedPtr<FglTFImporterOptions> SglTFImporterOptionsWindowEd::Open(UObject* InC
     glTFImporterOptions->FilePathInOS = InFilePathInOS;
     glTFImporterOptions->FilePathInEngine = InFilePathInEngine;
     glTFImporterOptions->Details = GetMutableDefault<UglTFImporterOptionsDetails>();
+#if (ENGINE_MINOR_VERSION <= 13)
+#else
+    glTFImporterOptions->FileHash = MakeShared<FMD5Hash>();
+    *glTFImporterOptions->FileHash = FMD5Hash::HashFile(*glTFImporterOptions->FilePathInOS);
+#endif
 
     TSharedPtr<SWindow> ParentWindow;
 
