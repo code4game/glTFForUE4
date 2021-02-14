@@ -5,23 +5,25 @@ This is a **[glTF][glTF]** tool for **[UE4][UE4](Unreal Engine 4)**. It can help
 ## Features
 
 * Load and parse the [glTF][glTF] 2.0 file
-  * **json**
-  * **json-embedded**
-  * **binary**
+    * **json**
+    * **json-embedded**
+    * **binary**
 * Import the **static mesh** in UE4 editor
-  * Support the **morph targets**
-  * Spawn all **static meshes** as `AStaticMeshActor` in a level
+    * Reimport the **static mesh**
+    * Support the **morph targets**
+    * Spawn all **static meshes** as `AStaticMeshActor` in a level
 * Import the **skeletal mesh** in UE4 editor
-  * Support the **morph targets**
-  * Import the **skeleton animation**
-  * Create the **physics asset**
-  * Spawn all **skeletal meshes** as `ASkeletalMeshActor` in a level
+    * Reimport the **skeletal mesh**
+    * Support the **morph targets**
+    * Import the **skeleton animation**
+    * Create the **physics asset**
+    * Spawn all **skeletal meshes** as `ASkeletalMeshActor` in a level
 * Imports the material(`PBR`) in UE4 editor
 * Imports the texture in UE4 editor
 * Allow to transform from local to world
 * Extensions
-  * **`KHR_draco_mesh_compression`**
-  * **`KHR_materials_pbrSpecularGlossiness`**
+    * **`KHR_draco_mesh_compression`**
+    * **`KHR_materials_pbrSpecularGlossiness`**
 
 ## More powerful features in the future
 

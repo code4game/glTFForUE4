@@ -179,7 +179,7 @@ public:
         }
         else
         {
-            const int32 StartIndex = FMath::Floor(static_cast<float>(InStart) / InStride);
+            const int32 StartIndex = static_cast<int32>(static_cast<float>(InStart) / InStride);
             const int32 StartOffset = InStart - StartIndex * InStride;
             if (BufferSegment.Num() < (StartIndex * InStride + InCount * InStride)) return false;
             OutBufferSegment.SetNumUninitialized(InCount);
