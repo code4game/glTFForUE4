@@ -162,25 +162,30 @@ public:
     template<typename TElem, EglTFBufferSource::Type SourceType>
     bool Get(int32 InIndex, TArray<TElem>& OutBufferSegment, FString& OutFilePath, int32 InStart = 0, int32 InCount = 0, int32 InStride = 0) const
     {
-        if (InStride == 0) InStride = sizeof(TElem);
-        checkfSlow(sizeof(TElem) > InStride, TEXT("Stride is too smaller!"));
-        if (sizeof(TElem) > InStride) return false;
+        const int32 ElemSize = static_cast<int32>(sizeof(TElem));
+        if (InStride == 0) InStride = ElemSize;
+        checkfSlow(ElemSize > InStride, TEXT("Stride is too smaller!"));
+        if (ElemSize > InStride) return false;
         if (InStart < 0) return false;
         const TArray<uint8>& BufferSegment = GetData<SourceType>(InIndex, OutFilePath);
         if (BufferSegment.Num() <= 0) return false;
         if (InCount <= 0) InCount = BufferSegment.Num();
-        if (BufferSegment.Num() < (InStart + InCount * InStride)) return false;
 
-        OutBufferSegment.SetNumUninitialized(InCount);
-        if (InStride == sizeof(TElem))
+        if (InStride == ElemSize)
         {
+            if (BufferSegment.Num() < (InStart + InCount * InStride)) return false;
+            OutBufferSegment.SetNumUninitialized(InCount);
             FMemory::Memcpy((void*)OutBufferSegment.GetData(), (void*)(BufferSegment.GetData() + InStart), InCount * sizeof(TElem));
         }
         else
         {
-            for (int32 i = 0; i < InCount; ++i)
+            const int32 StartIndex = FMath::Floor(static_cast<float>(InStart) / InStride);
+            const int32 StartOffset = InStart - StartIndex * InStride;
+            if (BufferSegment.Num() < (StartIndex * InStride + InCount * InStride)) return false;
+            OutBufferSegment.SetNumUninitialized(InCount);
+            for (int32 i = StartIndex; i < InCount; ++i)
             {
-                FMemory::Memcpy((void*)(OutBufferSegment.GetData() + i), (void*)(BufferSegment.GetData() + InStart + i * InStride), InStride);
+                FMemory::Memcpy((void*)(OutBufferSegment.GetData() + i), (void*)(BufferSegment.GetData() + StartOffset + i * InStride), ElemSize);
             }
         }
         return true;

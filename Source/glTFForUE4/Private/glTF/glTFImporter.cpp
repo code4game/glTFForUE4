@@ -1168,7 +1168,7 @@ namespace glTFImporter
         if (InAccessor->type == GLTF_TCHAR_TO_GLTFSTRING(TEXT("SCALAR")))
         {
             TArray<TAccessorTypeScale<TAccessorDataType>> AccessorDataArray;
-            if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
+            if (InBuffers.GetBufferViewData<>(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
             {
                 for (const TAccessorTypeScale<TAccessorDataType>& AccessorDataItem : AccessorDataArray)
                 {
@@ -1184,7 +1184,7 @@ namespace glTFImporter
         else if (InAccessor->type == GLTF_TCHAR_TO_GLTFSTRING(TEXT("VEC2")))
         {
             TArray<TAccessorTypeVec2<TAccessorDataType, bSwapYZ, bInverseX>> AccessorDataArray;
-            if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
+            if (InBuffers.GetBufferViewData<>(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
             {
                 for (const TAccessorTypeVec2<TAccessorDataType, bSwapYZ, bInverseX>& AccessorDataItem : AccessorDataArray)
                 {
@@ -1200,7 +1200,7 @@ namespace glTFImporter
         else if (InAccessor->type == GLTF_TCHAR_TO_GLTFSTRING(TEXT("VEC3")))
         {
             TArray<TAccessorTypeVec3<TAccessorDataType, bSwapYZ, bInverseX>> AccessorDataArray;
-            if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
+            if (InBuffers.GetBufferViewData<>(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
             {
                 for (const TAccessorTypeVec3<TAccessorDataType, bSwapYZ, bInverseX>& AccessorDataItem : AccessorDataArray)
                 {
@@ -1216,7 +1216,7 @@ namespace glTFImporter
         else if (InAccessor->type == GLTF_TCHAR_TO_GLTFSTRING(TEXT("VEC4")))
         {
             TArray<TAccessorTypeVec4<TAccessorDataType, bSwapYZ, bInverseX>> AccessorDataArray;
-            if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
+            if (InBuffers.GetBufferViewData<>(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
             {
                 for (const TAccessorTypeVec4<TAccessorDataType, bSwapYZ, bInverseX>& AccessorDataItem : AccessorDataArray)
                 {
@@ -1232,7 +1232,7 @@ namespace glTFImporter
         else if (InAccessor->type == GLTF_TCHAR_TO_GLTFSTRING(TEXT("MAT4")))
         {
             TArray<TAccessorTypeMat4x4<TAccessorDataType, bSwapYZ, bInverseX>> AccessorDataArray;
-            if (InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
+            if (InBuffers.GetBufferViewData<>(InGlTF, BufferViewIndex, AccessorDataArray, FilePath, InAccessor->byteOffset, InAccessor->count))
             {
                 for (const TAccessorTypeMat4x4<TAccessorDataType, bSwapYZ, bInverseX>& AccessorDataItem : AccessorDataArray)
                 {
@@ -1490,7 +1490,7 @@ namespace glTFImporter
             int32 BufferViewIndex = *(ExtensionDraco->bufferView);
             TArray<uint8> EncodeBuffer;
             FString BufferFilePath;
-            if (!InBuffers.GetBufferViewData(InGlTF, BufferViewIndex, EncodeBuffer, BufferFilePath)
+            if (!InBuffers.GetBufferViewData<>(InGlTF, BufferViewIndex, EncodeBuffer, BufferFilePath)
                 || !FglTFBufferDecoder::Decode<TexCoordNumber, JointNumber, bSwapYZ, bInverseX>(InBuffers, ExtensionDraco, EncodeBuffer, OutTriangleIndices, OutVertexPositions, OutVertexNormals, OutVertexTangents, OutVertexTexcoords, OutJointsIndices, OutJointWeights))
             {
                 return false;
