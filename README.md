@@ -4,6 +4,7 @@
 [![Manual](https://img.shields.io/badge/read-manual-green.svg?style=flat)](https://gltf-for-ue4.readthedocs.io/)
 [![Roadmap](https://img.shields.io/badge/visit-roadmap-green.svg?style=flat)](https://github.com/code4game/glTFForUE4/milestones)
 [![Join the chat at https://gitter.im/code4game/glTFForUE4](https://badges.gitter.im/code4game/glTFForUE4.svg)](https://gitter.im/code4game/glTFForUE4)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fcode4game%2FglTFForUE4.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fcode4game%2FglTFForUE4?ref=badge_shield)
 
 > If you are interesting, you can star or fork or post an issue or say something.
 >
@@ -41,3 +42,6 @@
 ## License
 
 [![The MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](https://github.com/code4game/glTFForUE4/blob/master/LICENSE.md)
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fcode4game%2FglTFForUE4.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fcode4game%2FglTFForUE4?ref=badge_large)
