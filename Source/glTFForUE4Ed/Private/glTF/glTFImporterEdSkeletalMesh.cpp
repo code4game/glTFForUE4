@@ -771,7 +771,8 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
     if (!Skeleton)
     {
         Skeleton = NewObject<USkeleton>(NewAssetPackage, USkeleton::StaticClass(), *SkeletonObjectName, InputFlags);
-        if (Skeleton) FAssetRegistryModule::AssetCreated(Skeleton);
+        if (Skeleton)
+            FAssetRegistryModule::AssetCreated(Skeleton);
     }
     checkSlow(Skeleton);
     if (Skeleton)
@@ -806,13 +807,14 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
         UPhysicsAsset* PhysicsAsset = SkeletalMesh->PhysicsAsset;
         SkeletalMesh->PhysicsAsset = nullptr;
         if (!PhysicsAsset)
-        {
             PhysicsAsset = LoadObject<UPhysicsAsset>(NewAssetPackage, *PhysicsObjectName);
-        }
+        UPhysicsAsset* NewPhysicsAsset = nullptr;
         if (!PhysicsAsset)
         {
             PhysicsAsset = NewObject<UPhysicsAsset>(NewAssetPackage, UPhysicsAsset::StaticClass(), *PhysicsObjectName, InputFlags);
-            if (PhysicsAsset) FAssetRegistryModule::AssetCreated(PhysicsAsset);
+            if (PhysicsAsset)
+                FAssetRegistryModule::AssetCreated(PhysicsAsset);
+            NewPhysicsAsset = PhysicsAsset;
         }
         if (PhysicsAsset)
         {
@@ -826,9 +828,9 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
                 checkSlow(0);
                 FeedbackTaskWrapper.Log(ELogVerbosity::Error, CreationErrorMessage);
 
-                TArray<UObject*> ObjectsToDelete;
-                ObjectsToDelete.Add(PhysicsAsset);
-                ObjectTools::DeleteObjects(ObjectsToDelete, false);
+                /// remove the useless object
+                if (NewPhysicsAsset == PhysicsAsset)
+                    NewPhysicsAsset->MarkPendingKill();
             }
         }
     }
