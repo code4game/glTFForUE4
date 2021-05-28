@@ -244,6 +244,35 @@ namespace glTFForUE4Ed
         FReferenceSkeletonModifier ReferenceSkeletonModifier(OutReferenceSkeleton, InSkeleton);
 #endif
 
+        TArray<int32> RootBoneIndices;
+        for (int32 b = 0; b < RefBonesBinary.Num(); b++)
+        {
+#if ENGINE_MINOR_VERSION <= 20
+            const VBone& BinaryBone = RefBonesBinary[b];
+#else
+            const SkeletalMeshImportData::FBone& BinaryBone = RefBonesBinary[b];
+#endif
+            if (BinaryBone.ParentIndex == -1)
+            {
+                RootBoneIndices.Add(b);
+            }
+        }
+        int32 NewRootIndex = -1;
+        if (RootBoneIndices.Num() > 1)
+        {
+            /// create new root bone for multi root bones
+            /// and use the transform of the first root bone
+            const FName BoneName(TEXT("RootNew"));
+            const FString BoneString = BoneName.ToString();
+            const FMeshBoneInfo BoneInfo(BoneName, BoneString, -1);
+#if ENGINE_MINOR_VERSION <= 13
+            NewRootIndex = OutReferenceSkeleton.GetNum();
+            OutReferenceSkeleton.Add(BoneInfo, RefBonesBinary[RootBoneIndices[0]].BonePos.Transform);
+#else
+            NewRootIndex = ReferenceSkeletonModifier.GetReferenceSkeleton().GetNum();
+            ReferenceSkeletonModifier.Add(BoneInfo, RefBonesBinary[RootBoneIndices[0]].BonePos.Transform);
+#endif
+        }
         // Digest bones to the serializable format.
         for (int32 b = 0; b < RefBonesBinary.Num(); b++)
         {
@@ -264,7 +293,12 @@ namespace glTFForUE4Ed
                 return false;
             }
 
-            const FMeshBoneInfo BoneInfo(BoneName, BinaryBone.Name, BinaryBone.ParentIndex);
+            int32 BoneParentIndex = BinaryBone.ParentIndex;
+            if (BoneParentIndex == -1)
+                BoneParentIndex = NewRootIndex;
+            else if (NewRootIndex != -1)
+                BoneParentIndex += 1;
+            const FMeshBoneInfo BoneInfo(BoneName, BinaryBone.Name, BoneParentIndex);
 #if ENGINE_MINOR_VERSION <= 13
             OutReferenceSkeleton.Add(BoneInfo, BinaryBone.BonePos.Transform);
 #else
