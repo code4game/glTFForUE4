@@ -9,7 +9,8 @@ public class libdraco_ue4 : ModuleRules
     {
         Type = ModuleType.External;
 
-        string DracoPath = System.IO.Path.Combine(ModuleDirectory, "libdraco-1.3.0");
+        string ExtrasPath = System.IO.Path.Combine(ModuleDirectory, "..", "..", "..", "Extras");
+        string DracoPath = System.IO.Path.Combine(ExtrasPath, "libdraco-1.3.0");
         string IncludePath = System.IO.Path.Combine(DracoPath, "include");
         List<string> LibPaths = new List<string>();
         List<string> LibFilePaths = new List<string>();
@@ -38,7 +39,8 @@ public class libdraco_ue4 : ModuleRules
             }
 #endif
 
-            string LibPath = System.IO.Path.Combine(DracoPath, "lib", PlatformName, "vs2019", "Release");
+            string VSFolderName = (Target.WindowsPlatform.GetVisualStudioCompilerVersionName() == "2019") ? "vs2019" : "vs2017";
+            string LibPath = System.IO.Path.Combine(DracoPath, "lib", PlatformName, VSFolderName, "Release");
             LibPaths.Add(LibPath);
 
             LibFilePaths.Add(System.IO.Path.Combine(LibPath, "dracodec.lib"));

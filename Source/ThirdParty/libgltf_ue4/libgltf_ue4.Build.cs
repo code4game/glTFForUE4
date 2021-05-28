@@ -9,7 +9,8 @@ public class libgltf_ue4 : ModuleRules
     {
         Type = ModuleType.External;
 
-        string glTFPath = System.IO.Path.Combine(ModuleDirectory, "libgltf-0.1.8");
+        string ExtrasPath = System.IO.Path.Combine(ModuleDirectory, "..", "..", "..", "Extras");
+        string glTFPath = System.IO.Path.Combine(ExtrasPath, "libgltf-0.1.8");
         string IncludePath = System.IO.Path.Combine(glTFPath, "include");
         List<string> LibPaths = new List<string>();
         string LibFilePath = "";
@@ -38,7 +39,8 @@ public class libgltf_ue4 : ModuleRules
             }
 #endif
 
-            string LibPath = System.IO.Path.Combine(glTFPath, "lib", PlatformName, "vs2019", "Release");
+            string VSFolderName = (Target.WindowsPlatform.GetVisualStudioCompilerVersionName() == "2019") ? "vs2019" : "vs2017";
+            string LibPath = System.IO.Path.Combine(glTFPath, "lib", PlatformName, VSFolderName, "Release");
             LibPaths.Add(LibPath);
 
             LibFilePath = System.IO.Path.Combine(LibPath, "libgltf.lib");
