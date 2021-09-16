@@ -152,7 +152,7 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
 
     NewStaticMesh->PreEditChange(nullptr);
 
-#if ENGINE_MINOR_VERSION <= 22
+#if (ENGINE_MINOR_VERSION <= 22)
     TArray<FStaticMeshSourceModel>& StaticMeshSourceModels = NewStaticMesh->SourceModels;
 #else
     TArray<FStaticMeshSourceModel>& StaticMeshSourceModels = NewStaticMesh->GetSourceModels();
@@ -163,9 +163,15 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     FStaticMeshSourceModel& SourceModel = StaticMeshSourceModels[0];
     SourceModel.BuildSettings.bUseMikkTSpace = glTFImporterOptions->Details->bUseMikkTSpace;
 
+#if (ENGINE_MINOR_VERSION <= 26)
     NewStaticMesh->LightingGuid = FGuid::NewGuid();
     NewStaticMesh->LightMapResolution = 64;
     NewStaticMesh->LightMapCoordinateIndex = 1;
+#else
+    NewStaticMesh->SetLightingGuid(FGuid::NewGuid());
+    NewStaticMesh->SetLightMapResolution(64);
+    NewStaticMesh->SetLightMapCoordinateIndex(1);
+#endif
 
     if (!NewRawMesh.IsValidOrFixable())
     {
@@ -209,8 +215,10 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
     // clear old materials
 #if (ENGINE_MINOR_VERSION <= 13)
     NewStaticMesh->Materials.Empty();
-#else
+#elif (ENGINE_MINOR_VERSION <= 26)
     NewStaticMesh->StaticMaterials.Empty();
+#else
+    NewStaticMesh->GetStaticMaterials().Empty();
 #endif
 
 #if ENGINE_MINOR_VERSION <= 22
@@ -241,8 +249,10 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
 
 #if (ENGINE_MINOR_VERSION <= 13)
         Info.MaterialIndex = NewStaticMesh->Materials.Emplace(NewMaterial);
-#else
+#elif (ENGINE_MINOR_VERSION <= 26)
         Info.MaterialIndex = NewStaticMesh->StaticMaterials.Emplace(NewMaterial);
+#else
+        Info.MaterialIndex = NewStaticMesh->GetStaticMaterials().Emplace(NewMaterial);
 #endif
         NewMap.Set(0, i, Info);
     }

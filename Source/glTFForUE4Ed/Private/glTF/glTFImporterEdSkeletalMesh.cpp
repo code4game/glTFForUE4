@@ -29,6 +29,11 @@
 #include <Rendering/SkeletalMeshLODModel.h>
 #endif
 
+#if (ENGINE_MINOR_VERSION <= 26)
+#else
+#include <Engine/SkeletalMesh.h>
+#endif
+
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
 namespace glTFForUE4Ed
@@ -658,8 +663,13 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
         SkeletalMesh->InvalidateDeriveDataCacheGUID();
         SkeletalMesh->UnregisterAllMorphTarget();
 
+#if (ENGINE_MINOR_VERSION <= 26)
         SkeletalMesh->RefBasesInvMatrix.Empty();
         SkeletalMesh->Materials.Empty();
+#else
+        SkeletalMesh->GetRefBasesInvMatrix().Empty();
+        SkeletalMesh->GetMaterials().Empty();
+#endif
     }
     if (!SkeletalMesh) return nullptr;
 
@@ -694,7 +704,11 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
 #endif
     }
 
+#if (ENGINE_MINOR_VERSION <= 26)
     SkeletalMesh->RefSkeleton = RefSkeleton;
+#else
+    SkeletalMesh->SetRefSkeleton(RefSkeleton);
+#endif
     SkeletalMesh->CalculateInvRefMatrices();
 
 #if ENGINE_MINOR_VERSION <= 23
@@ -718,7 +732,12 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
 #else
     IMeshBuilderModule& MeshBuilderModule = IMeshBuilderModule::GetForRunningPlatform();
 #endif
+#if (ENGINE_MINOR_VERSION <= 26)
     if (!MeshBuilderModule.BuildSkeletalMesh(SkeletalMesh, 0, false))
+#else
+    const FSkeletalMeshBuildParameters SkeletalMeshBuildParameters(SkeletalMesh, GetTargetPlatformManagerRef().GetRunningTargetPlatform(),0, false);
+    if (!MeshBuilderModule.BuildSkeletalMesh(SkeletalMeshBuildParameters))
+#endif
     {
         if (bCreated)
         {
@@ -743,18 +762,27 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
                 checkSlow(0);
                 NewMaterial = UMaterial::GetDefaultMaterial(MD_Surface);
             }
+
+#if (ENGINE_MINOR_VERSION <= 26)
             SkeletalMesh->Materials.Emplace(FSkeletalMaterial(NewMaterial));
+#else
+            SkeletalMesh->GetMaterials().Emplace(FSkeletalMaterial(NewMaterial));
+#endif
         }
     }
     else
     {
-#if ENGINE_MINOR_VERSION <= 20
+#if (ENGINE_MINOR_VERSION <= 20)
         for (const VMaterial& Material : SkeletalMeshImportData.Materials)
 #else
         for (const SkeletalMeshImportData::FMaterial& Material : SkeletalMeshImportData.Materials)
 #endif
         {
+#if (ENGINE_MINOR_VERSION <= 26)
             SkeletalMesh->Materials.Emplace(Material.Material.Get());
+#else
+            SkeletalMesh->GetMaterials().Emplace(Material.Material.Get());
+#endif
         }
     }
 
@@ -763,7 +791,11 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
 
     /// generate the skeleton object
     FString SkeletonObjectName = FString::Printf(TEXT("%s_Skeleton"), *SkeletalMeshName);
+#if (ENGINE_MINOR_VERSION <= 26)
     USkeleton* Skeleton = SkeletalMesh->Skeleton;
+#else
+    USkeleton *Skeleton = SkeletalMesh->GetSkeleton();
+#endif
     if (!Skeleton)
     {
         Skeleton = LoadObject<USkeleton>(NewAssetPackage, *SkeletonObjectName);
@@ -777,7 +809,11 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
     checkSlow(Skeleton);
     if (Skeleton)
     {
+#if (ENGINE_MINOR_VERSION <= 26)
         SkeletalMesh->Skeleton = Skeleton;
+#else
+        SkeletalMesh->SetSkeleton(Skeleton);
+#endif
 
         Skeleton->MergeAllBonesToBoneTree(SkeletalMesh);
 
@@ -804,8 +840,13 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(
     if (bCreated && glTFImporterOptions->Details->bCreatePhysicsAsset)
     {
         FString PhysicsObjectName = FString::Printf(TEXT("%s_Physics"), *SkeletalMeshName);
-        UPhysicsAsset* PhysicsAsset = SkeletalMesh->PhysicsAsset;
+#if (ENGINE_MINOR_VERSION <= 26)
+        UPhysicsAsset *PhysicsAsset = SkeletalMesh->PhysicsAsset;
         SkeletalMesh->PhysicsAsset = nullptr;
+#else
+        UPhysicsAsset *PhysicsAsset = SkeletalMesh->GetPhysicsAsset();
+        SkeletalMesh->SetPhysicsAsset(nullptr);
+#endif
         if (!PhysicsAsset)
             PhysicsAsset = LoadObject<UPhysicsAsset>(NewAssetPackage, *PhysicsObjectName);
         UPhysicsAsset* NewPhysicsAsset = nullptr;

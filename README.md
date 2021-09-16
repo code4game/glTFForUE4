@@ -16,6 +16,7 @@
 
 | UE4  | Plugin | Download |
 |:----:|:--------|:--------|
+| 4.27 | 2.0.8 Win/Mac | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
 | 4.26 | 2.0.8 Win/Mac | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
 | 4.25 | 2.0.8 Win/Mac | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
 | 4.24 | 2.0.8 Win/Mac | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |

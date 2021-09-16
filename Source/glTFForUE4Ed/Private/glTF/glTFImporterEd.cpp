@@ -274,7 +274,11 @@ bool FglTFImporterEd::SetAssetImportData(UObject* InObject, const FglTFImporterO
     }
     else if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(InObject))
     {
+#if (ENGINE_MINOR_VERSION <= 26)
         SkeletalMesh->AssetImportData = glTFImporterEdData;
+#else
+        SkeletalMesh->SetAssetImportData(glTFImporterEdData);
+#endif
     }
     if (glTFImporterEdData)
     {
@@ -292,7 +296,11 @@ UAssetImportData* FglTFImporterEd::GetAssetImportData(UObject* InObject)
     }
     else if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(InObject))
     {
+#if (ENGINE_MINOR_VERSION <= 26)
         AssetImportData = SkeletalMesh->AssetImportData;
+#else
+        AssetImportData = SkeletalMesh->GetAssetImportData();
+#endif
     }
     else if (UTexture* Texture = Cast<UTexture>(InObject))
     {
