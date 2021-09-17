@@ -12,7 +12,11 @@
 #include <Animation/MorphTarget.h>
 #include <Misc/Paths.h>
 
+#if (ENGINE_MINOR_VERSION <= 26)
 #include <SkelImport.h>
+#else
+#include <ImportUtils/SkelImport.h>
+#endif
 #include <MeshUtilities.h>
 #if ENGINE_MINOR_VERSION <= 23
 #else
