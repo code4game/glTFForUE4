@@ -513,11 +513,11 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const TSharedPtr<FglTFImporterOp
             else if (OutRawMesh.WedgeTexCoords[i].Num() == OutRawMesh.VertexPositions.Num())
             {
 #if GLTFFORUE_ENGINE_VERSION < 500
-                TArray<FVector2D> WedgeTexCoords = OutRawMesh.WedgeTexCoords[i];
+                const TArray<FVector2D> WedgeTexCoords = OutRawMesh.WedgeTexCoords[i];
 #else
-                TArray<FVector2f> WedgeTexCoords = OutRawMesh.WedgeTexCoords[i];
+                const TArray<FVector2f> WedgeTexCoords = OutRawMesh.WedgeTexCoords[i];
 #endif
-                WedgeTexCoords.SetNumUninitialized(WedgeIndicesCount);
+                OutRawMesh.WedgeTexCoords[i].SetNumUninitialized(WedgeIndicesCount);
                 for (int32 j = 0, jc = OutRawMesh.WedgeIndices.Num(); j < jc; ++j)
                 {
                     OutRawMesh.WedgeTexCoords[i][j] = WedgeTexCoords[OutRawMesh.WedgeIndices[j] % WedgeTexCoords.Num()];

@@ -63,8 +63,7 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
 #if GLTFFORUE_ENGINE_VERSION < 500
         AnimSequence->CleanAnimSequenceForImport();
 #else
-        //TODO: warning
-        AnimSequence->CleanAnimSequenceForImport();
+        AnimSequence->GetController().ResetModel();
 #endif
     }
     //WARN:
@@ -72,6 +71,12 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
 
     AnimSequence->SetSkeleton(InSkeleton);
     AnimSequence->CreateAnimation(InSkeletalMesh);
+    
+#if GLTFFORUE_ENGINE_VERSION < 500
+#else
+    UAnimDataModel* AnimDataModelPtr = AnimSequence->GetDataModel();
+    IAnimationDataController& AnimationDataControllerRef = AnimSequence->GetController();
+#endif
 
     FeedbackTaskWrapper.StatusUpdate(0, 2, LOCTEXT("SetSkeleton", "Set the skeleton to an animation sequence"));
 
@@ -106,7 +111,7 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
     }
 
     FeedbackTaskWrapper.StatusUpdate(1, 2, LOCTEXT("AddKeyToSequence", "2/2 Add the key to sequence"));
-
+    
     int32 NumFrames = 0;
     float SequenceLength = 0.0f;
     for (int32 i = 0; i < glTFAnimationSequenceDatasArray.Num(); ++i)
@@ -187,14 +192,10 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
 #if GLTFFORUE_ENGINE_VERSION < 500
                     AnimSequence->bNeedsRebake = true;
                     AnimSequence->AddKeyToSequence(KeyData.Time, CurveName, KeyData.Transform);
-#endif
 
 #if GLTFFORUE_ENGINE_VERSION < 416
                     FTransformCurve* TransformCurve = static_cast<FTransformCurve*>(AnimSequence->RawCurveData.GetCurveData(CurveUID, FRawCurveTracks::TransformType));
-#elif GLTFFORUE_ENGINE_VERSION < 500
-                    FTransformCurve* TransformCurve = static_cast<FTransformCurve*>(AnimSequence->RawCurveData.GetCurveData(CurveUID, ERawCurveTrackTypes::RCT_Transform));
 #else
-                    //TODO: warning
                     FTransformCurve* TransformCurve = static_cast<FTransformCurve*>(AnimSequence->RawCurveData.GetCurveData(CurveUID, ERawCurveTrackTypes::RCT_Transform));
 #endif
                     check(TransformCurve);
@@ -212,6 +213,12 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
                         FKeyHandle KeyHandle = TransformCurve->ScaleCurve.FloatCurves->FindKey(KeyData.Time);
                         TransformCurve->ScaleCurve.FloatCurves->SetKeyInterpMode(KeyHandle, KeyData.ScaleInterpolation);
                     }
+#else
+                    const FAnimationCurveIdentifier AnimationCurveIdentifier(NewSmartName, ERawCurveTrackTypes::RCT_Transform);
+                    if (!AnimDataModelPtr->FindTransformCurve(AnimationCurveIdentifier))
+                        AnimationDataControllerRef.AddCurve(AnimationCurveIdentifier);
+                    AnimationDataControllerRef.SetTransformCurveKey(AnimationCurveIdentifier, KeyData.Time, KeyData.Transform);
+#endif
                 }
                 if ((InMorphTargetNames.Num() == KeyData.Weights.Num()) &&
                     (KeyData.Flags & FglTFAnimationSequenceKeyData::EFlag_Weights))
@@ -235,20 +242,21 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
         FeedbackTaskWrapper.StatusUpdate(i + glTFAnimationSequenceDatasArray.Num(), glTFAnimationSequenceDatasArray.Num() * 2, LOCTEXT("AddKeyToSequence", "2/2 Add the key to sequence"));
     }
     
-#if GLTFFORUE_ENGINE_VERSION < 500
-    AnimSequence->SequenceLength = SequenceLength;
-#else
-    //TODO: warning
-    AnimSequence->SequenceLength = SequenceLength;
-#endif
     if (SequenceLength == 0)
     {
         NumFrames = 1;
     }
-#if GLTFFORUE_ENGINE_VERSION < 422
+
+#if GLTFFORUE_ENGINE_VERSION < 500
+#   if GLTFFORUE_ENGINE_VERSION < 422
     AnimSequence->NumFrames = NumFrames;
-#else
+#   else
     AnimSequence->SetRawNumberOfFrame(NumFrames);
+#   endif
+    AnimSequence->SequenceLength = SequenceLength;
+#else
+    AnimationDataControllerRef.SetFrameRate(FFrameRate(NumFrames, 1));
+    AnimationDataControllerRef.SetPlayLength(SequenceLength);
 #endif
     
 #if GLTFFORUE_ENGINE_VERSION < 500
@@ -257,13 +265,15 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
         AnimSequence->BakeTrackCurvesToRawAnimation();
     }
     else
-#endif
     {
         AnimSequence->PostProcessSequence();
     }
+#endif
     AnimSequence->Modify(true);
     AnimSequence->MarkPackageDirty();
+#if GLTFFORUE_ENGINE_VERSION < 500
     AnimSequence->MarkRawDataAsModified();
+#endif
 
     // Reregister skeletal mesh components so they reflect the updated animation
     for (TObjectIterator<USkeletalMeshComponent> Iter; Iter; ++Iter)
