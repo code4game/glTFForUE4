@@ -169,13 +169,12 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
 
     NewStaticMesh->PreEditChange(nullptr);
 
-#if GLTFFORUE_ENGINE_VERSION < 423
-    TArray<FStaticMeshSourceModel>& StaticMeshSourceModels = NewStaticMesh->SourceModels;
-#else
-    TArray<FStaticMeshSourceModel>& StaticMeshSourceModels = NewStaticMesh->GetSourceModels();
-#endif
-
 #if GLTFFORUE_ENGINE_VERSION < 500
+#   if GLTFFORUE_ENGINE_VERSION < 423
+    TArray<FStaticMeshSourceModel>& StaticMeshSourceModels = NewStaticMesh->SourceModels;
+#   else
+    TArray<FStaticMeshSourceModel>& StaticMeshSourceModels = NewStaticMesh->GetSourceModels();
+#   endif
     StaticMeshSourceModels.Empty();
     new (StaticMeshSourceModels) FStaticMeshSourceModel();
     FStaticMeshSourceModel& SourceModel = StaticMeshSourceModels[0];
@@ -221,7 +220,9 @@ UStaticMesh* FglTFImporterEdStaticMesh::CreateStaticMesh(const TWeakPtr<FglTFImp
         (glTFImporterOptions->Details->bRecomputeTangents || NewRawMesh.WedgeTangentX.Num() != NewRawMesh.WedgeIndices.Num() ||
          NewRawMesh.WedgeTangentY.Num() != NewRawMesh.WedgeIndices.Num());
     SourceModel.BuildSettings.bRemoveDegenerates    = glTFImporterOptions->Details->bRemoveDegenerates;
+#if GLTFFORUE_ENGINE_VERSION < 500
     SourceModel.BuildSettings.bBuildAdjacencyBuffer = glTFImporterOptions->Details->bBuildAdjacencyBuffer;
+#endif
     SourceModel.BuildSettings.bUseFullPrecisionUVs  = glTFImporterOptions->Details->bUseFullPrecisionUVs;
     SourceModel.BuildSettings.bGenerateLightmapUVs  = glTFImporterOptions->Details->bGenerateLightmapUVs;
     SourceModel.RawMeshBulkData->SaveRawMesh(NewRawMesh);
@@ -438,10 +439,16 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const TSharedPtr<FglTFImporterOp
             {
                 WedgeTangentX = InNodeAbsoluteTransform.GetRotation().RotateVector(WedgeTangentX);
             }
+#if GLTFFORUE_ENGINE_VERSION < 500
             WedgeTangentXs.Add(WedgeTangentX);
+#else
+            WedgeTangentXs.Add(FVector3f(WedgeTangentX));
+#endif
 
             const FVector& Normal = Normals[i];
-            WedgeTangentYs.Add(FVector::CrossProduct(Normal, WedgeTangentX * Tangent.W));
+#if GLTFFORUE_ENGINE_VERSION < 500
+            WedgeTangentYs.Add(FVector3f(FVector::CrossProduct(Normal, FVector(WedgeTangentX) * Tangent.W)));
+#endif
         }
     }
     else
@@ -463,7 +470,11 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const TSharedPtr<FglTFImporterOp
     {
         OutRawMesh.WedgeTangentX.Add(WedgeTangentXs[TriangleIndices[i]]);
         OutRawMesh.WedgeTangentY.Add(WedgeTangentYs[TriangleIndices[i]]);
+#if GLTFFORUE_ENGINE_VERSION < 500
         OutRawMesh.WedgeTangentZ.Add(Normals[TriangleIndices[i]]);
+#else
+        OutRawMesh.WedgeTangentZ.Add(FVector3f(Normals[TriangleIndices[i]]));
+#endif
     }
 
     int32 WedgeIndicesCount = OutRawMesh.WedgeIndices.Num();
@@ -501,9 +512,13 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const TSharedPtr<FglTFImporterOp
             }
             else if (OutRawMesh.WedgeTexCoords[i].Num() == OutRawMesh.VertexPositions.Num())
             {
+#if GLTFFORUE_ENGINE_VERSION < 500
                 TArray<FVector2D> WedgeTexCoords = OutRawMesh.WedgeTexCoords[i];
-                OutRawMesh.WedgeTexCoords[i].SetNumUninitialized(WedgeIndicesCount);
-                for (int32 j = 0; j < OutRawMesh.WedgeIndices.Num(); ++j)
+#else
+                TArray<FVector2f> WedgeTexCoords = OutRawMesh.WedgeTexCoords[i];
+#endif
+                WedgeTexCoords.SetNumUninitialized(WedgeIndicesCount);
+                for (int32 j = 0, jc = OutRawMesh.WedgeIndices.Num(); j < jc; ++j)
                 {
                     OutRawMesh.WedgeTexCoords[i][j] = WedgeTexCoords[OutRawMesh.WedgeIndices[j] % WedgeTexCoords.Num()];
                 }

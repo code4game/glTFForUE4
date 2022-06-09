@@ -40,6 +40,7 @@ public class glTFForUE4Ed : ModuleRules
 #endif
 #if UE_5_0_OR_LATER
                 "AnimationBlueprintLibrary",
+                "PhysicsUtilities",
 #endif
                 "AnimationModifiers",
                 "glTFForUE4",

@@ -60,7 +60,12 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
     else
     {
         UAnimationBlueprintLibrary::RemoveAllCurveData(AnimSequence);
+#if GLTFFORUE_ENGINE_VERSION < 500
         AnimSequence->CleanAnimSequenceForImport();
+#else
+        //TODO: warning
+        AnimSequence->CleanAnimSequenceForImport();
+#endif
     }
     //WARN:
     if (!AnimSequence) return nullptr;
@@ -179,13 +184,17 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
             {
                 if (KeyData.Flags & FglTFAnimationSequenceKeyData::EFlag_Transform)
                 {
+#if GLTFFORUE_ENGINE_VERSION < 500
                     AnimSequence->bNeedsRebake = true;
-
                     AnimSequence->AddKeyToSequence(KeyData.Time, CurveName, KeyData.Transform);
+#endif
 
 #if GLTFFORUE_ENGINE_VERSION < 416
                     FTransformCurve* TransformCurve = static_cast<FTransformCurve*>(AnimSequence->RawCurveData.GetCurveData(CurveUID, FRawCurveTracks::TransformType));
+#elif GLTFFORUE_ENGINE_VERSION < 500
+                    FTransformCurve* TransformCurve = static_cast<FTransformCurve*>(AnimSequence->RawCurveData.GetCurveData(CurveUID, ERawCurveTrackTypes::RCT_Transform));
 #else
+                    //TODO: warning
                     FTransformCurve* TransformCurve = static_cast<FTransformCurve*>(AnimSequence->RawCurveData.GetCurveData(CurveUID, ERawCurveTrackTypes::RCT_Transform));
 #endif
                     check(TransformCurve);
@@ -207,7 +216,9 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
                 if ((InMorphTargetNames.Num() == KeyData.Weights.Num()) &&
                     (KeyData.Flags & FglTFAnimationSequenceKeyData::EFlag_Weights))
                 {
+#if GLTFFORUE_ENGINE_VERSION < 500
                     AnimSequence->bNeedsRebake = true;
+#endif
 
                     /// set the morph target
                     for (int32 j = 0, jc = InMorphTargetNames.Num(); j < jc; ++j)
@@ -223,8 +234,13 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
 
         FeedbackTaskWrapper.StatusUpdate(i + glTFAnimationSequenceDatasArray.Num(), glTFAnimationSequenceDatasArray.Num() * 2, LOCTEXT("AddKeyToSequence", "2/2 Add the key to sequence"));
     }
-
+    
+#if GLTFFORUE_ENGINE_VERSION < 500
     AnimSequence->SequenceLength = SequenceLength;
+#else
+    //TODO: warning
+    AnimSequence->SequenceLength = SequenceLength;
+#endif
     if (SequenceLength == 0)
     {
         NumFrames = 1;
@@ -234,12 +250,14 @@ UAnimSequence* FglTFImporterEdAnimationSequence::CreateAnimationSequence(const T
 #else
     AnimSequence->SetRawNumberOfFrame(NumFrames);
 #endif
-
+    
+#if GLTFFORUE_ENGINE_VERSION < 500
     if (AnimSequence->HasSourceRawData())
     {
         AnimSequence->BakeTrackCurvesToRawAnimation();
     }
     else
+#endif
     {
         AnimSequence->PostProcessSequence();
     }

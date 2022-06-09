@@ -6,7 +6,6 @@
 #include "glTF/glTFImporterOptions.h"
 #include "glTF/glTFImporterEdMaterial.h"
 #include "glTF/glTFImporterEdAnimationSequence.h"
-#include "glTFForUE4ToUE5.h"
 
 #include <SkeletalMeshTypes.h>
 #include <Engine/SkeletalMesh.h>
@@ -146,13 +145,13 @@ namespace glTFForUE4Ed
 #if GLTFFORUE_ENGINE_VERSION < 500
         for (FVector& Point : InOutSkeletalMeshImportData.Points)
 #else
-        for (auto& Point : InOutSkeletalMeshImportData.Points)
+        for (FVector3f& Point : InOutSkeletalMeshImportData.Points)
 #endif
         {
 #if GLTFFORUE_ENGINE_VERSION < 500
             Point = InNodeTransform.TransformPosition(Point);
 #else
-            UE5TransformPosition(InNodeTransform, Point);
+            Point = FVector3f(InNodeTransform.TransformPosition(FVector(Point)));
 #endif
         }
         for (SkeletalMeshImportData::FTriangle& Triangle : InOutSkeletalMeshImportData.Faces)
@@ -167,9 +166,12 @@ namespace glTFForUE4Ed
                 FVector& TangentZ = Triangle.TangentZ[i];
                 TangentZ          = InNodeTransform.TransformVectorNoScale(TangentZ);
 #else
-                UE5TransformVectorNoScale(InNodeTransform, Triangle.TangentX[i]);
-                UE5TransformVectorNoScale(InNodeTransform, Triangle.TangentY[i]);
-                UE5TransformVectorNoScale(InNodeTransform, Triangle.TangentZ[i]);
+                FVector3f& TangentX = Triangle.TangentX[i];
+                TangentX            = FVector3f(InNodeTransform.TransformVectorNoScale(FVector(TangentX)));
+                FVector3f& TangentY = Triangle.TangentY[i];
+                TangentY            = FVector3f(InNodeTransform.TransformVectorNoScale(FVector(TangentY)));
+                FVector3f& TangentZ = Triangle.TangentZ[i];
+                TangentZ            = FVector3f(InNodeTransform.TransformVectorNoScale(FVector(TangentZ)));
 #endif
             }
         }
@@ -196,7 +198,7 @@ namespace glTFForUE4Ed
 #if GLTFFORUE_ENGINE_VERSION < 500
             LODPoints[p] = InSkeletalMeshImportData.Points[p];
 #else
-            UE5ConvertV3F2V3D(InSkeletalMeshImportData.Points[p], LODPoints[p]);
+            LODPoints[p] = FVector(InSkeletalMeshImportData.Points[p]);
 #endif
         }
 
@@ -304,7 +306,7 @@ namespace glTFForUE4Ed
             ReferenceSkeletonModifier.Add(BoneInfo, RefBonesBinary[RootBoneIndices[0]].BonePos.Transform);
 #else
             NewRootIndex = ReferenceSkeletonModifier.GetReferenceSkeleton().GetNum();
-            ReferenceSkeletonModifier.Add(BoneInfo, UE5ConvertT3F2TD(RefBonesBinary[RootBoneIndices[0]].BonePos.Transform));
+            ReferenceSkeletonModifier.Add(BoneInfo, FTransform(RefBonesBinary[RootBoneIndices[0]].BonePos.Transform));
 #endif
         }
         // Digest bones to the serializable format.
@@ -341,7 +343,7 @@ namespace glTFForUE4Ed
 #elif GLTFFORUE_ENGINE_VERSION < 500
             ReferenceSkeletonModifier.Add(BoneInfo, BinaryBone.BonePos.Transform);
 #else
-            ReferenceSkeletonModifier.Add(BoneInfo, UE5ConvertT3F2TD(BinaryBone.BonePos.Transform));
+            ReferenceSkeletonModifier.Add(BoneInfo, FTransform(BinaryBone.BonePos.Transform));
 #endif
         }
 
@@ -430,7 +432,7 @@ namespace glTFForUE4Ed
 #if GLTFFORUE_ENGINE_VERSION < 500
             InOutSkeletalMeshImportData.Points[i] = InPoints;
 #else
-            InOutSkeletalMeshImportData.Points[i] = UE5ConvertV3D2V3F(InPoints[i]);
+            InOutSkeletalMeshImportData.Points[i] = FVector3f(InPoints[i]);
 #endif
         }
 
@@ -452,7 +454,7 @@ namespace glTFForUE4Ed
 #if GLTFFORUE_ENGINE_VERSION < 500
                     TriangleFace.TangentZ[j] = Normal;
 #else
-                    TriangleFace.TangentZ[j] = UE5ConvertV3D2V3F(Normal);
+                    TriangleFace.TangentZ[j] = FVector3f(Normal);
 #endif
 
                     if (InTangents.Num() == InPoints.Num())
@@ -465,8 +467,8 @@ namespace glTFForUE4Ed
                         TriangleFace.TangentX[j] = WedgeTangentX;
                         TriangleFace.TangentY[j] = FVector::CrossProduct(Normal, WedgeTangentX * Tangent.W);
 #else
-                        TriangleFace.TangentX[j] = UE5ConvertV3D2V3F(WedgeTangentX);
-                        TriangleFace.TangentY[j] = UE5ConvertV3D2V3F(FVector::CrossProduct(Normal, WedgeTangentX * Tangent.W));
+                        TriangleFace.TangentX[j] = FVector3f(WedgeTangentX);
+                        TriangleFace.TangentY[j] = FVector3f(FVector::CrossProduct(Normal, WedgeTangentX * Tangent.W));
 #endif
                     }
                 }
@@ -493,7 +495,7 @@ namespace glTFForUE4Ed
 #if GLTFFORUE_ENGINE_VERSION < 500
                     Wedge.UVs[k] = TextureCoord[PointIndex];
 #else
-                    Wedge.UVs[k] = UE5ConvertV2D2V2F(TextureCoord[PointIndex]);
+                    Wedge.UVs[k] = FVector2f(TextureCoord[PointIndex]);
 #endif
                 }
                 InOutSkeletalMeshImportData.Wedges.Add(Wedge);
@@ -830,7 +832,11 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     {
         if (bCreated)
         {
+#if GLTFFORUE_ENGINE_VERSION < 500
             SkeletalMesh->MarkPendingKill();
+#else
+            SkeletalMesh->MarkAsGarbage();
+#endif
         }
         FeedbackTaskWrapper.Log(ELogVerbosity::Error,
                                 LOCTEXT("CreateSkeletalMeshFailedToBuildTheSkeletalMesh", "Failed to build the skeletal mesh!"));
@@ -965,7 +971,11 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
 
                 /// remove the useless object
                 if (NewPhysicsAsset == PhysicsAsset)
+#if GLTFFORUE_ENGINE_VERSION < 500
                     NewPhysicsAsset->MarkPendingKill();
+#else
+                    NewPhysicsAsset->MarkAsGarbage();
+#endif
             }
         }
     }
@@ -1206,7 +1216,13 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
                 continue;
             }
             OutMorphTargetImportDatas[i]        = OutSkeletalMeshImportData;
-            OutMorphTargetImportDatas[i].Points = MorphTargetsPoints[i];
+#if GLTFFORUE_ENGINE_VERSION < 500
+            OutMorphTargetImportDatas[i].Points = FVector3f(MorphTargetsPoints[i]);
+#else
+            OutMorphTargetImportDatas[i].Points.SetNum(MorphTargetsPoints[i].Num());
+            for (int32 j = 0, jc = OutMorphTargetImportDatas[i].Points.Num(); j < jc; ++j)
+                OutMorphTargetImportDatas[i].Points[j] = FVector3f(MorphTargetsPoints[i][j]);
+#endif
             OutMorphTargetImportDatas[i].PointToRawMap.Empty();
         }
     }
@@ -1293,12 +1309,24 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
         if (!JointIds.Contains(Bone.ParentIndex))
         {
             Bone.ParentIndex = INDEX_NONE;
+
+#if GLTFFORUE_ENGINE_VERSION < 500
             Bone.BonePos.Transform.SetFromMatrix(OutInverseBindMatrices[i].Inverse());
             Bone.BonePos.Transform *= InNodeTransform;
+#else
+            FTransform BonePosTransform;
+            BonePosTransform.SetFromMatrix(OutInverseBindMatrices[i].Inverse());
+            Bone.BonePos.Transform = ::FTransform3f(BonePosTransform);
+            Bone.BonePos.Transform *= ::FTransform3f(InNodeTransform);
+#endif
         }
         else
         {
+#if GLTFFORUE_ENGINE_VERSION < 500
             Bone.BonePos.Transform = NodeInfo.RelativeTransform;
+#else
+            Bone.BonePos.Transform = ::FTransform3f(NodeInfo.RelativeTransform);
+#endif
         }
 
         // TODO:
@@ -1328,18 +1356,31 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
     {
         for (auto& Point : OutSkeletalMeshImportData.Points)
         {
+#if GLTFFORUE_ENGINE_VERSION < 500
             Point = InNodeTransform.TransformPosition(Point);
+#else
+            Point = FVector3f(InNodeTransform.TransformPosition(FVector(Point)));
+#endif
         }
         for (auto& Triangle : OutSkeletalMeshImportData.Faces)
         {
             for (int32 i = 0; i < 3; ++i)
             {
+#if GLTFFORUE_ENGINE_VERSION < 500
                 auto& TangentX = Triangle.TangentX[i];
                 TangentX       = InNodeTransform.TransformVectorNoScale(TangentX);
                 auto& TangentY = Triangle.TangentY[i];
                 TangentY       = InNodeTransform.TransformVectorNoScale(TangentY);
                 auto& TangentZ = Triangle.TangentZ[i];
                 TangentZ       = InNodeTransform.TransformVectorNoScale(TangentZ);
+#else
+                auto& TangentX = Triangle.TangentX[i];
+                TangentX       = FVector3f(InNodeTransform.TransformVectorNoScale(FVector(TangentX)));
+                auto& TangentY = Triangle.TangentY[i];
+                TangentY       = FVector3f(InNodeTransform.TransformVectorNoScale(FVector(TangentY)));
+                auto& TangentZ = Triangle.TangentZ[i];
+                TangentZ       = FVector3f(InNodeTransform.TransformVectorNoScale(FVector(TangentZ)));
+#endif
             }
         }
     }
