@@ -447,6 +447,8 @@ bool FglTFImporterEdStaticMesh::GenerateRawMesh(const TSharedPtr<FglTFImporterOp
 
             const FVector& Normal = Normals[i];
 #if GLTFFORUE_ENGINE_VERSION < 500
+            WedgeTangentYs.Add(FVector::CrossProduct(Normal, WedgeTangentX * Tangent.W));
+#else
             WedgeTangentYs.Add(FVector3f(FVector::CrossProduct(Normal, FVector(WedgeTangentX) * Tangent.W)));
 #endif
         }

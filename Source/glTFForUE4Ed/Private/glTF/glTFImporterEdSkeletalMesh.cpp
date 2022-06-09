@@ -430,11 +430,13 @@ namespace glTFForUE4Ed
         {
             InOutSkeletalMeshImportData.PointToRawMap[i] = i;
 #if GLTFFORUE_ENGINE_VERSION < 500
-            InOutSkeletalMeshImportData.Points[i] = InPoints;
 #else
             InOutSkeletalMeshImportData.Points[i] = FVector3f(InPoints[i]);
 #endif
         }
+#if GLTFFORUE_ENGINE_VERSION < 500
+        InOutSkeletalMeshImportData.Points = InPoints;
+#endif
 
         for (int32 i = 0; i < InTriangleIndices.Num(); i += GLTF_TRIANGLE_POINTS_NUM)
         {
@@ -1217,7 +1219,7 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
             }
             OutMorphTargetImportDatas[i]        = OutSkeletalMeshImportData;
 #if GLTFFORUE_ENGINE_VERSION < 500
-            OutMorphTargetImportDatas[i].Points = FVector3f(MorphTargetsPoints[i]);
+            OutMorphTargetImportDatas[i].Points = MorphTargetsPoints[i];
 #else
             OutMorphTargetImportDatas[i].Points.SetNum(MorphTargetsPoints[i].Num());
             for (int32 j = 0, jc = OutMorphTargetImportDatas[i].Points.Num(); j < jc; ++j)
