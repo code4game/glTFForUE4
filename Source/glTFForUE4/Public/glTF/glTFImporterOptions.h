@@ -1,4 +1,4 @@
-// Copyright(c) 2016 - 2021 Code 4 Game, Org. All Rights Reserved.
+// Copyright(c) 2016 - 2022 Code 4 Game, Org. All Rights Reserved.
 #pragma once
 
 #include "glTFImporterOptions.generated.h"
@@ -173,7 +173,7 @@ struct GLTFFORUE4_API FglTFImporterOptions
     UPROPERTY()
     UglTFImporterOptionsDetails* Details;
 
-#if (ENGINE_MINOR_VERSION <= 13)
+#if GLTFFORUE_ENGINE_VERSION < 414
 #else
     TSharedPtr<struct FMD5Hash> FileHash;
 #endif

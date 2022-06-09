@@ -1,20 +1,22 @@
-// Copyright(c) 2016 - 2021 Code 4 Game, Org. All Rights Reserved.
+// Copyright(c) 2016 - 2022 Code 4 Game, Org. All Rights Reserved.
 
 #pragma once
 
-#include <vector>
-#include <map>
-#include <memory>
-
-#include <libgltf/libgltf.h>
+#include "glTFForUE4PublicPCH.h"
 
 #include <Components.h>
 #include <Engine/Texture.h>
-#if ENGINE_MINOR_VERSION <= 12
+#if GLTFFORUE_ENGINE_VERSION < 413
 #include <Curves/CurveBase.h>
 #else
 #include <Curves/RichCurve.h>
 #endif
+
+#include <libgltf/libgltf.h>
+
+#include <vector>
+#include <map>
+#include <memory>
 
 #include "glTFImporter.generated.h"
 

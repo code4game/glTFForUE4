@@ -1,4 +1,4 @@
-// Copyright 2017 - 2018 Code 4 Game, Org. All Rights Reserved.
+// Copyright(c) 2016 - 2022 Code 4 Game, Org. All Rights Reserved.
 
 using UnrealBuildTool;
 
@@ -37,6 +37,9 @@ public class glTFForUE4Ed : ModuleRules
 #if UE_4_24_OR_LATER
                 "MeshBuilder",
                 "SkeletalMeshUtilitiesCommon",
+#endif
+#if UE_5_0_OR_LATER
+                "AnimationBlueprintLibrary",
 #endif
                 "AnimationModifiers",
                 "glTFForUE4",

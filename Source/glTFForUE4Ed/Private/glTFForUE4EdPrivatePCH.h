@@ -1,10 +1,10 @@
-// Copyright(c) 2016 - 2021 Code 4 Game, Org. All Rights Reserved.
+// Copyright(c) 2016 - 2022 Code 4 Game, Org. All Rights Reserved.
 
 #pragma once
 
-#include <Runtime/Launch/Resources/Version.h>
+#include "glTFForUE4PublicPCH.h"
 
-#if ENGINE_MINOR_VERSION <= 14
+#if GLTFFORUE_ENGINE_VERSION < 415
 #include <Core.h>
 #include <CoreUObject.h>
 #include <Engine.h>

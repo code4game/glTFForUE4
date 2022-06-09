@@ -1,4 +1,4 @@
-// Copyright(c) 2016 - 2021 Code 4 Game, Org. All Rights Reserved.
+// Copyright(c) 2016 - 2022 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTFBinaryFactory.h"
@@ -6,7 +6,7 @@
 #include "glTFImporterEd.h"
 
 #include <Engine/StaticMesh.h>
-#if ENGINE_MINOR_VERSION <= 13
+#if GLTFFORUE_ENGINE_VERSION < 414
 #include <Misc/CoreMisc.h>
 #else
 #include <Misc/FileHelper.h>

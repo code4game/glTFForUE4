@@ -15,10 +15,16 @@ public class libdraco_ue4 : ModuleRules
         List<string> LibPaths = new List<string>();
         List<string> LibFilePaths = new List<string>();
 
+#if UE_5_0_OR_LATER
+        if (Target.Platform == UnrealTargetPlatform.Win64)
+#else
         if ((Target.Platform == UnrealTargetPlatform.Win32) || (Target.Platform == UnrealTargetPlatform.Win64))
+#endif
         {
             string PlatformName = "";
-#if UE_4_23_OR_LATER
+#if UE_5_0_OR_LATER
+            PlatformName = "win64";
+#elif UE_4_23_OR_LATER
             if (Target.Platform == UnrealTargetPlatform.Win32)
             {
                 PlatformName = "win32";

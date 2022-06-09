@@ -1,9 +1,9 @@
-// Copyright(c) 2016 - 2021 Code 4 Game, Org. All Rights Reserved.
+// Copyright(c) 2016 - 2022 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4PrivatePCH.h"
 #include "glTF/glTFImporterOptions.h"
 
-#if (ENGINE_MINOR_VERSION <= 25)
+#if GLTFFORUE_ENGINE_VERSION < 426
 #else
 #include <Misc/SecureHash.h>
 #endif
@@ -112,7 +112,7 @@ FglTFImporterOptions::FglTFImporterOptions()
     , FilePathInEngine(TEXT(""))
     , DetailsStored()
     , Details(nullptr)
-#if (ENGINE_MINOR_VERSION <= 13)
+#if GLTFFORUE_ENGINE_VERSION < 414
 #else
     , FileHash(nullptr)
 #endif

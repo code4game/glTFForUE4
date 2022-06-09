@@ -1,11 +1,11 @@
-// Copyright(c) 2016 - 2021 Code 4 Game, Org. All Rights Reserved.
+// Copyright(c) 2016 - 2022 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTF/glTFImporterEdTexture.h"
 
 #include "glTF/glTFImporterOptions.h"
 
-#if (ENGINE_MINOR_VERSION <= 17)
+#if GLTFFORUE_ENGINE_VERSION < 418
 #include <ImageWrapper.h>
 #else
 #include <IImageWrapper.h>
@@ -62,7 +62,7 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
     UPackage* TexturePackage = LoadPackage(nullptr, *PackageName, LOAD_None);
     if (!TexturePackage)
     {
-#if (ENGINE_MINOR_VERSION <= 25)
+#if GLTFFORUE_ENGINE_VERSION < 426
         TexturePackage = CreatePackage(nullptr, *PackageName);
 #else
         TexturePackage = CreatePackage(*PackageName);
@@ -72,7 +72,7 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
     TexturePackage->FullyLoad();
 
     IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
-#if (ENGINE_MINOR_VERSION <= 15)
+#if GLTFFORUE_ENGINE_VERSION < 416
     IImageWrapperPtr ImageWrappers[7] = {
 #else
     TSharedPtr<IImageWrapper> ImageWrappers[7] = {
@@ -98,7 +98,7 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
         int32 Height = ImageWrapper->GetHeight();
 
         int32 BitDepth = ImageWrapper->GetBitDepth();
-#if (ENGINE_MINOR_VERSION <= 17)
+#if GLTFFORUE_ENGINE_VERSION < 418
         ERGBFormat::Type ImageFormat = ImageWrapper->GetFormat();
 #else
         ERGBFormat ImageFormat = ImageWrapper->GetFormat();
@@ -164,7 +164,7 @@ UTexture* FglTFImporterEdTexture::CreateTexture(const TWeakPtr<FglTFImporterOpti
         }
         NewTexture->SRGB = !InIsNormalmap;
         NewTexture->CompressionSettings = !InIsNormalmap ? TC_Default : TC_Normalmap;
-#if (ENGINE_MINOR_VERSION <= 24)
+#if GLTFFORUE_ENGINE_VERSION < 425
         const TArray<uint8>* RawData = nullptr;
         if (ImageWrapper->GetRaw(ImageFormat, BitDepth, RawData))
 #else

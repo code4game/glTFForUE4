@@ -1,4 +1,4 @@
-// Copyright(c) 2016 - 2021 Code 4 Game, Org. All Rights Reserved.
+// Copyright(c) 2016 - 2022 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTFForUE4EdPrivatePCH.h"
 #include "glTF/glTFImporterOptionsWindowEd.h"
@@ -12,7 +12,7 @@
 #include <PropertyEditorModule.h>
 #include <IDetailsView.h>
 
-#if (ENGINE_MINOR_VERSION <= 25)
+#if GLTFFORUE_ENGINE_VERSION < 426
 #else
 #include <Misc/SecureHash.h>
 #endif
@@ -26,7 +26,7 @@ TSharedPtr<FglTFImporterOptions> SglTFImporterOptionsWindowEd::Open(UObject* InC
     glTFImporterOptions->FilePathInOS = InFilePathInOS;
     glTFImporterOptions->FilePathInEngine = InFilePathInEngine;
     glTFImporterOptions->Details = GetMutableDefault<UglTFImporterOptionsDetails>();
-#if (ENGINE_MINOR_VERSION <= 13)
+#if GLTFFORUE_ENGINE_VERSION < 414
 #else
     glTFImporterOptions->FileHash = MakeShared<FMD5Hash>();
     *glTFImporterOptions->FileHash = FMD5Hash::HashFile(*glTFImporterOptions->FilePathInOS);
