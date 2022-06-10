@@ -1,10 +1,9 @@
 # glTF for UE4
 
 [![glTF status](https://img.shields.io/badge/glTF-2%2E0-green.svg?style=flat)](https://github.com/KhronosGroup/glTF)
-[![Manual](https://img.shields.io/badge/read-manual-green.svg?style=flat)](https://gltf-for-ue4.readthedocs.io/)
+[![Discussions](https://img.shields.io/badge/manual-chat-green.svg?style=flat)](https://github.com/code4game/glTFForUE4/discussions)
 [![Roadmap](https://img.shields.io/badge/visit-roadmap-green.svg?style=flat)](https://github.com/code4game/glTFForUE4/milestones)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/5ebf3642ec3d4505a58c25dfb308ae6f)](https://www.codacy.com/gh/code4game/glTFForUE4/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=code4game/glTFForUE4&amp;utm_campaign=Badge_Grade)
-[![Join the chat at https://gitter.im/code4game/glTFForUE4](https://badges.gitter.im/code4game/glTFForUE4.svg)](https://gitter.im/code4game/glTFForUE4)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fcode4game%2FglTFForUE4.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fcode4game%2FglTFForUE4?ref=badge_shield)
 
 > If you are interesting, you can star or fork or post an issue or say something.
