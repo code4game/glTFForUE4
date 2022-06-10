@@ -214,7 +214,7 @@ UObject* FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImporterOptions>&    In
             CreatedObjects.Emplace(NewSkeletalMesh);
             if (glTFImporterOptions->Details->bImportLevel)
             {
-                SpawnSkeletalMeshActor(InOutglTFImporterCollection.TargetWorld, TransformActor, NewSkeletalMesh);
+                SpawnSkeletalMeshActor(InOutglTFImporterCollection.TargetWorld, TransformActor, InputFlags, NewSkeletalMesh);
             }
         }
         else if (glTFImporterOptions->Details->bImportStaticMesh)
@@ -226,7 +226,7 @@ UObject* FglTFImporterEd::CreateNode(const TWeakPtr<FglTFImporterOptions>&    In
             CreatedObjects.Emplace(NewStaticMesh);
             if (glTFImporterOptions->Details->bImportLevel)
             {
-                SpawnStaticMeshActor(InOutglTFImporterCollection.TargetWorld, TransformActor, NewStaticMesh);
+                SpawnStaticMeshActor(InOutglTFImporterCollection.TargetWorld, TransformActor, InputFlags, NewStaticMesh);
             }
         }
     }

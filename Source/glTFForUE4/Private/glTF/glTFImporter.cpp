@@ -893,7 +893,7 @@ UObject* FglTFImporter::Create(const TWeakPtr<FglTFImporterOptions>& InglTFImpor
     return nullptr;
 }
 
-bool FglTFImporter::SpawnStaticMeshActor(UWorld* InWorld, const FTransform& InTransform, UStaticMesh* InStaticMesh)
+bool FglTFImporter::SpawnStaticMeshActor(UWorld* InWorld, const FTransform& InTransform, EObjectFlags InObjectFlags, UStaticMesh* InStaticMesh)
 {
     if (!InWorld) return false;
     AStaticMeshActor* StaticMeshActor = InWorld->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(), InTransform);
@@ -904,10 +904,14 @@ bool FglTFImporter::SpawnStaticMeshActor(UWorld* InWorld, const FTransform& InTr
     return true;
 }
 
-bool FglTFImporter::SpawnSkeletalMeshActor(UWorld* InWorld, const FTransform& InTransform, USkeletalMesh* InSkeletalMesh)
+bool FglTFImporter::SpawnSkeletalMeshActor(UWorld* InWorld, const FTransform& InTransform, EObjectFlags InObjectFlags, USkeletalMesh* InSkeletalMesh)
 {
     if (!InWorld) return false;
-    ASkeletalMeshActor* SkeletalMeshActor = InWorld->SpawnActor<ASkeletalMeshActor>(ASkeletalMeshActor::StaticClass(), InTransform);
+
+    FActorSpawnParameters SpawnParameters;
+    SpawnParameters.ObjectFlags           = InObjectFlags;
+
+    ASkeletalMeshActor* SkeletalMeshActor = InWorld->SpawnActor<ASkeletalMeshActor>(ASkeletalMeshActor::StaticClass(), InTransform, SpawnParameters);
     if (!SkeletalMeshActor) return false;
     USkeletalMeshComponent* SkeletalMeshComponent = SkeletalMeshActor->GetSkeletalMeshComponent();
     if (!SkeletalMeshComponent) return false;
