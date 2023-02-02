@@ -6,7 +6,11 @@
 #include "glTF/glTFImporterOptions.h"
 #include "glTF/glTFImporter.h"
 
-#include <AssetRegistryModule.h>
+#if GLTFFORUE_ENGINE_VERSION < 501
+#    include <AssetRegistryModule.h>
+#else
+#    include <AssetRegistry/AssetRegistryModule.h>
+#endif
 #include <ComponentReregisterContext.h>
 #include <AnimationBlueprintLibrary.h>
 #include <Animation/AnimCurveCompressionSettings.h>

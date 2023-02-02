@@ -12,6 +12,10 @@
 #include <PropertyEditorModule.h>
 #include <IDetailsView.h>
 
+#if GLTFFORUE_ENGINE_VERSION < 501
+#else
+#    include <EditorStyleSet.h>
+#endif
 #if GLTFFORUE_ENGINE_VERSION < 426
 #else
 #include <Misc/SecureHash.h>
@@ -81,7 +85,11 @@ void SglTFImporterOptionsWindowEd::Construct(const FArguments& InArgs)
             .AutoHeight()
         [
             SNew(SBorder)
+#if GLTFFORUE_ENGINE_VERSION < 501
                 .BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
+#else
+                .BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
+#endif
             [
                 SNew(SGridPanel)
                 + SGridPanel::Slot(0, 0)
@@ -90,7 +98,11 @@ void SglTFImporterOptionsWindowEd::Construct(const FArguments& InArgs)
                     .VAlign(VAlign_Center)
                 [
                     SNew(STextBlock)
+#if GLTFFORUE_ENGINE_VERSION < 501
                         .Font(FEditorStyle::GetFontStyle("CurveEd.LabelFont"))
+#else
+                        .Font(FAppStyle::GetFontStyle("CurveEd.LabelFont"))
+#endif
                         .Text(LOCTEXT("ImportOptionsWindow_SourceFilePath_Title", "Source File Path: "))
                 ]
                 + SGridPanel::Slot(1, 0)
@@ -99,7 +111,11 @@ void SglTFImporterOptionsWindowEd::Construct(const FArguments& InArgs)
                     .VAlign(VAlign_Center)
                 [
                     SNew(STextBlock)
+#if GLTFFORUE_ENGINE_VERSION < 501
                         .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+#else
+                        .Font(FAppStyle::GetFontStyle("CurveEd.InfoFont"))
+#endif
                         .Text(FText::FromString(glTFImporterOptionsPtr->FilePathInOS))
                 ]
                 + SGridPanel::Slot(0, 1)
@@ -108,7 +124,11 @@ void SglTFImporterOptionsWindowEd::Construct(const FArguments& InArgs)
                     .VAlign(VAlign_Center)
                 [
                     SNew(STextBlock)
+#if GLTFFORUE_ENGINE_VERSION < 501
                         .Font(FEditorStyle::GetFontStyle("CurveEd.LabelFont"))
+#else
+                        .Font(FAppStyle::GetFontStyle("CurveEd.LabelFont"))
+#endif
                         .Text(LOCTEXT("ImportOptionsWindow_TargetFilePath_Title", "Target File Path: "))
                 ]
                 + SGridPanel::Slot(1, 1)
@@ -117,7 +137,11 @@ void SglTFImporterOptionsWindowEd::Construct(const FArguments& InArgs)
                     .VAlign(VAlign_Center)
                 [
                     SNew(STextBlock)
+#if GLTFFORUE_ENGINE_VERSION < 501
                     .Font(FEditorStyle::GetFontStyle("CurveEd.InfoFont"))
+#else
+                    .Font(FAppStyle::GetFontStyle("CurveEd.InfoFont"))
+#endif
                     .Text(FText::FromString(glTFImporterOptionsPtr->FilePathInEngine))
                 ]
             ]

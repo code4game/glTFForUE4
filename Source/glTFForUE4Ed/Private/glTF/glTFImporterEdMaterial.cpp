@@ -6,12 +6,17 @@
 #include "glTF/glTFImporterOptions.h"
 #include "glTF/glTFImporterEdTexture.h"
 
-#include "Materials/Material.h"
+#include <Materials/Material.h>
 #include <Materials/MaterialInstanceConstant.h>
-#include "Materials/MaterialExpressionScalarParameter.h"
-#include "Materials/MaterialExpressionVectorParameter.h"
-#include "Materials/MaterialExpressionTextureSampleParameter.h"
-#include "AssetRegistryModule.h"
+#include <Materials/MaterialExpressionScalarParameter.h>
+#include <Materials/MaterialExpressionVectorParameter.h>
+#include <Materials/MaterialExpressionTextureSampleParameter.h>
+
+#if GLTFFORUE_ENGINE_VERSION < 501
+#    include <AssetRegistryModule.h>
+#else
+#    include <AssetRegistry/AssetRegistryModule.h>
+#endif
 
 #include <Factories/MaterialInstanceConstantFactoryNew.h>
 
@@ -27,7 +32,11 @@ namespace glTFForUE4Ed
     {
         if (!InMaterial || !InGuid.IsValid()) return nullptr;
 
+#if GLTFFORUE_ENGINE_VERSION < 501
         for (UMaterialExpression* Expression : InMaterial->Expressions)
+#else
+        for (const TObjectPtr<UMaterialExpression> Expression : InMaterial->GetExpressions())
+#endif
         {
             if (!Expression || !UMaterial::IsParameter(Expression)) continue;
             TMaterialExpression* ExpressionTemp = Cast<TMaterialExpression>(Expression);

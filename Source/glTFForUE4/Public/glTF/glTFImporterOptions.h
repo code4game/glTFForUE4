@@ -148,7 +148,7 @@ public:
     bool bImportCameraInLevel;
     
     UPROPERTY(EditAnywhere, Config, Category = "Level", AdvancedDisplay, meta = (EditCondition = bImportLevel, AllowedClasses = "World", ToolTip = "Import a new level that create by the template"))
-    FStringAssetReference ImportLevelTemplate;
+    FSoftObjectPath ImportLevelTemplate;
 
     void Get(FglTFImporterOptionsDetailsStored& OutDetailsStored) const;
     void Set(const FglTFImporterOptionsDetailsStored& InDetailsStored);

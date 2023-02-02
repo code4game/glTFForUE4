@@ -6,13 +6,16 @@
 #include "glTF/glTFImporterEdMaterial.h"
 #include "glTF/glTFImporterOptions.h"
 
-#include "AssetRegistryModule.h"
-#include "Engine/StaticMesh.h"
-#include "Materials/Material.h"
-#include "Misc/Paths.h"
-#include "RawMesh.h"
-#include "RenderingThread.h"
-#include "StaticMeshResources.h"
+#if GLTFFORUE_ENGINE_VERSION < 501
+#    include <AssetRegistryModule.h>
+#else
+#    include <AssetRegistry/AssetRegistryModule.h>
+#endif
+#include <Engine/StaticMesh.h>
+#include <Materials/Material.h>
+#include <RawMesh.h>
+#include <RenderingThread.h>
+#include <StaticMeshResources.h>
 
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 

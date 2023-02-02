@@ -24,7 +24,11 @@
 #    include <LODUtilities.h>
 #endif
 #include <PhysicsAssetUtils.h>
-#include <AssetRegistryModule.h>
+#if GLTFFORUE_ENGINE_VERSION < 501
+#    include <AssetRegistryModule.h>
+#else
+#    include <AssetRegistry/AssetRegistryModule.h>
+#endif
 #include <AssetNotifications.h>
 
 #if GLTFFORUE_ENGINE_VERSION < 419

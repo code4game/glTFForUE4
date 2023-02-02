@@ -11,7 +11,11 @@
 #include <IImageWrapper.h>
 #include <IImageWrapperModule.h>
 #endif
-#include <AssetRegistryModule.h>
+#if GLTFFORUE_ENGINE_VERSION < 501
+#    include <AssetRegistryModule.h>
+#else
+#    include <AssetRegistry/AssetRegistryModule.h>
+#endif
 
 #define LOCTEXT_NAMESPACE "glTFForUE4EdModule"
 
