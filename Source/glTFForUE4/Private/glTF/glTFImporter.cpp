@@ -1897,7 +1897,7 @@ bool FglTFImporter::GetNodeParentIndicesAndTransforms(const std::shared_ptr<libg
     return true;
 }
 
-bool FglTFImporter::GetNodeInfos(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TMap<int32, struct FglTFImporterNodeInfo>& OutNodeInfos, bool bSwapYZ /*= true*/)
+bool FglTFImporter::GetNodeInfos(const std::shared_ptr<libgltf::SGlTF>& InGlTF, TMap<int32, FglTFImporterNodeInfo>& OutNodeInfos, bool bSwapYZ /*= true*/)
 {
     TArray<int32> NodeParentIndices;
     TArray<FTransform> NodeRelativeTransforms;

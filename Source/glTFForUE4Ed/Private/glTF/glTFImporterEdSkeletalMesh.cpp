@@ -289,12 +289,10 @@ namespace glTFForUE4Ed
 #else
             const SkeletalMeshImportData::FBone& BinaryBone = RefBonesBinary[b];
 #endif
-            if (BinaryBone.ParentIndex == -1)
-            {
+            if (BinaryBone.ParentIndex == INDEX_NONE)
                 RootBoneIndices.Add(b);
-            }
         }
-        int32 NewRootIndex = -1;
+        int32 NewRootIndex = INDEX_NONE;
         if (RootBoneIndices.Num() > 1)
         {
             /// create new root bone for multi root bones
@@ -313,6 +311,7 @@ namespace glTFForUE4Ed
             ReferenceSkeletonModifier.Add(BoneInfo, FTransform(RefBonesBinary[RootBoneIndices[0]].BonePos.Transform));
 #endif
         }
+
         // Digest bones to the serializable format.
         for (int32 b = 0; b < RefBonesBinary.Num(); b++)
         {
@@ -786,10 +785,6 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
 #endif
         SkeletalMeshLODInfos.Empty();
         SkeletalMeshLODInfos.Add(FSkeletalMeshLODInfo());
-        SkeletalMeshLODInfos[0].ReductionSettings.NumOfTrianglesPercentage = 1.0f;
-        SkeletalMeshLODInfos[0].ReductionSettings.NumOfVertPercentage      = 1.0f;
-        SkeletalMeshLODInfos[0].ReductionSettings.MaxDeviationPercentage   = 0.0f;
-        SkeletalMeshLODInfos[0].LODHysteresis                              = 0.02f;
 
         ImportedResource->LODModels.Empty();
 #if GLTFFORUE_ENGINE_VERSION < 419
@@ -838,11 +833,11 @@ USkeletalMesh* FglTFImporterEdSkeletalMesh::CreateSkeletalMesh(const TWeakPtr<Fg
     {
         if (bCreated)
         {
-#if GLTFFORUE_ENGINE_VERSION < 500
+#    if GLTFFORUE_ENGINE_VERSION < 500
             SkeletalMesh->MarkPendingKill();
-#else
+#    else
             SkeletalMesh->MarkAsGarbage();
-#endif
+#    endif
         }
         FeedbackTaskWrapper.Log(ELogVerbosity::Error,
                                 LOCTEXT("CreateSkeletalMeshFailedToBuildTheSkeletalMesh", "Failed to build the skeletal mesh!"));
@@ -1188,12 +1183,14 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
                                             JointsIndeies,
                                             JointsWeights))
     {
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Failed to get the skeletal mesh data!"));
         return false;
     }
 
     if (!glTFForUE4Ed::BuildSkeletalMeshImportData(
             TriangleIndices, Points, Normals, Tangents, TextureCoords, JointsIndeies, JointsWeights, OutSkeletalMeshImportData))
     {
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Failed to build the skeletal mesh data!"));
         return false;
     }
 
@@ -1221,7 +1218,7 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
             {
                 continue;
             }
-            OutMorphTargetImportDatas[i]        = OutSkeletalMeshImportData;
+            OutMorphTargetImportDatas[i] = OutSkeletalMeshImportData;
 #if GLTFFORUE_ENGINE_VERSION < 500
             OutMorphTargetImportDatas[i].Points = MorphTargetsPoints[i];
 #else
@@ -1255,20 +1252,20 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
     if (!FglTFImporter::GetInverseBindMatrices(InGlTF, InSkin, InBuffers, OutInverseBindMatrices))
     {
         checkSlow(0);
-        // TODO:
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Failed to get the inverse bind matrix!"));
         return false;
     }
 
     if (OutInverseBindMatrices.Num() != static_cast<int32>(InSkin->joints.size()))
     {
         checkSlow(0);
-        // TODO:
+        UE_LOG(LogglTFForUE4Ed, Error, TEXT("Failed to the number of inverse bind matrix is incorrect!"));
         return false;
     }
 
     const FString SkinName = GLTF_GLTFSTRING_TO_TCHAR(InSkin->name.c_str());
 
-    /// collect the joint id
+    /// Collect the joint id
     TArray<int32> JointIds;
     for (int32 i = 0, ic = static_cast<int32>(InSkin->joints.size()); i < ic; ++i)
     {
@@ -1282,64 +1279,75 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
         if (JointId < 0 || JointId >= static_cast<int32>(InGlTF->nodes.size()))
         {
             checkSlow(0);
-            // TODO:
+            UE_LOG(LogglTFForUE4Ed, Error, TEXT("Failed to the %d's joint id is incorrect!"), i);
             return false;
         }
 
         JointIds.Emplace(JointId);
+    }
+
+    const FVector NodeScale3D = InNodeTransform.GetScale3D();
+    for (int32 i = 0, ic = JointIds.Num(); i < ic; ++i)
+    {
+        const int32 JointId = JointIds[i];
 
 #if GLTFFORUE_ENGINE_VERSION < 421
         VBone Bone;
 #else
         SkeletalMeshImportData::FBone Bone;
 #endif
-        Bone.BonePos.Transform.SetIdentity();
 
         const std::shared_ptr<libgltf::SNode>& NodePtr = InGlTF->nodes[JointId];
         if (!NodePtr || NodePtr->name.empty())
         {
-            Bone.Name = FString::Printf(TEXT("Bone_%s_%d"), *SkinName, JointId);
+            Bone.Name = FString::Printf(TEXT("B_%s_%d"), *SkinName, JointId);
         }
         else
         {
             FString NodeName = GLTF_GLTFSTRING_TO_TCHAR(NodePtr->name.c_str());
-            Bone.Name        = FString::Printf(TEXT("Bone_%s_%d_%s"), *SkinName, JointId, *NodeName);
+            Bone.Name        = FString::Printf(TEXT("B_%s_%d_%s"), *SkinName, JointId, *NodeName);
         }
         Bone.Flags       = 0;
         Bone.NumChildren = static_cast<int32>(InGlTF->nodes[JointId]->children.size());
 
         const FglTFImporterNodeInfo& NodeInfo = InOutglTFImporterCollection.FindNodeInfo(JointId);
 
+        const FTransform BonePosTransform = FTransform(OutInverseBindMatrices[i].Inverse());
+#if GLTFFORUE_ENGINE_VERSION < 500
+        Bone.BonePos.Transform = BonePosTransform;
+#else
+        Bone.BonePos.Transform = ::FTransform3f(BonePosTransform);
+#endif
+
         /// it is a root if the id is not contained in the joints
-        Bone.ParentIndex = NodeInfo.ParentIndex;
-        if (!JointIds.Contains(Bone.ParentIndex))
+        if (!JointIds.Contains(NodeInfo.ParentIndex))
         {
             Bone.ParentIndex = INDEX_NONE;
 
 #if GLTFFORUE_ENGINE_VERSION < 500
-            Bone.BonePos.Transform.SetFromMatrix(OutInverseBindMatrices[i].Inverse());
             Bone.BonePos.Transform *= InNodeTransform;
 #else
-            FTransform BonePosTransform;
-            BonePosTransform.SetFromMatrix(OutInverseBindMatrices[i].Inverse());
-            Bone.BonePos.Transform = ::FTransform3f(BonePosTransform);
             Bone.BonePos.Transform *= ::FTransform3f(InNodeTransform);
 #endif
         }
         else
         {
+            Bone.ParentIndex = NodeInfo.ParentIndex;
+
+            int32            InverseBindMatricesParentIndex = JointIds.Find(NodeInfo.ParentIndex);
+            const FTransform ParentBonePosTransform         = FTransform(OutInverseBindMatrices[InverseBindMatricesParentIndex]);
 #if GLTFFORUE_ENGINE_VERSION < 500
-            Bone.BonePos.Transform = NodeInfo.RelativeTransform;
+            Bone.BonePos.Transform *= ParentBonePosTransform;
 #else
-            Bone.BonePos.Transform = ::FTransform3f(NodeInfo.RelativeTransform);
+            Bone.BonePos.Transform *= ::FTransform3f(ParentBonePosTransform);
 #endif
         }
 
-        // TODO:
+        // For testing / debug
         Bone.BonePos.Length = 1.0f;
-        Bone.BonePos.XSize  = 100.0f;
-        Bone.BonePos.YSize  = 100.0f;
-        Bone.BonePos.ZSize  = 100.0f;
+        Bone.BonePos.XSize  = NodeScale3D.X;
+        Bone.BonePos.YSize  = NodeScale3D.Y;
+        Bone.BonePos.ZSize  = NodeScale3D.Z;
 
         OutSkeletalMeshImportData.RefBonesBinary.Emplace(Bone);
 
@@ -1360,37 +1368,13 @@ bool FglTFImporterEdSkeletalMesh::GenerateSkeletalMeshImportData(const std::shar
     /// transform the point and tangent
     if (!InNodeTransform.Equals(FTransform::Identity))
     {
-        for (auto& Point : OutSkeletalMeshImportData.Points)
+        glTFForUE4Ed::TransformSkeletalMeshImportData(OutSkeletalMeshImportData, InNodeTransform);
+
+        for (FSkeletalMeshImportData& MorphTargetImportData : OutSkeletalMeshImportData.MorphTargets)
         {
-#if GLTFFORUE_ENGINE_VERSION < 500
-            Point = InNodeTransform.TransformPosition(Point);
-#else
-            Point = FVector3f(InNodeTransform.TransformPosition(FVector(Point)));
-#endif
-        }
-        for (auto& Triangle : OutSkeletalMeshImportData.Faces)
-        {
-            for (int32 i = 0; i < 3; ++i)
-            {
-#if GLTFFORUE_ENGINE_VERSION < 500
-                auto& TangentX = Triangle.TangentX[i];
-                TangentX       = InNodeTransform.TransformVectorNoScale(TangentX);
-                auto& TangentY = Triangle.TangentY[i];
-                TangentY       = InNodeTransform.TransformVectorNoScale(TangentY);
-                auto& TangentZ = Triangle.TangentZ[i];
-                TangentZ       = InNodeTransform.TransformVectorNoScale(TangentZ);
-#else
-                auto& TangentX = Triangle.TangentX[i];
-                TangentX       = FVector3f(InNodeTransform.TransformVectorNoScale(FVector(TangentX)));
-                auto& TangentY = Triangle.TangentY[i];
-                TangentY       = FVector3f(InNodeTransform.TransformVectorNoScale(FVector(TangentY)));
-                auto& TangentZ = Triangle.TangentZ[i];
-                TangentZ       = FVector3f(InNodeTransform.TransformVectorNoScale(FVector(TangentZ)));
-#endif
-            }
+            glTFForUE4Ed::TransformSkeletalMeshImportData(MorphTargetImportData, InNodeTransform);
         }
     }
-
     return true;
 }
 
