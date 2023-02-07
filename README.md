@@ -8,6 +8,10 @@
 
 > Depends on [libgltf](https://github.com/code4game/libgltf) to parse the glTF 2.0 file.
 
+## Sponsors and Supporters
+
+[![Individuals](https://opencollective.com/gltfforue4/individuals.svg?button=false) ![Organizations](https://opencollective.com/gltfforue4/organizations.svg) ](https://opencollective.com/gltfforue4#support)
+
 ## Download
 
 | UE  | Plugin | Download |
