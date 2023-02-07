@@ -1,4 +1,4 @@
-// Copyright(c) 2016 - 2022 Code 4 Game, Org. All Rights Reserved.
+// Copyright(c) 2016 - 2023 Code 4 Game, Org. All Rights Reserved.
 
 #include "glTF/glTFImporterEdStaticMesh.h"
 #include "glTFForUE4EdPrivatePCH.h"
