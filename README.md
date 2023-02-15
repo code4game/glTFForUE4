@@ -2,7 +2,9 @@
 
 [![glTF status](https://img.shields.io/badge/glTF-2%2E0-green.svg?style=flat)](https://github.com/KhronosGroup/glTF)
 [![Roadmap](https://img.shields.io/badge/visit-roadmap-green.svg?style=flat)](https://github.com/code4game/glTFForUE4/milestones)
-[![Discussions](https://img.shields.io/badge/read-manual-green.svg?style=flat)](https://github.com/code4game/glTFForUE4/discussions)
+[![Manual](https://img.shields.io/badge/read-manual-green.svg?style=flat)](https://github.com/code4game/glTFForUE4/discussions)
+[![Chat](https://img.shields.io/badge/chat-discord-green.svg?style=flat)](https://discord.gg/bWxyeUeYaS)
+
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/5ebf3642ec3d4505a58c25dfb308ae6f)](https://www.codacy.com/gh/code4game/glTFForUE4/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=code4game/glTFForUE4&amp;utm_campaign=Badge_Grade)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fcode4game%2FglTFForUE4.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fcode4game%2FglTFForUE4?ref=badge_shield)
 
@@ -32,8 +34,8 @@
 | 4.16 | 1.2.2 Win/Mac | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
 | 4.15 | 1.2.2 Win/Mac | [![Download from itch.io](https://img.shields.io/badge/download-itch%2Eio-blue.svg?style=flat)](https://c4gio.itch.io/gltf-for-ue4) |
 
-> Now, I just maintenance the latest three versions of Unreal Engine.
-> It should available for UE4.10~23, you can compile it by yourself.
+> Now, I just maintenance the latest two versions of Unreal Engine.
+> It should available for UE4.10~27, you can compile it by yourself.
 > 
 > If you get the message `batch response: This repository is over its data quota. Account responsible for LFS bandwidth should purchase more data packs to restore access.`
 > when you clone or pull from [github](https://github.com/code4game/glTFForUE4),

@@ -11,4 +11,4 @@
 
 ## Reimport the glTF
 
-Just the static mesh and the skeleton mesh for now.
+The static mesh and the skeleton mesh are available for now.
